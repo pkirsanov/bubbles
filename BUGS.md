@@ -1957,16 +1957,23 @@ The regex uses only POSIX ERE classes, so it behaves identically under BSD grep;
 ## BUG-028 — Check 43 treats identical deterministic output as cloned evidence and lets unrelated specs block each other
 
 - **Filed:** 2026-08-12
-- **Disposition:** **FIXED** 2026-08-17 in `3c03201` — for the false-accusation defect; recommendations 1-2 remain **OPEN** (see below). Check 43 no longer treats a differing `evidence_category` as grounds for a forgery allegation: category comes from operator-supplied tags and describes a run, not the program that ran. Identity is now judged by the PROGRAM (`program_identity`); a dispatch verb (`run`/`exec`) keeps the script name, so `npm run lint` and `npm run test` stay distinct; and `target_identity` now carries the positional subject, so two files handled in one scope are distinct. Live effect on this repo's tool log: **5 clone groups → 0**, with 3 of them correctly accepted as deterministic siblings. All adversarial bounds retained (cargo-vs-npm, facet-1 single-target, facet-2 wrappers, IV-F4).
+- **Disposition:** **IMPLEMENTATION FIXED** 2026-08-17 in `3c03201` for the
+  false-accusation defect. Recommendations 1-2 remain **OPEN**. Current D3
+  derives identity from normalized program plus dispatch script, target or input
+  closure, numeric exit, and independent execution provenance. Evidence category
+  is known non-mixed sanity and diagnostic metadata only. Matching or differing
+  labels do not establish a clone. Live effect on this repo's tool log was
+  **5 clone groups → 0**, with 3 accepted as deterministic siblings. The
+  cargo-versus-npm, single-target, wrapper, and IV-F4 adversarial bounds remain.
   - **Rejected approach, recorded so it is not retried blind:** spec-scoping the clone groups (restricting a group to the certifying spec) was implemented and MEASURED — it silenced **all 14** adversarial assertions, because receipts rarely carry the certifying spec's name. It was REVERTED as a false-PASS regression.
   - **Still open:** correct scoping depends on this entry's own recommendations 1-2 (receipt identifiers recorded on admitted claims), which remain unimplemented. That part of BUG-028 stays explicitly OPEN as a follow-up; the false-accusation defect is closed.
 - **Severity:** high. The check blocks certification and falsely accuses honest executions of evidence reuse.
 - **Found by:** current-policy revalidation of downstream `research-lab/specs/011-volatility-regime-and-sizing-lab`.
 - **Distinct from:** BUG-007 excluded empty stdout. BUG-019 normalized equivalent command spellings. This defect concerns substantive deterministic output from separate commands.
 
-### Reproduction
+### Historical Reproduction
 
-The downstream transition guard reported:
+At discovery time, the downstream transition guard reported:
 
 ```text
 BLOCK: Evidence receipt CLONE — one captured stdout is cited by two different commands
@@ -1976,13 +1983,18 @@ AND
 bash .github/bubbles/scripts/artifact-lint.sh specs/_bugs/BUG-003-bond-regime-simple-power-model-digest-divergence
 ```
 
-The tool log contains separate successful executions with different durations. Both commands produce the same deterministic summary, such as `Artifact lint PASSED.` Their matching output bytes do not prove receipt reuse.
+The tool log contained separate successful executions with different durations. Both commands produced the same deterministic summary, such as `Artifact lint PASSED.` Their matching output bytes did not prove receipt reuse.
 
-Check 43 reads the repository-wide `.specify/runtime/tool-calls.jsonl`. It groups every non-empty `stdoutHash` across every spec. It then blocks when one hash has more than one normalized command identity.
+The pre-fix Check 43 grouped non-empty `stdoutHash` values across specs. It
+treated one hash under multiple command identities as cloned evidence without
+proving incompatible program, target, or execution identity.
 
-### Root cause
+### Historical Root Cause
 
-`state-transition-guard.sh` assumes different commands cannot honestly produce identical substantive stdout. Deterministic validators disprove that premise. The check also ignores the target spec and certifying window, so receipts from unrelated packets block the active transition.
+`state-transition-guard.sh` assumed different commands could not honestly
+produce identical substantive stdout. Deterministic validators disproved that
+premise. The old check also lacked enough target and execution identity to
+separate honest siblings from incompatible reuse.
 
 ### Expected behavior
 
@@ -1997,6 +2009,10 @@ Evidence reuse detection must prove that one receipt backed multiple unrelated c
 5. Keep equal output hashes as advisory diagnostics when receipt identity is unavailable.
 
 Add adversarial selftests for two different spec-scoped artifact-lint runs with equal stdout. They must pass. Reusing one receipt identifier across two incompatible claims must still fail.
+
+These recommendations remain follow-up work. They do not describe the current
+D3 mechanism and do not authorize closing BUG-028 before its recorded
+validation condition is satisfied.
 
 ---
 
@@ -2136,13 +2152,12 @@ Add an integration fixture where only `spec.md` changes after certification. The
 ## BUG-032 — planning-maturity guards confuse prose, output equality, and terminality with stronger contract facts
 
 - **Filed:** 2026-08-15
-- **Disposition:** open. All four guard repairs (D1-D4) are IMPLEMENTED and
-  landed on `main` in commit `0531189`; the contract documentation for G043 and
-  G101 is now reconciled to them. The packet is NOT closed: it is not
-  validate-certified, and its Scope 4 obligations still require full
-  `framework-validate` and `release-check` evidence that no session has captured
-  against the current tree. Per Gate G095 this is a tracked OPEN defect with a
-  recorded reason.
+- **Disposition:** open. D1 through D4 are implemented and covered by focused
+  persistent regression evidence in the current packet. Planning reconciliation
+  records Scopes 1 through 3 as Done with 27/27, 7/7, and 7/7 Markdown-to-machine
+  Test Plan parity. The packet remains `in_progress` and is not validate-certified.
+  Scope 4 still requires full `framework-validate`, `release-check`, and
+  certification evidence. No full-framework or release result is claimed here.
 - **Severity:** high. Valid planning can be blocked, honest evidence can be
   accused of cloning, and planning maturity can be counted as release delivery.
 - **Canonical packet:**
@@ -2152,8 +2167,10 @@ Add an integration fixture where only `spec.md` changes after certification. The
   reconciliation.
 - **Related:** BUG-028 is the standalone predecessor for the deterministic
   validator receipt-hash defect. BUG-032 subsumes its implementation planning;
-  BUG-028 remains open until BUG-032 D3 is validate-certified. BUG-033 refines
-  the same Check 43 surface for repeated honest re-runs.
+  its false-accusation implementation is present. BUG-028 follow-up
+  recommendations remain open, and BUG-028 remains open until BUG-032 D3 is
+  validate-certified. BUG-033 refines the same Check 43 surface for repeated
+  honest re-runs.
 
 The packet defines four ordered scopes, exact negative and adversarial fixtures,
 persistent selftest surfaces, mode-aware delivery semantics, documentation
@@ -2161,16 +2178,20 @@ reconciliation, and exact validation commands.
 
 ### Delivered so far
 
-- Check 8B now fires only on an explicit mutation verb (`renames`/`removes`/
-  `moves`/`deprecates`) co-occurring with a consumer-interface noun, so generic
-  replacement and migration prose no longer demands a Consumer Impact Sweep.
+- Check 8B now requires a bounded relationship between an explicit mutation and
+  a completed consumer-interface phrase. Generic replacement and migration prose
+  no longer demands a Consumer Impact Sweep. Ambiguity and finite overflow fail
+  closed without guessing a consumer mutation.
 - Check 5A distinguishes explicit no-SLA/no-SLO/not-applicable posture from a
   quantitative performance promise.
-- Check 43 derives receipt identity from command family, evidence category,
-  target closure, exit status, and execution provenance instead of stdout bytes
-  alone; BUG-007 empty-stdout and BUG-019 spelling behavior are preserved.
-- G101 separates terminal-for-mode from delivery-capable terminality, so a
-  planning, docs, or review ceiling can no longer satisfy `delivery=required`.
+- Check 43 derives receipt identity from normalized program plus dispatch script,
+  target or input closure, numeric exit, and independent execution provenance.
+  Evidence category remains known non-mixed sanity and diagnostic metadata.
+  Matching or differing labels do not establish a clone. BUG-007 empty-stdout
+  and BUG-019 spelling behavior remain protected.
+- G101 rejects planning, docs-only, validate-only, and prototype terminality for
+  `delivery=required`. Delivery-capable terminality plus validate certification
+  remains required.
 - The G043 and G101 contract text in `bubbles/registry/gates.yaml`,
   `agents/bubbles_shared/quality-gates.md`,
   `agents/bubbles_shared/scenario-compile.md`, `agents/bubbles.goal.agent.md`,
@@ -2179,16 +2200,19 @@ reconciliation, and exact validation commands.
   `docs/its-not-rocket-appliances.html` regenerated by
   `generate-cheatsheet.sh`) now states delivery-capable terminality and the
   narrowed Check 8B trigger.
+- `skills/bubbles-quality-gates-catalog/SKILL.md` now states that planning,
+  docs-only, validate-only, and prototype terminality are non-delivery. The
+  skill requires delivery-capable terminality plus validate certification, and
+  its path is inside the BUG-032 work boundary.
 
 ### Still open
 
-- `skills/bubbles-quality-gates-catalog/SKILL.md` still publishes the superseded
-  "TERMINAL + VALIDATE-certified" G101 shorthand. It is outside the packet's
-  approved `workBoundary.allowedPaths`, so correcting it needs a Goal Contract
-  revision first rather than an out-of-boundary edit.
-- Scope 4 requires captured `framework-validate` and `release-check` evidence.
+- Scope 4 requires captured `framework-validate` and `release-check` evidence
+  against the final current tree.
 - `bubbles.validate` has not certified the packet, so no terminal status may be
-  written and BUG-028 may not yet be reconciled.
+  written.
+- BUG-028 follow-up recommendations remain open. Its validation-linked closure
+  rule is not satisfied, so BUG-028 must remain open.
 
 ---
 
@@ -2199,7 +2223,7 @@ reconciliation, and exact validation commands.
   present in `bubbles/scripts/state-transition-guard.sh`: Check 43 binds
   `$targets` with `group_by(.cmd | cmd_identity) | map(.[0] | target_identity)`
   (line 4457), together with the facet-2 wrapper normalisation.
-  `bash bubbles/scripts/receipt-identity-selftest.sh` reports 15 passed, 0 failed.
+  `bash bubbles/scripts/receipt-identity-selftest.sh` reports 20 passed, 0 failed.
   The packet's own `state.json` remains `in_progress`: on 2026-08-17
   `state-transition-guard.sh` refused the `done` transition for
   `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization` with 28

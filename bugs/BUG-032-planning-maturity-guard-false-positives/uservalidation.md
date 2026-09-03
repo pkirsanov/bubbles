@@ -16,12 +16,15 @@
   and pending-activation mode semantics.
 - [x] Exact focused, full-framework, release, agnosticity, and diff validation
   commands are recorded in `scopes.md` and `report.md`.
-- [x] The packet remains `in_progress`; no item claims the guard fixes or their
-  regression tests have executed.
+- [x] The packet records the existing focused fix and regression evidence for
+  Scopes 1 through 3, keeps Scope 4 `In Progress`, and makes no claim of current
+  full framework validation, release-check completion, certification, or human
+  acceptance.
 
 Unchecked items in this section are reserved for user-reported regressions. This
-planning checklist verifies packet content only and is not implementation
-acceptance.
+planning checklist verifies packet content only. Existing checked planning
+items are not human acceptance decisions, and this reconciliation adds or checks
+no new human decision.
 
 ## Goal
 

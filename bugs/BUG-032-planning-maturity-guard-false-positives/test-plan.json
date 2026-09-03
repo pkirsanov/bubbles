@@ -1,0 +1,1563 @@
+{
+  "version": 1,
+  "specId": "BUG-032",
+  "featureDir": "bugs/BUG-032-planning-maturity-guard-false-positives",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-09-02T01:58:50Z",
+  "supersededReason": "The preserved supersededScopes array records the historical 32-scenario interpretation. The current active scopes array contains 26 behaviors and five non-behavior verification obligations.",
+  "supersededScopes": [
+    {
+      "scopeId": "01-semantic-consumer-and-sla-classifiers",
+      "scopeName": "Semantic Consumer And SLA Classifiers",
+      "status": "in_progress",
+      "dependsOn": [],
+      "tests": [
+        {
+          "type": "regression-e2e-pre-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-004"],
+          "description": "The replacement and explicit opt-out fixtures fail before their production predicates change.",
+          "testIds": [
+            "BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics",
+            "BUG032-IV-F3 Check 5A accepts explicit no-SLA/no-SLO, negated-target, and not-applicable target prose without stress coverage"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before the D1 and D2 production repairs, with the failing assertions named.",
+          "evidenceRef": "report.md#scope-1-red-evidence"
+        },
+        {
+          "type": "regression-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "description": "Stale generation and unrelated-clause replacement semantics remain outside consumer mutation classification.",
+          "testIds": [
+            "BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with no impact-sweep requirement for stale generation or unrelated-clause replacement.",
+          "evidenceRef": "report.md#scope-1-green-evidence"
+        },
+        {
+          "type": "regression-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-002",
+          "description": "Provider, lifecycle, and generated-artifact replacement remain outside consumer mutation classification.",
+          "testIds": [
+            "BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 for all three replacement families.",
+          "evidenceRef": "report.md#scope-1-green-evidence"
+        },
+        {
+          "type": "adversarial-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-003",
+          "description": "Direct route, path, endpoint, contract, and identifier renames or removals still trigger all impact-planning checks.",
+          "testIds": [
+            "BUG032-IV-F1 Check 8B triggers on the exact mutation inflections 'renames' and 'removes'",
+            "BUG-032 Check 8B still flags all 5 explicit route/path/endpoint/contract/identifier mutations"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 while every direct mutation remains positive.",
+          "evidenceRef": "report.md#scope-1-green-evidence"
+        },
+        {
+          "type": "regression-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-004",
+          "description": "Explicit no-SLA, no-SLO, opted-out, negated-target, and not-applicable prose does not demand stress coverage.",
+          "testIds": [
+            "BUG032-IV-F3 Check 5A accepts explicit no-SLA/no-SLO, negated-target, and not-applicable target prose without stress coverage",
+            "BUG032-IV-F3 Check 5A does not turn explicit negated or not-applicable target posture into an affirmative contract"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 for each explicit non-affirmative posture.",
+          "evidenceRef": "report.md#scope-1-green-evidence"
+        },
+        {
+          "type": "adversarial-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-005",
+          "description": "Quantitative availability, latency, throughput, p95, p99, and no-more-than declarations remain affirmative.",
+          "testIds": [
+            "BUG-032 Check 5A still treats 'no more than 200 ms p95 latency' as an affirmative performance contract",
+            "Check 5A still flags all 5 genuine SLA declarations (p95 latency, throughput, SLA, SLO, p99 response time)"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 while every genuine promise still requires stress planning.",
+          "evidenceRef": "report.md#scope-1-green-evidence"
+        },
+        {
+          "type": "functional-regression-pre-fix-red",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "description": "The unpunctuated cache-removal sentence fails against the old broad classifier while direct route removal stays positive.",
+          "testIds": [
+            "BUG-032 Check 8B classifies unpunctuated cache removal plus preserved public route as negative"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before the finite Check 8B helper is implemented, with the direct-removal control still positive.",
+          "evidenceRef": "report.md#scope-1-scn-032-013-red-evidence"
+        },
+        {
+          "type": "functional-regression-post-fix-negative",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "description": "Punctuated and unpunctuated cache-removal declarations classify negative and name the other target and preserved route.",
+          "testIds": [
+            "BUG-032 Check 8B classifies punctuated and unpunctuated cache removal plus preserved public route as negative"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with classification=negative, mutationTarget=stale cache entries, and preservedSurfaces=route.",
+          "evidenceRef": "report.md#scope-1-scn-032-013-green-evidence"
+        },
+        {
+          "type": "adversarial-functional-direct-positive",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "description": "Active and passive public-route removal forms remain direct-positive and invoke all three impact-planning checks.",
+          "testIds": [
+            "BUG-032 Check 8B keeps active and passive public-route removal direct-positive"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with classification=direct-positive and remove:route for both forms.",
+          "evidenceRef": "report.md#scope-1-scn-032-013-green-evidence"
+        },
+        {
+          "type": "adversarial-functional-mixed-surface",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "description": "Preserved route plus removed redirect classifies mixed-surface and evaluates only the redirect mutation.",
+          "testIds": [
+            "BUG-032 Check 8B classifies preserved route plus removed redirect as mixed-surface"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with direct remove:redirect and preserved route.",
+          "evidenceRef": "report.md#scope-1-scn-032-013-green-evidence"
+        },
+        {
+          "type": "adversarial-functional-ambiguity",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "description": "Contradictory, unresolved, and over-128-token declarations fail closed with local rewrite guidance.",
+          "testIds": [
+            "BUG-032 Check 8B blocks same-surface mutation and preservation as ambiguous",
+            "BUG-032 Check 8B blocks unresolved nearby route mention as ambiguous",
+            "BUG-032 Check 8B blocks relevant declarations above 128 tokens as ambiguous"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "The outer selftest exits 0 only after each inner guard exits non-zero with conflict, unresolved, or token-limit.",
+          "evidenceRef": "report.md#scope-1-scn-032-013-green-evidence"
+        },
+        {
+          "type": "production-helper-extraction-contract",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "description": "The selftest extracts the finite Check 8B helper from stable production markers instead of copying its grammar.",
+          "testIds": [
+            "BUG-032 Check 8B finite classifier extracted from production markers (no test/source drift)"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when production markers resolve and the extracted helper drives the assertions.",
+          "evidenceRef": "report.md#scope-1-scn-032-013-green-evidence"
+        },
+        {
+          "type": "tests-first-review-red-cr01",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-014",
+          "description": "BUG032-CR-01 assertions expose line-global negation while retaining owned-negation controls.",
+          "testIds": [
+            "BUG-032 Check 8B keeps direct mutations positive after unrelated no or without phrases",
+            "BUG-032 Check 8B keeps owned negation negative"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production remediation because at least one unrelated-negation direct declaration is suppressed; the owned-negation controls remain independently asserted.",
+          "evidenceRef": "report.md#scope-1-five-finding-red-evidence"
+        },
+        {
+          "type": "tests-first-review-red-cr02",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-015",
+          "description": "BUG032-CR-02 assertions expose open surface-head acceptance with direct and explicit-preservation twins in the same run.",
+          "testIds": [
+            "BUG-032 Check 8B blocks trailing artifact nouns as surface-tail",
+            "BUG-032 Check 8B discriminates direct and explicitly preserved trailing-noun twins"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production remediation because the first candidate treats at least one unresolved trailing noun as a direct surface mutation.",
+          "evidenceRef": "report.md#scope-1-five-finding-red-evidence"
+        },
+        {
+          "type": "tests-first-review-red-cr03",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-016",
+          "description": "BUG032-CR-03 assertions expose normalization or materialization before the token-129 sentinel.",
+          "testIds": [
+            "BUG-032 Check 8B admits exactly 128 tokens and rejects token 129 before semantic scan"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production remediation with retained-token and overflow-token assertions proving that a correct label alone is insufficient.",
+          "evidenceRef": "report.md#scope-1-five-finding-red-evidence"
+        },
+        {
+          "type": "tests-first-review-red-eng01",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-016",
+          "description": "BUG032-ENG-01 assertions expose forbidden per-line process mechanisms structurally and through hostile shadow counters.",
+          "testIds": [
+            "BUG-032 Check 8B exact marked source has no statically admitted process-capable syntax or executable command head",
+            "BUG-032 Check 8B hostile shadow command counts remain zero"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production remediation because the marked helper contains or invokes a forbidden normalizer mechanism; marker extraction is counted separately.",
+          "evidenceRef": "report.md#scope-1-five-finding-red-evidence"
+        },
+        {
+          "type": "tests-first-review-red-eng02",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-014",
+          "scenarioIds": ["SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "BUG032-ENG-02 executes the complete negation, trailing-noun, exact-limit, helper-error, process, marker, and mixed-surface discriminator set before remediation.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production remediation with every new discriminator reached; the earlier baseline GREEN is not accepted as proof.",
+          "evidenceRef": "report.md#scope-1-five-finding-red-evidence"
+        },
+        {
+          "type": "functional-regression-phrase-local-negation-twins",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-014",
+          "description": "Four unrelated-negation declarations remain direct and run all three planning checks while four owned-negation controls remain negative.",
+          "testIds": [
+            "BUG-032 Check 8B keeps direct mutations positive after unrelated no or without phrases",
+            "BUG-032 Check 8B keeps owned negation negative"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with direct-positive/direct for every unrelated-negation case, all three missing impact requirements from each real guard fixture, and no impact requirement for each owned-negation control.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "functional-regression-surface-tail-triples",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-015",
+          "description": "Every trailing-noun ambiguity is discriminated from its direct and explicitly preserved twins.",
+          "testIds": [
+            "BUG-032 Check 8B blocks trailing artifact nouns as surface-tail",
+            "BUG-032 Check 8B discriminates direct and explicitly preserved trailing-noun twins"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with all four unresolved forms ambiguous/surface-tail and impact checks skipped, all direct twins positive, and all explicit-preservation twins negative.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "boundary-regression-token-128-129",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-016",
+          "description": "Exactly 128 tokens classify ordinarily while token 129 triggers before retention, normalization, or semantic scan.",
+          "testIds": [
+            "BUG-032 Check 8B admits exactly 128 tokens and rejects token 129 before semantic scan"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with retained length 128 in both cases, token 129 absent, direct all-three checks only for the exact-limit case, and ambiguous/token-limit for overflow.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "boundary-regression-candidate-8-9",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-016",
+          "description": "Exactly eight mutation candidates classify ordinarily while candidate nine triggers before relationship parsing.",
+          "testIds": [
+            "BUG-032 Check 8B admits exactly eight candidates and rejects candidate nine before relationship analysis"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with candidate length eight, direct all-three checks for the exact-limit case, ambiguous/candidate-limit for overflow, and candidate-limit precedence over the ninth trailing-tail adversary.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "guard-regression-candidate-limit-helper-error",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-016",
+          "description": "Candidate overflow and ASCII control-byte helper failure block the real guard before guessed impact checks; invalid invocation remains a separate helper assertion.",
+          "testIds": [
+            "BUG-032 Check 8B guard fails closed on candidate-limit and normalization-error",
+            "BUG-032 Check 8B invalid invocation returns a complete invalid-arguments error record"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only after each inner guard returns nonzero with its stable reason, local correction, and all three impact fields skipped, while invalid invocation returns its complete helper record.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "production-marker-sourceability-contract",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "scenarioIds": ["SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "Exactly one declaration-only production marker block is extracted and sourced without changing caller shell state or retaining a legacy-regex fallback.",
+          "testIds": [
+            "BUG-032 Check 8B finite classifier has one atomic marker block whose pre-source declaration-only detector admits only complete supported function declarations and inert marker-bounded comments",
+            "BUG-032 Check 8B finite classifier extracted from production markers (no test/source drift)"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with one marker pair, preserved shell options, traps, IFS, working directory, and positional arguments, no source-time output or classification, and no copied grammar or legacy fallback.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "structural-regression-no-per-line-process",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-016",
+          "description": "The exact marked block contains and invokes no external normalizer or child-process mechanism per physical line.",
+          "testIds": [
+            "BUG-032 Check 8B exact marked source has no statically admitted process-capable syntax or executable command head",
+            "BUG-032 Check 8B hostile shadow command counts remain zero"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 after a structural scan rejects forbidden commands and process syntax and the complete matrix leaves all hostile shadow counts at zero; one bounded marker extraction is reported separately.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "shared-consumer-mixed-surface-all-three",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "scenarioIds": ["SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "One-direct and two-direct mixed-surface declarations run all three scope-level requirements for every direct surface and none for the separately preserved route.",
+          "testIds": [
+            "BUG-032 Check 8B mixed surfaces run all three requirements for every direct surface only"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with declaration-order direct sets, route only in the preserved set, and section, completion-item, and inventory failures each emitted once for the complete direct set.",
+          "evidenceRef": "report.md#scope-1-final-five-finding-green-evidence"
+        },
+        {
+          "type": "static-shell-syntax",
+          "category": "unit",
+          "file": "bubbles/scripts/guards/planning-checks.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "Changed planning classifiers and their persistent selftest remain valid Bash syntax.",
+          "command": "bash -n bubbles/scripts/guards/planning-checks.sh bubbles/scripts/state-transition-guard.sh bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0."
+        },
+        {
+          "type": "framework-portability",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "The canonical framework suite preserves all nine classifier scenarios under the registered Bash 4+ and GNU/BSD compatibility contract on the final byte epoch.",
+          "command": "bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with current-session captured evidence in Scope 4."
+        },
+        {
+          "type": "tests-first-red-passive-unrelated-object",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-017",
+          "description": "Passive unrelated-object ownership fails before repair while the direct passive route control remains positive.",
+          "testIds": [
+            "BUG-032 Check 8B keeps a used passive surface separate from an unrelated passive object",
+            "BUG-032 Check 8B passive direct-route control remains direct-positive"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because the passive cache-removal fixture is falsely direct; the direct passive route-removal control executes and passes in the same run."
+        },
+        {
+          "type": "regression-green-passive-unrelated-object-twin",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-017",
+          "description": "The passive cache object remains separate from the used route while direct passive route removal remains positive.",
+          "testIds": [
+            "BUG-032 Check 8B keeps a used passive surface separate from an unrelated passive object",
+            "BUG-032 Check 8B passive direct-route control remains direct-positive"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with the cache removal negative, route preserved, and checks skipped, while direct passive route removal runs all three checks."
+        },
+        {
+          "type": "tests-first-red-passive-tail-clarification",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-018",
+          "description": "Passive surface-tail and explicit clarification assertions fail before repair while direct controls remain asserted.",
+          "testIds": [
+            "BUG-032 Check 8B blocks passive artifact tails and accepts explicit passive clarification",
+            "BUG-032 Check 8B passive tail direct controls remain positive"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair for the unresolved or clarified passive artifact form; direct controls execute in the same run."
+        },
+        {
+          "type": "regression-green-passive-tail-triples",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-018",
+          "description": "Passive unresolved direct and clarified artifact forms retain distinct outcomes.",
+          "testIds": [
+            "BUG-032 Check 8B blocks passive artifact tails and accepts explicit passive clarification",
+            "BUG-032 Check 8B passive tail direct controls remain positive"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with unresolved tails surface-tail and skipped checks, direct controls positive, and explicit artifact clarification negative."
+        },
+        {
+          "type": "tests-first-red-passive-will-not-negation",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-019",
+          "description": "Passive will-not negation fails before repair while will-be removal remains direct-positive.",
+          "testIds": [
+            "BUG-032 Check 8B preserves passive will-not negation",
+            "BUG-032 Check 8B passive will-be control remains direct-positive"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because will-not is falsely positive; the will-be control executes and passes in the same run."
+        },
+        {
+          "type": "regression-green-passive-negation-twin",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-019",
+          "description": "Will-not preserves route and will-be remains direct-positive.",
+          "testIds": [
+            "BUG-032 Check 8B preserves passive will-not negation",
+            "BUG-032 Check 8B passive will-be control remains direct-positive"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 with will-not negative and checks skipped while will-be remains direct and runs all three checks."
+        },
+        {
+          "type": "tests-first-red-check8b-context-boundary",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-020",
+          "description": "Check 8B fixture-context scanning fails before repair while the identical active declaration remains enforceable.",
+          "testIds": [
+            "BUG-032 Check 8B ignores Gherkin Examples and Test Plan fixture prose",
+            "BUG-032 Check 8B still evaluates identical active declarations"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because at least one fixture context is classified; the identical active declaration remains enforced in the same run."
+        },
+        {
+          "type": "regression-green-check8b-context-twins",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-020",
+          "description": "Check 8B ignores three fixture contexts and still evaluates identical active declarations.",
+          "testIds": [
+            "BUG-032 Check 8B ignores Gherkin Examples and Test Plan fixture prose",
+            "BUG-032 Check 8B still evaluates identical active declarations"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when all fixture contexts are ignored and the identical active declaration remains enforceable."
+        },
+        {
+          "type": "tests-first-red-check5a-context-boundary",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-021",
+          "description": "Quoted performance fixture handling fails before repair while the identical active p95 contract remains affirmative.",
+          "testIds": [
+            "BUG-032 Check 5A ignores quoted Gherkin Examples and Test Plan performance fixtures",
+            "BUG-032 Check 5A still evaluates identical active performance contracts"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because a quoted performance fixture is falsely active; the active p95 twin remains positive."
+        },
+        {
+          "type": "regression-green-check5a-context-twins",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-021",
+          "description": "Check 5A ignores three fixture contexts and retains the identical active p95 contract.",
+          "testIds": [
+            "BUG-032 Check 5A ignores quoted Gherkin Examples and Test Plan performance fixtures",
+            "BUG-032 Check 5A still evaluates identical active performance contracts"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when fixture contexts are ignored and the active p95 contract still requires canonical stress coverage."
+        },
+        {
+          "type": "tests-first-red-canonical-stress-coverage",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-022",
+          "description": "Broad stress prose falsely satisfies coverage before repair while a canonical Stress row and faithful DoD remain the positive control.",
+          "testIds": [
+            "BUG-032 Check 5A rejects stress-word coverage without a canonical Stress Test Plan row and DoD",
+            "BUG-032 Check 5A accepts a canonical Stress row with faithful DoD"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because broad prose passes without canonical structure; the complete structural control executes in the same run."
+        },
+        {
+          "type": "regression-green-canonical-stress-coverage-twin",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-022",
+          "description": "Check 5A rejects prose-only stress coverage and accepts a canonical Stress Test Plan row with faithful DoD.",
+          "testIds": [
+            "BUG-032 Check 5A rejects stress-word coverage without a canonical Stress Test Plan row and DoD",
+            "BUG-032 Check 5A accepts a canonical Stress row with faithful DoD"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when broad prose fails coverage and canonical Stress row plus faithful DoD passes."
+        },
+        {
+          "type": "tests-first-red-g040-exact-boundaries",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-028",
+          "description": "G040 benign prefix handling fails before repair while exact prohibited-phrase controls remain blocking.",
+          "testIds": [
+            "BUG-032 G040 permits benign separate-clause and future-workflow wording",
+            "BUG-032 G040 still blocks exact separate-ticket and future-scope phrases"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because at least one benign prefix blocks; both exact prohibited controls remain blocked in the same run."
+        },
+        {
+          "type": "regression-green-g040-boundary-twins",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-028",
+          "description": "G040 permits benign prefix lines and blocks exact prohibited phrases outside historical evidence.",
+          "testIds": [
+            "BUG-032 G040 permits benign separate-clause and future-workflow wording",
+            "BUG-032 G040 still blocks exact separate-ticket and future-scope phrases"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when both benign lines pass and both exact prohibited phrases block."
+        }
+      ]
+    },
+    {
+      "scopeId": "02-receipt-clone-execution-identity",
+      "scopeName": "Receipt Clone Execution Identity",
+      "status": "in_progress",
+      "dependsOn": [1],
+      "tests": [
+        {
+          "type": "functional-regression-historical-red",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "description": "The original deterministic-validator sibling false positive remains historical RED evidence only.",
+          "testIds": ["BUG-032 Check 43 accepts independent deterministic validator siblings over distinct targets"],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Historical non-zero evidence is preserved without being relabeled as differing-category proof.",
+          "evidenceRef": "report.md#scope-2-red-evidence"
+        },
+        {
+          "type": "functional-regression-normalized-program-target",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "description": "One normalized validator program over independent targets and provenance is accepted, including equivalent wrapper spelling.",
+          "testIds": [
+            "BUG-032 Check 43 accepts independent deterministic validator siblings over distinct targets",
+            "BUG-032 Check 43 preserves BUG-019 equivalent command-spelling normalization"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0.",
+          "evidenceRef": "report.md#scope-2-green-evidence"
+        },
+        {
+          "type": "functional-regression-differing-category-labels",
+          "category": "functional",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "description": "Known non-mixed category labels may differ when program, target, numeric exit, and independent provenance establish deterministic siblings.",
+          "testIds": [
+            "BUG-028 canonical: one validator over three subjects with differing tags is not reported as cloned evidence",
+            "BUG-028 canonical: the three-subject group is accepted through the deterministic-sibling path",
+            "BUG-028 defect 1: one command tagged test and validate is not reported as cloned evidence"
+          ],
+          "command": "bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 on the reconciled planning epoch.",
+          "evidenceRef": "report.md#scope-2-normalized-program-category-evidence"
+        },
+        {
+          "type": "adversarial-functional-incompatible-programs",
+          "category": "functional",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-032-007",
+          "description": "Incompatible normalized programs, two identities on one target, and cross-spec collisions remain blocking while categories stay diagnostic.",
+          "testIds": [
+            "BUG-032 pin: incompatible command families sharing one stdout are still refused",
+            "BUG-028 defect 1 bound: two identities sharing ONE target and one stdout are still refused",
+            "BUG-028 bound: a group mixing two specs on one stdout is still refused"
+          ],
+          "command": "bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when all named incompatible-program and same-target controls block.",
+          "evidenceRef": "report.md#scope-2-normalized-program-category-evidence"
+        },
+        {
+          "type": "functional-regression-empty-stdout",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-008",
+          "description": "The empty stdout digest remains exempt with or without stdoutBytes.",
+          "testIds": [
+            "BUG-032 Check 43 preserves empty-stdout exemption without stdoutBytes",
+            "BUG-032 Check 43 does not treat empty stdout as substantive cloned evidence"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0.",
+          "evidenceRef": "report.md#scope-2-green-evidence"
+        },
+        {
+          "type": "receipt-schema-compatibility",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-008"],
+          "description": "Schema-v2 receipt fixtures with and without optional stdoutBytes and inputClosure remain readable and conservative.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0.",
+          "evidenceRef": "report.md#scope-2-green-evidence"
+        },
+        {
+          "type": "static-shell-syntax",
+          "category": "unit",
+          "file": "bubbles/scripts/state-transition-guard.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-008"],
+          "description": "Check 43 and its persistent assertions remain valid Bash syntax.",
+          "command": "bash -n bubbles/scripts/state-transition-guard.sh bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0."
+        },
+        {
+          "type": "tests-first-red-complete-target-overlap",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-023",
+          "description": "A non-first target overlap escapes before repair while disjoint-target and same-target controls retain their outcomes.",
+          "testIds": [
+            "BUG-032 Check 43 compares complete target sets for every command identity",
+            "BUG-032 Check 43 preserves disjoint-target siblings and same-target refusal controls"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because hidden overlap is accepted; disjoint-target and same-target controls execute in the same run."
+        },
+        {
+          "type": "regression-green-complete-target-controls",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-023",
+          "description": "Complete target-set overlap blocks while complete disjoint sets remain siblings and same-target reuse remains blocking.",
+          "testIds": [
+            "BUG-032 Check 43 compares complete target sets for every command identity",
+            "BUG-032 Check 43 preserves disjoint-target siblings and same-target refusal controls"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when all targets participate in overlap detection and both deterministic controls retain their outcomes."
+        },
+        {
+          "type": "tests-first-red-underlying-wrapped-program",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-024",
+          "description": "Incompatible programs under evidence-capture collapse before repair while the same-program wrapped sibling control remains accepted.",
+          "testIds": [
+            "BUG-032 Check 43 unwraps evidence-capture to compare underlying programs",
+            "BUG-032 Check 43 preserves same-program wrapped siblings over distinct targets"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because wrapped cargo and npm are accepted; the compatible wrapped control executes in the same run."
+        },
+        {
+          "type": "regression-green-wrapper-identity-twins",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-024",
+          "description": "Evidence-capture normalization exposes incompatible underlying programs and preserves same-program wrapped siblings over distinct targets.",
+          "testIds": [
+            "BUG-032 Check 43 unwraps evidence-capture to compare underlying programs",
+            "BUG-032 Check 43 preserves same-program wrapped siblings over distinct targets"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when incompatible wrapped programs block and compatible wrapped siblings remain accepted."
+        },
+        {
+          "type": "tests-first-red-contradictory-stdout-metadata",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-025",
+          "description": "Non-empty hash with zero bytes disappears before repair while canonical empty and ordinary non-empty controls remain asserted.",
+          "testIds": [
+            "BUG-032 Check 43 fails closed on non-empty hash with zero-byte metadata",
+            "BUG-032 Check 43 preserves canonical empty and ordinary non-empty controls"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because contradictory metadata is ignored; both legitimate metadata controls execute in the same run."
+        },
+        {
+          "type": "regression-green-stdout-metadata-controls",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-025",
+          "description": "Contradictory stdout metadata fails closed while canonical empty remains exempt and positive-byte output follows ordinary identity analysis.",
+          "testIds": [
+            "BUG-032 Check 43 fails closed on non-empty hash with zero-byte metadata",
+            "BUG-032 Check 43 preserves canonical empty and ordinary non-empty controls"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when the contradiction blocks and both legitimate controls retain their contracts."
+        }
+      ]
+    },
+    {
+      "scopeId": "03-g101-delivery-capable-mode-semantics",
+      "scopeName": "G101 Delivery-Capable Mode Semantics",
+      "status": "in_progress",
+      "dependsOn": [],
+      "tests": [
+        {
+          "type": "regression-e2e-pre-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-009",
+          "description": "The new planning-mode fixture exposes the pre-fix false delivery result.",
+          "testIds": ["S13 product-to-planning/specs_hardened is not delivered"],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before the G101 mode-semantic repair.",
+          "evidenceRef": "report.md#scope-3-red-evidence"
+        },
+        {
+          "type": "regression-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-009",
+          "description": "Product-to-planning specs_hardened remains NOT-DELIVERED despite validate certification.",
+          "testIds": [
+            "S13 product-to-planning/specs_hardened is not delivered",
+            "S13 reports planning maturity as NOT-DELIVERED"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0.",
+          "evidenceRef": "report.md#scope-3-green-evidence"
+        },
+        {
+          "type": "adversarial-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-010",
+          "description": "Validate-certified full-delivery done remains DELIVERED.",
+          "testIds": [
+            "S16 full-delivery/done remains delivered",
+            "S16 reports a delivery-capable validate-certified success"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0.",
+          "evidenceRef": "report.md#scope-3-green-evidence"
+        },
+        {
+          "type": "regression-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-011",
+          "description": "Validate-certified delivered_prototype remains NOT-DELIVERED.",
+          "testIds": [
+            "S12 required feature delivered_prototype is refused (prototype never deployable)",
+            "S12 reports prototype output as NOT-DELIVERED"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0.",
+          "evidenceRef": "report.md#scope-3-green-evidence"
+        },
+        {
+          "type": "mode-contract-e2e-post-fix",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-012",
+          "description": "Validation-only and docs-only modes refuse; pending-activation and rapid delivery aliases pass only under their owning modes; unknown modes gain no fallback.",
+          "testIds": [
+            "S17 dark-launch-shipped/pending-activation remains delivered",
+            "S18 rapid-tool-delivery/delivered_fast remains delivered",
+            "S19 unknown mode gains no pending-activation fallback",
+            "S20 product-to-planning/done is incoherent, not delivered"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0.",
+          "evidenceRef": "report.md#scope-3-green-evidence"
+        },
+        {
+          "type": "mode-contract",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-009",
+          "scenarioIds": ["SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012"],
+          "description": "The full G101 decision table resolves planning, prototype, full-delivery, pending-activation, rapid-delivery, and unknown-mode outcomes through the canonical mode contract.",
+          "testIds": [
+            "S12 required feature delivered_prototype is refused (prototype never deployable)",
+            "S13 product-to-planning/specs_hardened is not delivered",
+            "S16 full-delivery/done remains delivered",
+            "S17 dark-launch-shipped/pending-activation remains delivered",
+            "S18 rapid-tool-delivery/delivered_fast remains delivered",
+            "S19 unknown mode gains no pending-activation fallback",
+            "S20 product-to-planning/done is incoherent, not delivered"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 for the full decision table.",
+          "evidenceRef": "report.md#scope-3-green-evidence"
+        },
+        {
+          "type": "static-shell-syntax",
+          "category": "unit",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+          "scenarioId": "SCN-032-009",
+          "scenarioIds": ["SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012"],
+          "description": "G101 and its persistent assertions remain valid Bash syntax.",
+          "command": "bash -n bubbles/scripts/release-delivery-reconciliation-guard.sh bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0."
+        },
+        {
+          "type": "tests-first-red-certification-authority",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-026",
+          "description": "Both explicit v3 certification conflicts falsely deliver before repair while coherent v3 and absent-certification legacy controls pass.",
+          "testIds": [
+            "BUG-032 G101 rejects explicit status-mirror divergence",
+            "BUG-032 G101 gives explicit v3 certification precedence over legacy phases",
+            "BUG-032 G101 preserves coherent v3 and no-certification legacy controls"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Non-zero before production repair because both explicit conflict cases are DELIVERED; both controls execute and pass in the same run."
+        },
+        {
+          "type": "regression-green-certification-authority-matrix",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-026",
+          "description": "Explicit v3 certification controls mirror and phase authority while absent-certification legacy compatibility remains documented and accepted.",
+          "testIds": [
+            "BUG-032 G101 rejects explicit status-mirror divergence",
+            "BUG-032 G101 gives explicit v3 certification precedence over legacy phases",
+            "BUG-032 G101 preserves coherent v3 and no-certification legacy controls"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 only when both explicit conflicts are NOT-DELIVERED, coherent v3 is DELIVERED, and absent-certification legacy compatibility remains DELIVERED."
+        }
+      ]
+    },
+    {
+      "scopeId": "04-contract-reconciliation-and-full-validation",
+      "scopeName": "Contract Reconciliation And Full Validation",
+      "status": "in_progress",
+      "dependsOn": [1, 2, 3],
+      "pausedUntilDependenciesDone": false,
+      "tests": [
+        {
+          "type": "focused-state-transition-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "Published Check 8B and Check 5A contracts agree with all nine classifier scenarios, including phrase-local negation, surface-tail triples, exact bounds, helper error, mixed-surface all-three checks, and zero per-line process fan-out.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 after Scope 1 completes."
+        },
+        {
+          "type": "focused-state-transition-receipt-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-008"],
+          "description": "The state-transition receipt matrix preserves normalized-program siblings, incompatible-program refusal, and empty-stdout handling.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 after Scope 2 completes."
+        },
+        {
+          "type": "focused-canonical-receipt-identity-reconciliation",
+          "category": "functional",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007"],
+          "description": "Differing category labels remain diagnostic while normalized program, target, exit, and provenance decide sibling acceptance or clone refusal.",
+          "command": "bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 on the reconciled Scope 2 epoch.",
+          "evidenceRef": "report.md#scope-2-normalized-program-category-evidence"
+        },
+        {
+          "type": "focused-g101-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-009",
+          "scenarioIds": ["SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012"],
+          "description": "Published G101 contracts agree with the complete delivery-capable mode decision table.",
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 after Scope 3 is eligible."
+        },
+        {
+          "type": "final-byte-identity-checkpoint",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "The changed production and persistent-test SHA-256, git-object, byte-count, and changed-path inventory is frozen before focused and whole-suite validation and matches afterward.",
+          "command": "Canonical bounded final-byte identity command recorded in report.md",
+          "liveSystem": false,
+          "expectedOutcome": "The before and after inventories are identical; any byte change invalidates the focused, framework, and release receipts.",
+          "evidenceRef": "report.md#scope-4-final-byte-epoch-evidence"
+        },
+        {
+          "type": "full-framework-validation",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "The canonical full framework suite preserves all sixteen scenario contracts on one frozen final byte epoch.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 framework validate\" -- bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": false,
+          "expectedOutcome": "Captured exit 0 with a verifiable full-output hash."
+        },
+        {
+          "type": "release-check",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "The canonical release suite preserves all sixteen scenario contracts on the same frozen final byte epoch.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 release check\" -- bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": false,
+          "expectedOutcome": "Captured exit 0 with a verifiable full-output hash."
+        },
+        {
+          "type": "agnosticity",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "Portable framework fixtures contain no downstream product-specific classifier or delivery semantics.",
+          "command": "bash bubbles/scripts/cli.sh agnosticity",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0."
+        },
+        {
+          "type": "patch-integrity",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016"],
+          "description": "All scenario mappings and planning artifacts remain free of whitespace errors.",
+          "command": "git diff --check",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0."
+        },
+        {
+          "type": "evidence-anchor-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-027",
+          "description": "Check 9 accepts nearest substantive owner evidence while parent short missing and prose-only execution anchors remain blocking controls.",
+          "testIds": ["BUG-032 Check 9 accepts nearest substantive owner evidence and rejects parent short missing or prose-only execution anchors"],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh and bash bubbles/scripts/state-transition-guard.sh bugs/BUG-032-planning-maturity-guard-false-positives",
+          "liveSystem": false,
+          "expectedOutcome": "The persistent positive and negative fixtures pass; the packet emits no Check 9 block for repaired references and raw evidence bytes remain unchanged."
+        },
+        {
+          "type": "g068-dod-fidelity",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "bindingKind": "rejected-history",
+          "description": "The rejected G068 same-ID oracle is retained only as inadmissible planning history.",
+          "testIds": [],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh and bash bubbles/scripts/traceability-guard.sh bugs/BUG-032-planning-maturity-guard-false-positives",
+          "liveSystem": false,
+          "expectedOutcome": "The exact-behavior fixture passes, the generic-DoD control blocks, and packet traceability reports zero Gherkin-to-DoD gaps."
+        },
+        {
+          "type": "release-manifest-ordering-freshness",
+          "category": "functional",
+          "file": "bubbles/scripts/regen-derived-selftest.sh",
+          "scenarioId": "SCN-032-030",
+          "description": "Derived outputs run in dependency order with release manifest last and remain fail-closed after a late tracked-input change.",
+          "testIds": [
+            "generators invoked in dependency order (gate enforcement -> stats -> cheatsheet -> ledger -> gate-map -> manifest LAST)",
+            "a generator still stale after regeneration makes the wrapper exit non-zero"
+          ],
+          "command": "bash bubbles/scripts/regen-derived-selftest.sh; then bash bubbles/scripts/regen-derived.sh; then bash bubbles/scripts/regen-derived.sh --check-only",
+          "liveSystem": false,
+          "expectedOutcome": "Ordering selftest exits 0; mutation-mode generation runs after all tracked inputs settle; final check-only exits 0 and the late-input control remains blocking."
+        },
+        {
+          "type": "test-comment-truth",
+          "category": "unit",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-031",
+          "description": "Test comments state current Check 43 category semantics and the correct S26-S28 and S29-S31 G101 groups without altering unrelated expectations.",
+          "testIds": ["BUG-032 test comments describe current Check 43 and G101 assertion groups"],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh and bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Comments match adjacent assertions; executable expectations remain unchanged except for separately planned A B or C repairs."
+        },
+        {
+          "type": "report-route-truth",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md",
+          "scenarioId": "SCN-032-032",
+          "description": "The active Completion Statement routes only unresolved convergence-9 work and preserves the independent BUG-035 disposition.",
+          "testIds": ["BUG-032 active Completion Statement routes only unresolved findings"],
+          "command": "bash bubbles/scripts/artifact-lint.sh bugs/BUG-032-planning-maturity-guard-false-positives plus the bounded planning parity assertion recorded in report.md",
+          "liveSystem": false,
+          "expectedOutcome": "The route omits the addressed state-note finding, names bubbles.test, carries A-RED and C-RED as parallel lanes, and keeps BUG-035 independent."
+        },
+        {
+          "type": "markdown-machine-test-plan-parity",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/test-plan.json",
+          "scenarioId": "SCN-032-017",
+          "scenarioIds": ["SCN-032-017", "SCN-032-018", "SCN-032-019", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-023", "SCN-032-024", "SCN-032-025", "SCN-032-026", "SCN-032-027", "SCN-032-028", "SCN-032-030", "SCN-032-031", "SCN-032-032"],
+          "description": "Every new Markdown Test Plan row has one semantically equal machine row and no machine row is orphaned.",
+          "command": "Canonical bounded parity assertion recorded in report.md",
+          "liveSystem": false,
+          "expectedOutcome": "Scope row counts scenario sets files identifiers commands and expected outcomes match exactly."
+        },
+        {
+          "type": "scenario-uniqueness-obligation-integrity",
+          "category": "functional",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/scenario-manifest.json",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-017", "SCN-032-018", "SCN-032-019", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-023", "SCN-032-024", "SCN-032-025", "SCN-032-026", "SCN-032-027", "SCN-032-028", "SCN-032-030", "SCN-032-031", "SCN-032-032"],
+          "description": "All 32 active scenarios have unique IDs and per-scenario trait-derived obligations.",
+          "command": "bash bubbles/scripts/scenario-obligation-lint.sh bugs/BUG-032-planning-maturity-guard-false-positives",
+          "liveSystem": false,
+          "expectedOutcome": "Exactly 32 unique IDs exist; every trait has its required obligation and no scenario declares the entire vocabulary."
+        },
+        {
+          "type": "planned-identifier-reachability",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/test-plan.json",
+          "scenarioId": "SCN-032-017",
+          "scenarioIds": ["SCN-032-017", "SCN-032-018", "SCN-032-019", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-023", "SCN-032-024", "SCN-032-025", "SCN-032-026", "SCN-032-027", "SCN-032-028", "SCN-032-030", "SCN-032-031", "SCN-032-032"],
+          "description": "Every newly planned persistent test identifier appears in its declared test file after tests-first authorship.",
+          "command": "Canonical bounded identifier-resolution assertion recorded in report.md",
+          "liveSystem": false,
+          "expectedOutcome": "Missing identifiers are expected before test authorship; zero identifiers are missing after A-RED B-RED C-RED and Scope 4 test ownership settle."
+        },
+        {
+          "type": "reference-existence",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-017", "SCN-032-018", "SCN-032-019", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-023", "SCN-032-024", "SCN-032-025", "SCN-032-026", "SCN-032-027", "SCN-032-028", "SCN-032-030", "SCN-032-031", "SCN-032-032"],
+          "description": "Every repository-relative path and gate reference introduced by the reconciliation resolves.",
+          "command": "bash bubbles/scripts/reference-existence-lint.sh bugs/BUG-032-planning-maturity-guard-false-positives",
+          "liveSystem": false,
+          "expectedOutcome": "Exit 0 after every planned path exists; no phantom reference remains."
+        }
+      ]
+    }
+  ],
+  "scopes": [
+    {
+      "scopeId": "01-semantic-consumer-and-sla-classifiers",
+      "scopeName": "Semantic Planning Classifiers",
+      "status": "in_progress",
+      "dependsOn": [],
+      "tests": [
+        {
+          "testId": "TP-01-01",
+          "type": "regression-functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-028"],
+          "description": "Preserve every prior Scope 1 positive negative boundary and active-twin control.",
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=60s 10800 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Every prior positive negative boundary and active-twin control retains its outcome."
+        },
+        {
+          "testId": "TP-01-02",
+          "type": "prior-accepted-tests-first-red",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-013",
+          "scenarioIds": ["SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-028"],
+          "description": "Preserve row 144 as accepted A-RED for its authorized pre-repair byte epoch.",
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=60s 11100 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 clean TP-01-02 authorized A-RED after route-oracle repair\" -- /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 10800 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Row 144 remains accepted A-RED only for its recorded pre-repair byte epoch."
+        },
+        {
+          "testId": "TP-01-03",
+          "type": "unchanged-baseline-recovery",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-028"],
+          "description": "Replay the unchanged row-145 family and recover its exact current result before security test edits.",
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=60s 11100 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 unchanged row-145 baseline recovery\" -- /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 10800 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Record the actual result and exact failing assertion without assigning a cause in advance."
+        },
+        {
+          "testId": "TP-01-04",
+          "type": "tests-first-security-red",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-033",
+          "scenarioIds": ["SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Capture persistent RED for all four security findings against unchanged production while every paired valid control executes.",
+          "testIds": [
+            "BUG-032 SEC-001 blocks Check 8B and Check 5A on producer and input-read failure",
+            "BUG-032 SEC-001 discards partial projection records and preserves complete controls",
+            "BUG-032 SEC-002 rejects fence identity and fixture table structure defects in first-error order",
+            "BUG-032 SEC-002 preserves valid fixture suppression and identical active twins",
+            "BUG-032 SEC-003 matches exact G040 phrases across case and horizontal separators",
+            "BUG-032 SEC-003 preserves punctuation boundaries and benign near-miss twins",
+            "BUG-032 SEC-004 enforces exact 4096 and 4097 line-byte boundaries",
+            "BUG-032 SEC-004 enforces exact 256 and 257 token-byte boundaries",
+            "BUG-032 SEC-004 preserves 128 and 129 token and eight and nine candidate controls",
+            "BUG-032 SEC-004 bounds oversized one-token input before semantic work"
+          ],
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=60s 11100 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 four-finding security RED\" -- /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 10800 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit nonzero against unchanged production with a failing assertion for each finding block and every paired control executed."
+        },
+        {
+          "testId": "TP-01-05",
+          "type": "focused-security-green",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-033",
+          "scenarioIds": ["SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Run the exact unchanged ten security assertions after production repair.",
+          "testIds": [
+            "BUG-032 SEC-001 blocks Check 8B and Check 5A on producer and input-read failure",
+            "BUG-032 SEC-001 discards partial projection records and preserves complete controls",
+            "BUG-032 SEC-002 rejects fence identity and fixture table structure defects in first-error order",
+            "BUG-032 SEC-002 preserves valid fixture suppression and identical active twins",
+            "BUG-032 SEC-003 matches exact G040 phrases across case and horizontal separators",
+            "BUG-032 SEC-003 preserves punctuation boundaries and benign near-miss twins",
+            "BUG-032 SEC-004 enforces exact 4096 and 4097 line-byte boundaries",
+            "BUG-032 SEC-004 enforces exact 256 and 257 token-byte boundaries",
+            "BUG-032 SEC-004 preserves 128 and 129 token and eight and nine candidate controls",
+            "BUG-032 SEC-004 bounds oversized one-token input before semantic work"
+          ],
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=60s 11100 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 focused four-finding security GREEN\" -- /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 10800 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "All ten security titles pass and the test file identity matches the RED oracle."
+        },
+        {
+          "testId": "TP-01-06",
+          "type": "unchanged-full-green",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-028", "SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Run every prior and security title through the unchanged complete A oracle.",
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=60s 11100 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 unchanged complete A GREEN\" -- /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 10800 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit zero with the same security test-file hash used by RED and focused GREEN."
+        },
+        {
+          "testId": "TP-01-07",
+          "type": "independent-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-028", "SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Independently verify the current A source and unchanged complete oracle pair.",
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=60s 11100 /opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label \"BUG-032 independent complete A verification\" -- /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 10800 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "A separate test-owner run exits zero on the recorded final source and test hashes."
+        },
+        {
+          "testId": "TP-01-08",
+          "type": "bounded-oversized-token-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-036",
+          "scenarioIds": ["SCN-032-036"],
+          "description": "A 100000-byte token stops at line byte 4097 before token retention or semantic work.",
+          "testIds": ["BUG-032 SEC-004 bounds oversized one-token input before semantic work"],
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=10s 120 /opt/homebrew/bin/bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "The case reports line-byte-limit after at most 4097 admitted bytes and completes within the 120-second outer guard."
+        },
+        {
+          "testId": "TP-01-09",
+          "type": "repeated-security-review",
+          "category": "security",
+          "file": "bubbles/scripts/security-gate.sh",
+          "scenarioId": "SCN-032-033",
+          "scenarioIds": ["SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Repeat mechanical and specialist security review for all four findings on independently verified final hashes.",
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=10s 300 /opt/homebrew/bin/bash bubbles/scripts/security-gate.sh --repo-root . followed by an independent bubbles.security review",
+          "liveSystem": false,
+          "expectedOutcome": "The mechanical gate exits zero and security reports all four findings addressed on the recorded hashes."
+        },
+        {
+          "testId": "TP-01-10",
+          "type": "syntax-portability-regression-quality",
+          "category": "unit",
+          "file": "bubbles/scripts/guards/planning-checks.sh",
+          "scenarioId": "SCN-032-001",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-028", "SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Validate final A shell syntax portability and persistent bugfix quality.",
+          "command": "/opt/local/bin/gtimeout --signal=TERM --kill-after=10s 300 /opt/homebrew/bin/bash -n bubbles/scripts/guards/planning-checks.sh bubbles/scripts/state-transition-guard.sh bubbles/scripts/state-transition-guard-selftest.sh and /opt/local/bin/gtimeout --signal=TERM --kill-after=10s 300 /opt/homebrew/bin/bash bubbles/scripts/regression-quality-guard.sh --bugfix bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Both commands exit zero on the independently verified A epoch."
+        }
+      ]
+    },
+    {
+      "scopeId": "02-receipt-clone-execution-identity",
+      "scopeName": "Receipt Clone Execution Identity",
+      "status": "in_progress",
+      "dependsOn": [1],
+      "tests": [
+        {
+          "testId": "TP-02-01",
+          "type": "regression-functional",
+          "category": "functional",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-008"],
+          "description": "Preserve the original deterministic-sibling incompatible-program same-target and empty-output controls.",
+          "command": "bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "The original Check 43 matrix remains green."
+        },
+        {
+          "testId": "TP-02-02",
+          "type": "tests-first-red",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-025"],
+          "description": "Capture B-RED for complete targets wrapper identity and contradictory stdout metadata after A releases the shared files.",
+          "testIds": [
+            "BUG-032 Check 43 compares complete target sets for every command identity",
+            "BUG-032 Check 43 preserves disjoint-target siblings and same-target refusal controls",
+            "BUG-032 Check 43 unwraps evidence-capture to compare underlying programs",
+            "BUG-032 Check 43 preserves same-program wrapped siblings over distinct targets",
+            "BUG-032 Check 43 fails closed on non-empty hash with zero-byte metadata",
+            "BUG-032 Check 43 preserves canonical empty and ordinary non-empty controls"
+          ],
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit nonzero before Check 43 repair while every control executes."
+        },
+        {
+          "testId": "TP-02-03",
+          "type": "regression-green",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-025"],
+          "description": "Run the exact unchanged B-RED assertions after Check 43 repair.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit zero after the B repair."
+        },
+        {
+          "testId": "TP-02-04",
+          "type": "independent-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-032-006",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-025"],
+          "description": "Independently verify the current B source and oracle pair.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "A separate test-owner run exits zero on verified B bytes."
+        },
+        {
+          "testId": "TP-02-05",
+          "type": "syntax-compatibility",
+          "category": "unit",
+          "file": "bubbles/scripts/state-transition-guard.sh",
+          "scenarioId": "SCN-032-008",
+          "scenarioIds": ["SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-025"],
+          "description": "Validate final B shell syntax and receipt-schema compatibility.",
+          "command": "bash -n bubbles/scripts/state-transition-guard.sh bubbles/scripts/state-transition-guard-selftest.sh bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Exit zero on the B verification epoch."
+        }
+      ]
+    },
+    {
+      "scopeId": "03-g101-delivery-capable-mode-semantics",
+      "scopeName": "G101 Delivery Authority",
+      "status": "in_progress",
+      "dependsOn": [],
+      "tests": [
+        {
+          "testId": "TP-03-01",
+          "type": "regression-functional",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-009",
+          "scenarioIds": ["SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012"],
+          "description": "Preserve the complete existing G101 mode-decision matrix.",
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "All existing planning prototype delivery alias and unknown-mode controls remain green."
+        },
+        {
+          "testId": "TP-03-02",
+          "type": "tests-first-red-green-pair",
+          "category": "functional",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "scenarioId": "SCN-032-026",
+          "scenarioIds": ["SCN-032-026"],
+          "description": "Preserve the explicit v3 conflict controls and the independently verified C-GREEN result.",
+          "testIds": [
+            "BUG-032 G101 rejects explicit status-mirror divergence",
+            "BUG-032 G101 gives explicit v3 certification precedence over legacy phases",
+            "BUG-032 G101 preserves coherent v3 and no-certification legacy controls"
+          ],
+          "command": "bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "Rows 125 through 129 remain independent C-GREEN evidence without closing Scope 3."
+        },
+        {
+          "testId": "TP-03-03",
+          "type": "frozen-epoch-verification",
+          "category": "unit",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+          "scenarioId": "SCN-032-026",
+          "scenarioIds": ["SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-026"],
+          "description": "Preserve the verified C source and selftest hashes through final validation.",
+          "command": "Bounded identity check followed by bash bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "The verified hashes remain current or receive replacement current-byte proof."
+        }
+      ]
+    },
+    {
+      "scopeId": "04-contract-reconciliation-and-full-validation",
+      "scopeName": "Verification And Release Closure",
+      "status": "in_progress",
+      "dependsOn": [1, 2, 3],
+      "verificationObligations": [
+        "BUG032-HARDEN9-EVIDENCE-ANCHORS-011",
+        "BUG032-HARDEN9-G068-DOD-013",
+        "BUG032-HARDEN9-RELEASE-MANIFEST-014",
+        "BUG032-HARDEN9-TEST-PROSE-015",
+        "BUG032-HARDEN9-REPORT-ROUTE-016"
+      ],
+      "tests": [
+        {
+          "testId": "TP-04-01",
+          "bindingKind": "verification",
+          "findingId": "BUG032-HARDEN9-EVIDENCE-ANCHORS-011",
+          "type": "artifact-fidelity",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md",
+          "description": "Resolve checked references to substantive owner evidence without changing raw evidence.",
+          "command": "bash bubbles/scripts/artifact-lint.sh bugs/BUG-032-planning-maturity-guard-false-positives",
+          "liveSystem": false,
+          "expectedOutcome": "Every checked reference resolves and raw evidence stays unchanged."
+        },
+        {
+          "testId": "TP-04-02",
+          "bindingKind": "verification",
+          "findingId": "BUG032-HARDEN9-G068-DOD-013",
+          "type": "traceability",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md",
+          "description": "Verify faithful SCN-032-014 direct and owned-negation DoD wording under structural-strict G068.",
+          "command": "bash bubbles/scripts/traceability-guard.sh bugs/BUG-032-planning-maturity-guard-false-positives",
+          "liveSystem": false,
+          "expectedOutcome": "Traceability reports no SCN-032-014 DoD gap and G068 policy remains unchanged."
+        },
+        {
+          "testId": "TP-04-03",
+          "bindingKind": "verification",
+          "findingId": "BUG032-HARDEN9-TEST-PROSE-015",
+          "ownerPartition": "state-transition-selftest",
+          "type": "test-comment-truth",
+          "category": "unit",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "description": "Make the Check 43 comment describe category as diagnostic and match adjacent assertions.",
+          "command": "Bounded comment-to-assertion check for bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "The A/B selftest comment matches its adjacent assertions."
+        },
+        {
+          "testId": "TP-04-04",
+          "bindingKind": "verification",
+          "findingId": "BUG032-HARDEN9-TEST-PROSE-015",
+          "ownerPartition": "release-delivery-selftest",
+          "type": "test-comment-truth",
+          "category": "unit",
+          "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "description": "Make both G101 comments name their actual adjacent case groups.",
+          "command": "Bounded comment-to-assertion check for bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "liveSystem": false,
+          "expectedOutcome": "The C selftest comments match their adjacent assertions."
+        },
+        {
+          "testId": "TP-04-05",
+          "bindingKind": "verification",
+          "findingId": "BUG032-HARDEN9-REPORT-ROUTE-016",
+          "type": "route-parity",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md",
+          "description": "Verify active report and state routing select test-only A correction next and keep B waiting.",
+          "command": "Bounded report-state route parity check",
+          "liveSystem": false,
+          "expectedOutcome": "Only unresolved BUG-032 work is routed and the BUG-035 sibling remains outside the target."
+        },
+        {
+          "testId": "TP-04-06",
+          "bindingKind": "verification",
+          "findingId": "BUG032-HARDEN9-RELEASE-MANIFEST-014",
+          "type": "generated-output-freshness",
+          "category": "functional",
+          "file": "bubbles/scripts/regen-derived.sh",
+          "description": "Generate the release manifest after every tracked input settles and recheck freshness.",
+          "command": "bash bubbles/scripts/regen-derived.sh then bash bubbles/scripts/regen-derived.sh --check-only",
+          "liveSystem": false,
+          "expectedOutcome": "The release manifest runs last and final freshness exits zero."
+        },
+        {
+          "testId": "TP-04-07",
+          "bindingKind": "behavior-set",
+          "type": "planning-integrity",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/scenario-manifest.json",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-025", "SCN-032-026", "SCN-032-028", "SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Run canonical planning checks against the exact 26-scenario inventory.",
+          "command": "Bounded BUG-032 planning validation matrix",
+          "liveSystem": false,
+          "expectedOutcome": "All required planning checks pass on settled planning bytes."
+        },
+        {
+          "testId": "TP-04-08",
+          "bindingKind": "behavior-set",
+          "type": "scenario-test-resolution",
+          "category": "unit",
+          "file": "bugs/BUG-032-planning-maturity-guard-false-positives/scenario-manifest.json",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-025", "SCN-032-026", "SCN-032-028", "SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Resolve exact persistent test titles and enumerate expected pre-B unresolved titles.",
+          "command": "bash bubbles/scripts/scenario-test-resolve.sh bugs/BUG-032-planning-maturity-guard-false-positives",
+          "liveSystem": false,
+          "expectedOutcome": "Only not-yet-authored B titles remain unresolved before B-RED and final validation resolves all titles."
+        },
+        {
+          "testId": "TP-04-09",
+          "bindingKind": "behavior-set",
+          "type": "focused-regression",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-025", "SCN-032-026", "SCN-032-028", "SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Run the A and B state-transition suites and the C release-delivery suite on one frozen epoch.",
+          "command": "Focused selftest commands recorded by their owning phases",
+          "liveSystem": false,
+          "expectedOutcome": "Every focused suite exits zero on one frozen source and oracle epoch."
+        },
+        {
+          "testId": "TP-04-10",
+          "bindingKind": "behavior-set",
+          "type": "full-release-validation",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioIds": ["SCN-032-001", "SCN-032-002", "SCN-032-003", "SCN-032-004", "SCN-032-005", "SCN-032-006", "SCN-032-007", "SCN-032-008", "SCN-032-009", "SCN-032-010", "SCN-032-011", "SCN-032-012", "SCN-032-013", "SCN-032-014", "SCN-032-015", "SCN-032-016", "SCN-032-020", "SCN-032-021", "SCN-032-022", "SCN-032-025", "SCN-032-026", "SCN-032-028", "SCN-032-033", "SCN-032-034", "SCN-032-035", "SCN-032-036"],
+          "description": "Run framework validation and release checks after final generation.",
+          "command": "bash bubbles/scripts/cli.sh framework-validate then bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": false,
+          "expectedOutcome": "Both captured commands exit zero on the same frozen epoch."
+        }
+      ]
+    }
+  ]
+}

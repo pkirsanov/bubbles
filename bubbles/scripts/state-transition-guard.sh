@@ -578,6 +578,7 @@ detect_scope_layout() {
 
 combined_scopes_tmp=""
 scope_section_tmp_files=()
+scope_projection_tmp_files=()
 
 build_scope_analysis_units() {
   local scope_path="$1"
@@ -635,11 +636,15 @@ scope_analysis_label() {
 
 cleanup_tmp_artifacts() {
   if [[ -n "$combined_scopes_tmp" ]] && [[ -f "$combined_scopes_tmp" ]]; then
-    rm -f "$combined_scopes_tmp"
+    rm -f -- "$combined_scopes_tmp"
   fi
 
   if [[ ${#scope_section_tmp_files[@]} -gt 0 ]]; then
-    rm -f "${scope_section_tmp_files[@]}"
+    rm -f -- "${scope_section_tmp_files[@]}"
+  fi
+
+  if [[ ${#scope_projection_tmp_files[@]} -gt 0 ]]; then
+    rm -f -- "${scope_projection_tmp_files[@]}"
   fi
 }
 
@@ -1189,7 +1194,8 @@ echo ""
 echo "--- Check 4: DoD Completion (Zero Unchecked) ---"
 total_checked=0
 total_unchecked=0
-for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
   total_checked=$((total_checked + $(grep -cE '^\- \[x\] ' "$scope_path" || true)))
   total_unchecked=$((total_unchecked + $(grep -cE '^\- \[ \] ' "$scope_path" || true)))
@@ -1582,15 +1588,645 @@ echo ""
 echo "--- Check 5A: SLA Stress Coverage ---"
 sla_scope_count=0
 
+# BUG-032 / SCN-032-020, SCN-032-021, SCN-032-033, and SCN-032-034:
+# project each enumerated scope unit once. A candidate stream becomes visible
+# only after the input read, producer status, structure, and completion trailer
+# all close successfully.
+_scope_project_markdown_context() {
+  local input_snapshot="$1"
+  local candidate_records="$2"
+
+  LC_ALL=C awk '
+    function emit(record) {
+      print record
+    }
+    function trimmed(text, value) {
+      value = text
+      sub(/^[[:blank:]]*/, "", value)
+      sub(/[[:blank:]]*$/, "", value)
+      return value
+    }
+    function marker_name(character) {
+      return character == "`" ? "backtick" : "tilde"
+    }
+    function parse_fence(text, position, leading, character, run_length, rest, word_count, key) {
+      FENCE_VALID = 0
+      FENCE_CHARACTER = ""
+      FENCE_LENGTH = 0
+      FENCE_INFO = ""
+      FENCE_ONLY = 0
+      position = 1
+      leading = 0
+      while (substr(text, position, 1) == " ") {
+        leading++
+        position++
+      }
+      if (leading > 3) return 0
+      character = substr(text, position, 1)
+      if (character != "`" && character != "~") return 0
+      run_length = 0
+      while (substr(text, position + run_length, 1) == character) run_length++
+      if (run_length < 3) return 0
+      rest = substr(text, position + run_length)
+      FENCE_VALID = 1
+      FENCE_CHARACTER = character
+      FENCE_LENGTH = run_length
+      FENCE_ONLY = rest ~ /^[[:blank:]]*$/
+      rest = trimmed(rest)
+      for (key in FENCE_WORDS) delete FENCE_WORDS[key]
+      if (rest != "") {
+        word_count = split(rest, FENCE_WORDS, /[[:blank:]]+/)
+        if (word_count > 0) FENCE_INFO = tolower(FENCE_WORDS[1])
+      }
+      return 1
+    }
+    function heading_value(text, value) {
+      value = trimmed(text)
+      if (value !~ /^#+[[:blank:]]+/) return ""
+      sub(/^#+[[:blank:]]+/, "", value)
+      sub(/[[:blank:]]*#*[[:blank:]]*$/, "", value)
+      return tolower(value)
+    }
+    function clear_cells(cell_index) {
+      for (cell_index = 1; cell_index <= TABLE_CELL_CAP; cell_index++) delete TABLE_CELLS[cell_index]
+      TABLE_CELL_CAP = 0
+    }
+    function parse_table(text, value, cell_index, character, cell, column_count) {
+      clear_cells()
+      TABLE_COLUMN_COUNT = 0
+      value = trimmed(text)
+      if (substr(value, 1, 1) != "|" || substr(value, length(value), 1) != "|") return 0
+      cell = ""
+      column_count = 0
+      for (cell_index = 2; cell_index < length(value); cell_index++) {
+        character = substr(value, cell_index, 1)
+        if (character == "|" && substr(value, cell_index - 1, 1) != "\\") {
+          column_count++
+          TABLE_CELLS[column_count] = trimmed(cell)
+          cell = ""
+        } else {
+          cell = cell character
+        }
+      }
+      column_count++
+      TABLE_CELLS[column_count] = trimmed(cell)
+      TABLE_CELL_CAP = column_count
+      TABLE_COLUMN_COUNT = column_count
+      return column_count > 0
+    }
+    function delimiter_row_valid(expected_columns, cell_index) {
+      if (TABLE_COLUMN_COUNT != expected_columns) return 0
+      for (cell_index = 1; cell_index <= TABLE_COLUMN_COUNT; cell_index++) {
+        if (TABLE_CELLS[cell_index] !~ /^:?-{3,}:?$/) return 0
+      }
+      return 1
+    }
+    function type_column_index(cell_index, cell, count, result) {
+      count = 0
+      result = 0
+      for (cell_index = 1; cell_index <= TABLE_COLUMN_COUNT; cell_index++) {
+        cell = tolower(TABLE_CELLS[cell_index])
+        gsub(/[*`]/, "", cell)
+        cell = trimmed(cell)
+        if (cell == "type" || cell == "test type") {
+          count++
+          result = cell_index
+        }
+      }
+      return count == 1 ? result : 0
+    }
+    function emit_active(kind, context, text) {
+      printf "%s\t%d\t%s\t%d\t%s\n", kind, NR, context, length(text), text
+      active_count++
+    }
+    function emit_fixture(kind, text) {
+      printf "F\t%d\t%s\t%d\n", NR, kind, length(text)
+      fixture_count++
+    }
+    function emit_error(reason, line_number, boundary) {
+      if (!projection_error) {
+        printf "E\t%d\t%s\t%s\n", line_number, reason, boundary
+      }
+      projection_error = 1
+      exit 3
+    }
+    function process_active(text, heading, lower) {
+      if (text ~ /^[[:blank:]]*$/) return
+      if (parse_fence(text)) {
+        fence_character = FENCE_CHARACTER
+        fence_length = FENCE_LENGTH
+        fence_open_line = NR
+        if (FENCE_INFO == "gherkin") {
+          fence_mode = "fixture"
+          emit_fixture("gherkin-fence", text)
+        } else {
+          fence_mode = "ordinary"
+        }
+        return
+      }
+      heading = heading_value(text)
+      if (heading == "examples") {
+        table_state = "examples-await-header"
+        table_start_line = NR
+        return
+      }
+      if (heading == "test plan") {
+        table_state = "test-plan-await-header"
+        table_start_line = NR
+        return
+      }
+      lower = tolower(trimmed(text))
+      if (lower == "examples:") {
+        table_state = "examples-await-header"
+        table_start_line = NR
+        return
+      }
+      if (text ~ /^[[:blank:]]*-[[:blank:]]+\[[ xX]\]/) {
+        emit_active("D", "dod", text)
+      } else {
+        emit_active("A", "active", text)
+      }
+    }
+    BEGIN {
+      fence_mode = ""
+      fence_character = ""
+      fence_length = 0
+      fence_open_line = 0
+      table_state = "active"
+      table_start_line = 0
+      table_columns = 0
+      table_data_rows = 0
+      test_type_column = 0
+      active_count = 0
+      fixture_count = 0
+      structural_count = 0
+      projection_error = 0
+    }
+    {
+      raw = $0
+      if (fence_mode == "fixture") {
+        if (parse_fence(raw) && FENCE_ONLY) {
+          if (FENCE_CHARACTER == fence_character && FENCE_LENGTH == fence_length) {
+            emit_fixture("gherkin-fence", raw)
+            fence_mode = ""
+            next
+          }
+          emit_error("fence-identity-error", NR,
+            "opener-line=" fence_open_line " opener-marker: " marker_name(fence_character) ":" fence_length " closer-line=" NR " closer-marker: " marker_name(FENCE_CHARACTER) ":" FENCE_LENGTH)
+        }
+        emit_fixture("gherkin-fence", raw)
+        next
+      }
+      if (fence_mode == "ordinary") {
+        if (parse_fence(raw) && FENCE_ONLY \
+          && FENCE_CHARACTER == fence_character && FENCE_LENGTH == fence_length) {
+          fence_mode = ""
+          next
+        }
+        emit_active("A", "ordinary-text-fence", raw)
+        next
+      }
+
+      if (table_state == "examples-await-header" || table_state == "test-plan-await-header") {
+        if (raw ~ /^[[:blank:]]*$/) next
+        if (!parse_table(raw)) {
+          emit_error(table_state ~ /^examples/ ? "examples-table-error" : "test-plan-table-error",
+            NR, "row=" NR " expected=header")
+        }
+        table_columns = TABLE_COLUMN_COUNT
+        test_type_column = table_state ~ /^test-plan/ ? type_column_index() : 0
+        if (table_state ~ /^test-plan/ && test_type_column == 0) {
+          emit_error("test-plan-table-error", NR, "row=" NR " expected=one-type-column")
+        }
+        emit_fixture(table_state ~ /^examples/ ? "examples-header" : "test-plan-header", raw)
+        structural_count++
+        table_state = table_state ~ /^examples/ ? "examples-await-delimiter" : "test-plan-await-delimiter"
+        next
+      }
+      if (table_state == "examples-await-delimiter" || table_state == "test-plan-await-delimiter") {
+        if (!parse_table(raw) || !delimiter_row_valid(table_columns)) {
+          emit_error(table_state ~ /^examples/ ? "examples-table-error" : "test-plan-table-error",
+            NR, "row=" NR " expected=delimiter columns=" table_columns)
+        }
+        emit_fixture(table_state ~ /^examples/ ? "examples-delimiter" : "test-plan-delimiter", raw)
+        structural_count++
+        table_data_rows = 0
+        table_state = table_state ~ /^examples/ ? "examples-data" : "test-plan-data"
+        next
+      }
+      if (table_state == "examples-data" || table_state == "test-plan-data") {
+        if (parse_table(raw)) {
+          if (TABLE_COLUMN_COUNT != table_columns) {
+            emit_error(table_state == "examples-data" ? "examples-table-error" : "test-plan-table-error",
+              NR, "row=" NR " columns=" TABLE_COLUMN_COUNT "/" table_columns)
+          }
+          table_data_rows++
+          structural_count++
+          fixture_count++
+          if (table_state == "test-plan-data") {
+            printf "T\t%d\ttest-plan\tdata\t%d\t%d\t%d\t%s\n",
+              NR, TABLE_COLUMN_COUNT, test_type_column, length(raw), raw
+          } else {
+            printf "F\t%d\texamples-data\t%d\n", NR, length(raw)
+          }
+          next
+        }
+        if (table_data_rows == 0) {
+          emit_error(table_state == "examples-data" ? "examples-table-error" : "test-plan-table-error",
+            NR, "row=" NR " expected=data columns=" table_columns)
+        }
+        table_state = "active"
+        table_columns = 0
+        table_data_rows = 0
+        test_type_column = 0
+      }
+      process_active(raw)
+    }
+    END {
+      if (projection_error) exit 3
+      if (fence_mode == "fixture") {
+        printf "E\t%d\tunclosed-fence-error\topener-line=%d required-closer: %s:%d\n",
+          fence_open_line, fence_open_line, marker_name(fence_character), fence_length
+        exit 3
+      }
+      if (table_state != "active" && table_state !~ /-data$/) {
+        reason = table_state ~ /^examples/ ? "examples-table-error" : "test-plan-table-error"
+        printf "E\t%d\t%s\trow=%d expected=%s\n", NR + 1, reason, NR + 1,
+          table_state ~ /await-header$/ ? "header" : "delimiter"
+        exit 3
+      }
+      if (table_state ~ /-data$/ && table_data_rows == 0) {
+        reason = table_state == "examples-data" ? "examples-table-error" : "test-plan-table-error"
+        printf "E\t%d\t%s\trow=%d expected=data columns=%d\n",
+          NR + 1, reason, NR + 1, table_columns
+        exit 3
+      }
+      printf "C\t%d\t%d\t%d\t%d\n", NR + 1, active_count, fixture_count, structural_count
+    }
+  ' "$input_snapshot" > "$candidate_records"
+}
+
+SCOPE_CONTEXT_STATUS=()
+SCOPE_CONTEXT_PRODUCER_STATUS=()
+SCOPE_CONTEXT_INPUT_READ_STATUS=()
+SCOPE_CONTEXT_REASON=()
+SCOPE_CONTEXT_SOURCE_LOCATION=()
+SCOPE_CONTEXT_BOUNDARY=()
+SCOPE_CONTEXT_ACTIVE_COUNT=()
+SCOPE_CONTEXT_FIXTURE_COUNT=()
+SCOPE_CONTEXT_STRUCTURAL_STATUS=()
+SCOPE_CONTEXT_RECORD_FILE=()
+SCOPE_CONTEXT_REPORTED=()
+SCOPE_CONTEXT_ACTIVE_LINES=()
+SCOPE_CONTEXT_ACTIVE_LOCATIONS=()
+SCOPE_CONTEXT_DOD_LINES=()
+SCOPE_CONTEXT_TEST_ROWS=()
+
+_scope_context_set_error() {
+  local scope_index="$1"
+  local reason="$2"
+  local source_location="$3"
+  local boundary="$4"
+  local input_status="$5"
+  local producer_status="$6"
+  local scope_label=""
+
+  scope_label="$(scope_analysis_label "$scope_index")"
+  if [[ "$source_location" =~ ^[0-9]+$ ]]; then
+    source_location="$scope_label:$source_location"
+  fi
+  SCOPE_CONTEXT_STATUS[$scope_index]="error"
+  SCOPE_CONTEXT_PRODUCER_STATUS[$scope_index]="$producer_status"
+  SCOPE_CONTEXT_INPUT_READ_STATUS[$scope_index]="$input_status"
+  SCOPE_CONTEXT_REASON[$scope_index]="$reason"
+  SCOPE_CONTEXT_SOURCE_LOCATION[$scope_index]="$source_location"
+  SCOPE_CONTEXT_BOUNDARY[$scope_index]="$boundary"
+  SCOPE_CONTEXT_ACTIVE_COUNT[$scope_index]="discarded"
+  SCOPE_CONTEXT_FIXTURE_COUNT[$scope_index]="discarded"
+  SCOPE_CONTEXT_STRUCTURAL_STATUS[$scope_index]="discarded"
+  SCOPE_CONTEXT_RECORD_FILE[$scope_index]=""
+}
+
+_scope_context_report() {
+  local scope_index="$1"
+  local scope_label=""
+  local result="continue"
+  local correction="none"
+  local check8b_disposition="pending"
+  local check5a_disposition="pending"
+  local dependent_checks="pending"
+
+  [[ "${SCOPE_CONTEXT_REPORTED[$scope_index]:-0}" -eq 0 ]] || return 0
+  scope_label="$(scope_analysis_label "$scope_index")"
+  if [[ "${SCOPE_CONTEXT_STATUS[$scope_index]}" == "error" ]]; then
+    result="blocked"
+    check8b_disposition="error"
+    check5a_disposition="error"
+    dependent_checks="skipped"
+    case "${SCOPE_CONTEXT_REASON[$scope_index]}" in
+      context-read-error) correction="Restore readable regular scope input, then rerun the guard." ;;
+      context-projection-error) correction="Rewrite only the named scope structure so projection can complete, then rerun the guard." ;;
+      fence-identity-error|unclosed-fence-error) correction="Close only the named Gherkin fixture fence with its exact marker type and length." ;;
+      examples-table-error) correction="Repair only the named Examples table header, delimiter, or first malformed row." ;;
+      test-plan-table-error) correction="Repair only the named Test Plan table header, delimiter, or first malformed row." ;;
+    esac
+  fi
+
+  printf '%s\n' \
+    'check: Context projection' \
+    "scope: $scope_label" \
+    'consumers: Check 8B,Check 5A' \
+    "projection-status: ${SCOPE_CONTEXT_STATUS[$scope_index]}" \
+    "producer-status: ${SCOPE_CONTEXT_PRODUCER_STATUS[$scope_index]}" \
+    "input-read-status: ${SCOPE_CONTEXT_INPUT_READ_STATUS[$scope_index]}" \
+    "source-location: ${SCOPE_CONTEXT_SOURCE_LOCATION[$scope_index]}" \
+    "active-count: ${SCOPE_CONTEXT_ACTIVE_COUNT[$scope_index]}" \
+    "fixture-count: ${SCOPE_CONTEXT_FIXTURE_COUNT[$scope_index]}" \
+    "structural-status: ${SCOPE_CONTEXT_STRUCTURAL_STATUS[$scope_index]}" \
+    "reason: ${SCOPE_CONTEXT_REASON[$scope_index]}" \
+    "boundary: ${SCOPE_CONTEXT_BOUNDARY[$scope_index]}" \
+    "check-8b-disposition: $check8b_disposition" \
+    "check-8b-impact-checks: $dependent_checks" \
+    "check-5a-disposition: $check5a_disposition" \
+    "check-5a-stress-checks: $dependent_checks" \
+    "result: $result" \
+    "correction: $correction"
+  SCOPE_CONTEXT_REPORTED[$scope_index]=1
+  if [[ "$result" == "blocked" ]]; then
+    fail "Context projection failed for $scope_label with reason ${SCOPE_CONTEXT_REASON[$scope_index]}"
+  fi
+}
+
+_scope_context_source_identity() {
+  local source_path="$1"
+
+  if stat -c '%d:%i:%s:%Y:%Z' -- "$source_path" 2>/dev/null; then
+    return 0
+  fi
+  stat -f '%d:%i:%z:%m:%c' "$source_path" 2>/dev/null
+}
+
+_scope_context_prepare() {
+  local scope_index="$1"
+  local scope_path=""
+  local source_identity_before=""
+  local source_identity_after=""
+  local input_snapshot=""
+  local candidate_records=""
+  local stderr_sink=""
+  local producer_status=0
+  local record=""
+  local record_kind=""
+  local record_rest=""
+  local error_line=""
+  local error_reason=""
+  local error_boundary=""
+  local completion_count=0
+  local completion_line=""
+  local completion_active=""
+  local completion_fixture=""
+  local completion_structural=""
+  local last_kind=""
+  local scope_label=""
+
+  if [[ "$scope_index" -lt 0 || "$scope_index" -ge ${#scope_analysis_files[@]} ]]; then
+    return 2
+  fi
+  scope_path="${scope_analysis_files[$scope_index]}"
+  scope_label="$(scope_analysis_label "$scope_index")"
+  SCOPE_CONTEXT_REPORTED[$scope_index]=0
+  if [[ ! -f "$scope_path" || -L "$scope_path" ]]; then
+    _scope_context_set_error "$scope_index" context-read-error scope-start input-read error not-reached
+    return 2
+  fi
+  if ! source_identity_before="$(_scope_context_source_identity "$scope_path")"; then
+    _scope_context_set_error "$scope_index" context-read-error scope-start input-read error not-reached
+    return 2
+  fi
+
+  if ! input_snapshot="$(mktemp "${TMPDIR:-/tmp}/bubbles-scope-context-input.XXXXXX")"; then
+    _scope_context_set_error "$scope_index" context-projection-error scope-start temp-create not-reached error
+    return 3
+  fi
+  scope_projection_tmp_files+=("$input_snapshot")
+  if ! candidate_records="$(mktemp "${TMPDIR:-/tmp}/bubbles-scope-context-records.XXXXXX")"; then
+    _scope_context_set_error "$scope_index" context-projection-error scope-start temp-create not-reached error
+    return 3
+  fi
+  scope_projection_tmp_files+=("$candidate_records")
+  if ! stderr_sink="$(mktemp "${TMPDIR:-/tmp}/bubbles-scope-context-error.XXXXXX")"; then
+    _scope_context_set_error "$scope_index" context-projection-error scope-start temp-create not-reached error
+    return 3
+  fi
+  scope_projection_tmp_files+=("$stderr_sink")
+  if [[ ! -f "$input_snapshot" || -L "$input_snapshot" \
+    || ! -f "$candidate_records" || -L "$candidate_records" \
+    || ! -f "$stderr_sink" || -L "$stderr_sink" \
+    || "$input_snapshot" == "$candidate_records" \
+    || "$input_snapshot" == "$stderr_sink" \
+    || "$candidate_records" == "$stderr_sink" ]]; then
+    _scope_context_set_error "$scope_index" context-projection-error scope-start temp-identity not-reached error
+    return 3
+  fi
+
+  if ! cat -- "$scope_path" > "$input_snapshot" 2> "$stderr_sink"; then
+    : > "$candidate_records"
+    _scope_context_set_error "$scope_index" context-read-error scope-start input-read error not-reached
+    return 2
+  fi
+  if ! source_identity_after="$(_scope_context_source_identity "$scope_path")" \
+    || [[ ! -f "$scope_path" || -L "$scope_path" ]] \
+    || [[ "$source_identity_before" != "$source_identity_after" ]]; then
+    : > "$input_snapshot"
+    : > "$candidate_records"
+    _scope_context_set_error "$scope_index" context-read-error scope-start input-read error not-reached
+    return 2
+  fi
+  : > "$stderr_sink"
+  if _scope_project_markdown_context "$input_snapshot" "$candidate_records" 2> "$stderr_sink"; then
+    producer_status=0
+  else
+    producer_status=$?
+  fi
+
+  while IFS= read -r record || [[ -n "$record" ]]; do
+    record_kind="${record%%$'\t'*}"
+    last_kind="$record_kind"
+    if [[ "$record_kind" == "E" ]]; then
+      record_rest="${record#*$'\t'}"
+      error_line="${record_rest%%$'\t'*}"
+      record_rest="${record_rest#*$'\t'}"
+      error_reason="${record_rest%%$'\t'*}"
+      error_boundary="${record_rest#*$'\t'}"
+      break
+    fi
+    if [[ "$record_kind" == "C" ]]; then
+      completion_count=$((completion_count + 1))
+      record_rest="${record#*$'\t'}"
+      completion_line="${record_rest%%$'\t'*}"
+      record_rest="${record_rest#*$'\t'}"
+      completion_active="${record_rest%%$'\t'*}"
+      record_rest="${record_rest#*$'\t'}"
+      completion_fixture="${record_rest%%$'\t'*}"
+      completion_structural="${record_rest#*$'\t'}"
+    fi
+  done < "$candidate_records"
+
+  if [[ "$producer_status" -ne 0 || -n "$error_reason" ]]; then
+    if [[ -n "$error_reason" ]]; then
+      _scope_context_set_error "$scope_index" "$error_reason" "${error_line:-scope-start}" \
+        "${error_boundary:-producer}" complete error
+    else
+      _scope_context_set_error "$scope_index" context-projection-error scope-start producer complete error
+    fi
+    : > "$candidate_records"
+    return 3
+  fi
+  if [[ "$completion_count" -ne 1 || "$last_kind" != "C" \
+    || ! "$completion_line" =~ ^[0-9]+$ \
+    || ! "$completion_active" =~ ^[0-9]+$ \
+    || ! "$completion_fixture" =~ ^[0-9]+$ \
+    || ! "$completion_structural" =~ ^[0-9]+$ ]]; then
+    _scope_context_set_error "$scope_index" context-projection-error scope-start completion-trailer complete error
+    : > "$candidate_records"
+    return 3
+  fi
+
+  SCOPE_CONTEXT_STATUS[$scope_index]="complete"
+  SCOPE_CONTEXT_PRODUCER_STATUS[$scope_index]="complete"
+  SCOPE_CONTEXT_INPUT_READ_STATUS[$scope_index]="complete"
+  SCOPE_CONTEXT_REASON[$scope_index]="none"
+  SCOPE_CONTEXT_SOURCE_LOCATION[$scope_index]="scope-start"
+  SCOPE_CONTEXT_BOUNDARY[$scope_index]="complete"
+  SCOPE_CONTEXT_ACTIVE_COUNT[$scope_index]="$completion_active"
+  SCOPE_CONTEXT_FIXTURE_COUNT[$scope_index]="$completion_fixture"
+  SCOPE_CONTEXT_STRUCTURAL_STATUS[$scope_index]="preserved"
+  SCOPE_CONTEXT_RECORD_FILE[$scope_index]="$candidate_records"
+  return 0
+}
+
+_scope_context_consume() {
+  local scope_index="$1"
+  local consumer_name="$2"
+  local record_file="${SCOPE_CONTEXT_RECORD_FILE[$scope_index]:-}"
+  local record=""
+  local record_kind=""
+  local record_rest=""
+  local record_line=""
+  local record_context=""
+  local record_bytes=""
+  local record_text=""
+  local seen_completion=0
+  local malformed=0
+  local -a staged_active=()
+  local -a staged_locations=()
+  local -a staged_dod=()
+  local -a staged_test_rows=()
+
+  SCOPE_CONTEXT_ACTIVE_LINES=()
+  SCOPE_CONTEXT_ACTIVE_LOCATIONS=()
+  SCOPE_CONTEXT_DOD_LINES=()
+  SCOPE_CONTEXT_TEST_ROWS=()
+  if [[ "${SCOPE_CONTEXT_STATUS[$scope_index]:-error}" != "complete" ]]; then
+    _scope_context_report "$scope_index"
+    return 2
+  fi
+  if [[ -z "$record_file" || ! -f "$record_file" || -L "$record_file" ]]; then
+    _scope_context_set_error "$scope_index" context-read-error scope-start projection-read complete complete
+    _scope_context_report "$scope_index"
+    return 2
+  fi
+
+  while IFS= read -r record || [[ -n "$record" ]]; do
+    record_kind="${record%%$'\t'*}"
+    if [[ "$seen_completion" -eq 1 ]]; then
+      malformed=1
+      break
+    fi
+    case "$record_kind" in
+      A|D)
+        record_rest="${record#*$'\t'}"
+        record_line="${record_rest%%$'\t'*}"
+        record_rest="${record_rest#*$'\t'}"
+        record_context="${record_rest%%$'\t'*}"
+        record_rest="${record_rest#*$'\t'}"
+        record_bytes="${record_rest%%$'\t'*}"
+        record_text="${record_rest#*$'\t'}"
+        if [[ ! "$record_line" =~ ^[0-9]+$ || ! "$record_bytes" =~ ^[0-9]+$ \
+          || -z "$record_context" ]]; then
+          malformed=1
+          break
+        fi
+        staged_active+=("$record_text")
+        staged_locations+=("$record_line")
+        if [[ "$record_kind" == "D" ]]; then
+          staged_dod+=("$record_text")
+        fi
+        ;;
+      T)
+        record_rest="${record#*$'\t'}"
+        record_line="${record_rest%%$'\t'*}"
+        record_rest="${record_rest#*$'\t'}"
+        record_rest="${record_rest#*$'\t'}"
+        record_rest="${record_rest#*$'\t'}"
+        record_rest="${record_rest#*$'\t'}"
+        record_bytes="${record_rest%%$'\t'*}"
+        record_text="${record_rest#*$'\t'}"
+        if [[ ! "$record_line" =~ ^[0-9]+$ || ! "$record_bytes" =~ ^[0-9]+$ ]]; then
+          malformed=1
+          break
+        fi
+        staged_test_rows+=("$record_text")
+        ;;
+      F) ;;
+      C)
+        seen_completion=1
+        ;;
+      E|*)
+        malformed=1
+        break
+        ;;
+    esac
+  done < "$record_file"
+
+  if [[ "$malformed" -ne 0 || "$seen_completion" -ne 1 ]]; then
+    _scope_context_set_error "$scope_index" context-read-error scope-start \
+      "projection-read:$consumer_name" complete complete
+    _scope_context_report "$scope_index"
+    return 2
+  fi
+  SCOPE_CONTEXT_ACTIVE_LINES=("${staged_active[@]}")
+  SCOPE_CONTEXT_ACTIVE_LOCATIONS=("${staged_locations[@]}")
+  SCOPE_CONTEXT_DOD_LINES=("${staged_dod[@]}")
+  SCOPE_CONTEXT_TEST_ROWS=("${staged_test_rows[@]}")
+  _scope_context_report "$scope_index"
+  return 0
+}
+
+for scope_context_index in "${!scope_analysis_files[@]}"; do
+  _scope_context_prepare "$scope_context_index" || true
+done
+
 scope_declares_performance_contract() {
-  local scope_path="$1"
+  local scope_index="$1"
   local performance_line=""
   local performance_signal='latency|throughput|p95|p99|response[ -]time|\bsla\b|\bslo\b'
   local affirmative_marker='target|budget|threshold|objective|guarantee|percentile|no more than|at most|at least|less than|greater than|under[[:space:]]+[0-9]|within[[:space:]]+[0-9]|[0-9]+([.][0-9]+)?[[:space:]]*(ms|milliseconds?|seconds?|rps|requests?[[:space:]]+per[[:space:]]+second|%|percent(age)?|ops)'
   local quantitative_marker='no more than|at most|at least|less than|greater than|under[[:space:]]+[0-9]|within[[:space:]]+[0-9]|[0-9]+([.][0-9]+)?[[:space:]]*(ms|milliseconds?|seconds?|rps|requests?[[:space:]]+per[[:space:]]+second|%|percent(age)?|ops)'
   local opt_out_marker='observability[^.;]*(opted out|disabled|unavailable|not applicable)|\bno[[:space:]]+(trace[[:space:]]+or[[:space:]]+)?(sla|slo)\b|\b(sla|slo|latency|throughput|p95|p99|response[ -]time)[^.;]*(not applicable|opted out|disabled|unavailable|absent|not declared|not required)|does not declare[^.;]*(sla|slo|latency|throughput|p95|p99|response[ -]time)|\bno[^.;]*(sla|slo|latency|throughput|p95|p99|response[ -]time)[^.;]*(evidence|target|budget|threshold|objective|guarantee)?[^.;]*(injected|captured|declared|required|available)?'
 
-  while IFS= read -r performance_line || [[ -n "$performance_line" ]]; do
+  SCOPE_PERFORMANCE_CONTRACTS=()
+  SCOPE_PERFORMANCE_TEST_ROWS=()
+  SCOPE_PERFORMANCE_DOD_LINES=()
+  SCOPE_PERFORMANCE_CONTEXT_ERROR=""
+
+  if ! _scope_context_consume "$scope_index" "Check 5A"; then
+    SCOPE_PERFORMANCE_CONTEXT_ERROR="${SCOPE_CONTEXT_REASON[$scope_index]}"
+    return 2
+  fi
+  SCOPE_PERFORMANCE_TEST_ROWS=("${SCOPE_CONTEXT_TEST_ROWS[@]}")
+  SCOPE_PERFORMANCE_DOD_LINES=("${SCOPE_CONTEXT_DOD_LINES[@]}")
+  for performance_line in ${SCOPE_CONTEXT_ACTIVE_LINES[@]+"${SCOPE_CONTEXT_ACTIVE_LINES[@]}"}; do
     if ! grep -Eiq "$performance_signal" <<< "$performance_line"; then
       continue
     fi
@@ -1599,30 +2235,150 @@ scope_declares_performance_contract() {
       # A concrete threshold wins over broad negation: "no more than 200 ms"
       # is an upper bound, while "no SLO target is declared" is an opt-out.
       if grep -Eiq "$quantitative_marker" <<< "$performance_line"; then
-        return 0
+        SCOPE_PERFORMANCE_CONTRACTS+=("$performance_line")
       fi
       continue
     fi
 
     if grep -Eiq "$affirmative_marker" <<< "$performance_line"; then
+      SCOPE_PERFORMANCE_CONTRACTS+=("$performance_line")
+    fi
+  done
+
+  [[ "${#SCOPE_PERFORMANCE_CONTRACTS[@]}" -gt 0 ]]
+}
+
+_performance_contract_matches_text() {
+  local contract_lower="${1,,}"
+  local candidate_lower="${2,,}"
+  local allow_active_reference="$3"
+  local metric_pattern=""
+  local secondary_pattern=""
+  local number_unit_pattern='([0-9]+([.][0-9]+)?)[[:space:]]*(ms|milliseconds?|seconds?|rps|requests?[[:space:]]+per[[:space:]]+second|%|percent|percentage|ops)'
+  local number=""
+  local unit=""
+  local escaped_number=""
+  local number_pattern=""
+  local unit_pattern=""
+
+  if [[ "$contract_lower" =~ (^|[^[:alnum:]_])p95([^[:alnum:]_]|$) ]]; then
+    metric_pattern='(^|[^[:alnum:]_])p95([^[:alnum:]_]|$)'
+  elif [[ "$contract_lower" =~ (^|[^[:alnum:]_])p99([^[:alnum:]_]|$) ]]; then
+    metric_pattern='(^|[^[:alnum:]_])p99([^[:alnum:]_]|$)'
+  elif [[ "$contract_lower" =~ (^|[^[:alnum:]_])throughput([^[:alnum:]_]|$) ]]; then
+    metric_pattern='(^|[^[:alnum:]_])throughput([^[:alnum:]_]|$)'
+  elif [[ "$contract_lower" =~ response[[:space:]-]time ]]; then
+    metric_pattern='response[[:space:]-]time'
+  elif [[ "$contract_lower" =~ (^|[^[:alnum:]_])sla([^[:alnum:]_]|$) ]]; then
+    metric_pattern='(^|[^[:alnum:]_])sla([^[:alnum:]_]|$)'
+  elif [[ "$contract_lower" =~ (^|[^[:alnum:]_])slo([^[:alnum:]_]|$) ]]; then
+    metric_pattern='(^|[^[:alnum:]_])slo([^[:alnum:]_]|$)'
+  elif [[ "$contract_lower" =~ (^|[^[:alnum:]_])latency([^[:alnum:]_]|$) ]]; then
+    metric_pattern='(^|[^[:alnum:]_])latency([^[:alnum:]_]|$)'
+  else
+    return 1
+  fi
+  [[ "$candidate_lower" =~ $metric_pattern ]] || return 1
+
+  if [[ "$contract_lower" =~ (^|[^[:alnum:]_])latency([^[:alnum:]_]|$) ]] \
+    && [[ "$metric_pattern" != '(^|[^[:alnum:]_])latency([^[:alnum:]_]|$)' ]]; then
+    secondary_pattern='(^|[^[:alnum:]_])latency([^[:alnum:]_]|$)'
+    [[ "$candidate_lower" =~ $secondary_pattern ]] || return 1
+  fi
+
+  if [[ "$contract_lower" =~ $number_unit_pattern ]]; then
+    number="${BASH_REMATCH[1]}"
+    unit="${BASH_REMATCH[3]}"
+    escaped_number="${number//./\\.}"
+    number_pattern="(^|[^0-9.])${escaped_number}([^0-9.]|$)"
+    case "$unit" in
+      ms|millisecond|milliseconds) unit_pattern='(^|[^[:alnum:]_])(ms|milliseconds?)([^[:alnum:]_]|$)' ;;
+      second|seconds) unit_pattern='(^|[^[:alnum:]_])seconds?([^[:alnum:]_]|$)' ;;
+      rps|request\ per\ second|requests\ per\ second) unit_pattern='(^|[^[:alnum:]_])(rps|requests?[[:space:]]+per[[:space:]]+second)([^[:alnum:]_]|$)' ;;
+      %|percent|percentage) unit_pattern='(%|(^|[^[:alnum:]_])percent(age)?([^[:alnum:]_]|$))' ;;
+      ops) unit_pattern='(^|[^[:alnum:]_])ops([^[:alnum:]_]|$)' ;;
+    esac
+    if [[ "$candidate_lower" =~ $number_pattern ]] \
+      && [[ "$candidate_lower" =~ $unit_pattern ]]; then
       return 0
     fi
+    if [[ "$allow_active_reference" == "yes" ]] \
+      && [[ "$candidate_lower" =~ (^|[^[:alnum:]_])active([^[:alnum:]_]|$) ]] \
+      && [[ "$candidate_lower" =~ (^|[^[:alnum:]_])(target|budget|threshold|objective|guarantee|contract)([^[:alnum:]_]|$) ]]; then
+      return 0
+    fi
+    return 1
+  fi
+  return 0
+}
 
-    return 0
-  done < "$scope_path"
+_scope_has_matching_stress_row() {
+  local contract="$1"
+  local row=""
+  local row_lower=""
+  local stress_row_pattern='^[[:space:]]*\|[[:space:]]*stress[[:space:]]*\|'
 
+  for row in ${SCOPE_PERFORMANCE_TEST_ROWS[@]+"${SCOPE_PERFORMANCE_TEST_ROWS[@]}"}; do
+    row_lower="${row,,}"
+    row_lower="${row_lower//\*/}"
+    row_lower="${row_lower//\`/}"
+    if [[ "$row_lower" =~ $stress_row_pattern ]] \
+      && _performance_contract_matches_text "$contract" "$row_lower" yes; then
+      return 0
+    fi
+  done
   return 1
 }
 
-for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
+_scope_has_matching_stress_dod() {
+  local contract="$1"
+  local dod_line=""
+  local dod_lower=""
+  local dod_pattern='^[[:space:]]*-[[:space:]]+\[[ xX]\]'
+  local stress_pattern='(^|[^[:alnum:]_])stress([^[:alnum:]_]|$)'
+
+  for dod_line in ${SCOPE_PERFORMANCE_DOD_LINES[@]+"${SCOPE_PERFORMANCE_DOD_LINES[@]}"}; do
+    dod_lower="${dod_line,,}"
+    if [[ "$dod_lower" =~ $dod_pattern ]] \
+      && [[ "$dod_lower" =~ $stress_pattern ]] \
+      && _performance_contract_matches_text "$contract" "$dod_lower" no; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+for scope_index in "${!scope_analysis_files[@]}"; do
+  scope_path="${scope_analysis_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
 
   # BUG-032: mention is not affirmation. Explicit no-SLA/no-SLO, not-applicable,
   # unavailable, and opted-out lines are ignored unless the same line carries
   # a target, budget, threshold, guarantee, comparator, or quantitative unit.
-  if scope_declares_performance_contract "$scope_path"; then
+  if scope_declares_performance_contract "$scope_index"; then
+    scope_performance_status=0
+  else
+    scope_performance_status=$?
+  fi
+  if [[ "$scope_performance_status" -eq 2 ]]; then
+    fail "SLA performance context projection failed for ${scope_path#$feature_dir/}: $SCOPE_PERFORMANCE_CONTEXT_ERROR"
+  elif [[ "$scope_performance_status" -eq 0 ]]; then
     sla_scope_count=$((sla_scope_count + 1))
-    if grep -Eq '^\|[[:space:]]*Stress[[:space:]]*\|' "$scope_path" || grep -Eiq 'stress' "$scope_path"; then
+    scope_missing_stress_row=0
+    scope_missing_stress_dod=0
+    for performance_contract in "${SCOPE_PERFORMANCE_CONTRACTS[@]}"; do
+      _scope_has_matching_stress_row "$performance_contract" \
+        || scope_missing_stress_row=1
+      _scope_has_matching_stress_dod "$performance_contract" \
+        || scope_missing_stress_dod=1
+    done
+    if [[ "$scope_missing_stress_row" -eq 1 ]]; then
+      fail "SLA-sensitive scope is missing canonical Stress Test Plan row: ${scope_path#$feature_dir/}"
+    fi
+    if [[ "$scope_missing_stress_dod" -eq 1 ]]; then
+      fail "SLA-sensitive scope is missing faithful stress DoD item: ${scope_path#$feature_dir/}"
+    fi
+    if [[ "$scope_missing_stress_row" -eq 0 && "$scope_missing_stress_dod" -eq 0 ]]; then
       pass "SLA-sensitive scope includes stress coverage: ${scope_path#$feature_dir/}"
     else
       fail "SLA-sensitive scope is missing explicit stress coverage: ${scope_path#$feature_dir/}"
@@ -4128,7 +4884,7 @@ else
   # merely names an artifact. Guarded by two selftest cases below: a negative
   # (prohibition prose must NOT block) and its adversarial twin (a real
   # admission MUST still block), so the narrowing cannot silently disable it.
-  deferral_pattern='deferred|defer to|deferred to|future scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate ticket|separate issue|separate PR|tracked separately|handled separately|punt\b|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|(is|are|was|were|remains?|stays?|left|leaving)[[:space:]]+(still[[:space:]]+)?an?[[:space:]]+placeholder|placeholder[[:space:]]+(value|until|for now)|temporary workaround'
+  deferral_pattern='(^|[^[:alnum:]_])(deferred|defer to|deferred to|future[[:blank:]-]+scope|future work|future iteration|follow-up|follow up|followup|out of scope|not in scope|beyond scope|will address later|address later|revisit later|separate[[:blank:]-]+ticket|separate issue|separate PR|tracked separately|handled separately|punt|punted|postpone|postponed|skip for now|skipped for now|not implemented yet|not yet implemented|(is|are|was|were|remains?|stays?|left|leaving)[[:space:]]+(still[[:space:]]+)?an?[[:space:]]+placeholder|placeholder[[:space:]]+(value|until|for now)|temporary workaround)([^[:alnum:]_]|$)'
   # Strategy (i): exclude schema-canonical follow-up field names mandated
   # by completion-governance.md AND the canonical "Follow-Up Narrative"
   # section heading itself. Both are schema-structural usage, not deferred-
@@ -4146,8 +4902,63 @@ else
   # nearby — that contract is enforced by skill/instruction docs and via
   # routine artifact-lint review, not by this regex (multi-line context
   # analysis would slow the guard substantially).
-  deferral_exclusion_pattern='no deferred items|no deferred work|no deferrals|without deferred work|zero deferred items|zero deferrals|no issues deferred|no issues deferred or skipped|followUpOwner|followUpAction|followUpTarget|followUps|follow-up narrative|follow-up section|\[lockdown-deferred-fr-[0-9]+\]|\[lockdown-deferred-[a-z0-9-]+-fr-[0-9]+\]|\[awaiting-operator-commit\]|\[awaiting-third-party-approval\]|\[awaiting-cutover-window\]|\[awaiting-regulator-review\]'
+  deferral_span_exclusion_pattern='no deferred items|no deferred work|no deferrals|without deferred work|zero deferred items|zero deferrals|no issues deferred or skipped|no issues deferred|followupowner|followupaction|followuptarget|followups|follow-up narrative|follow-up section'
+  deferral_exclusion_pattern='\[lockdown-deferred-fr-[0-9]+\]|\[lockdown-deferred-[a-z0-9-]+-fr-[0-9]+\]|\[awaiting-operator-commit\]|\[awaiting-third-party-approval\]|\[awaiting-cutover-window\]|\[awaiting-regulator-review\]'
   total_deferral_hits=0
+
+  _g040_strip_structural_spans() {
+    LC_ALL=C awk -v exclusions="$deferral_span_exclusion_pattern" '
+      {
+        line = $0
+        lower = tolower(line)
+        while (match(lower, exclusions)) {
+          line = substr(line, 1, RSTART - 1) substr(line, RSTART + RLENGTH)
+          lower = tolower(line)
+        }
+        print line
+      }
+    '
+  }
+
+  _g040_print_exact_pair_match() {
+    local source_line="$1"
+
+    LC_ALL=C awk -v line="$source_line" '
+      BEGIN {
+        lower = tolower(line)
+        inner = "(separate[[:blank:]-]+ticket|future[[:blank:]-]+scope)"
+        outer = "(^|[^[:alnum:]_])" inner "([^[:alnum:]_]|$)"
+        if (match(lower, outer)) {
+          full = substr(line, RSTART, RLENGTH)
+          full_lower = tolower(full)
+          if (match(full_lower, inner)) {
+            original = substr(full, RSTART, RLENGTH)
+            canonical = substr(tolower(original), 1, 8) == "separate" \
+              ? "separate ticket" : "future scope"
+            gsub(/\t/, "\\t", original)
+            printf "   canonical-phrase: %s\n", canonical
+            printf "   matched-form: %s\n", original
+            found = 1
+          }
+        }
+        exit found ? 0 : 1
+      }
+    '
+  }
+
+  _g040_print_bounded_fallback() {
+    local source_line="$1"
+    local sanitized_line=""
+    local excerpt_limit=512
+    local LC_ALL=C
+
+    sanitized_line="$(printf '%s' "$source_line" | tr -d '\000-\037\177')"
+    if [[ "${#sanitized_line}" -gt "$excerpt_limit" ]]; then
+      printf '   → %s [truncated]\n' "${sanitized_line:0:$excerpt_limit}"
+    else
+      printf '   → %s\n' "$sanitized_line"
+    fi
+  }
 
   # Strategy (iii): the awk filter strips fenced code AND content between
   # bubbles:g040-skip-begin / bubbles:g040-skip-end sentinel markers.
@@ -4166,7 +4977,7 @@ else
     # Count deferral language hits (case-insensitive), excluding inside code fence blocks
     # We scan outside code blocks only to avoid false positives from test descriptions or docs
     deferral_hits="$({
-      awk "$deferral_strip_awk" "$scope_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
+      awk "$deferral_strip_awk" "$scope_path" | _g040_strip_structural_spans | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
     } || true)"
 
     if [[ "$deferral_hits" -gt 0 ]]; then
@@ -4178,12 +4989,14 @@ else
       shown_lines=0
       while IFS= read -r deferral_line; do
         [[ -n "$deferral_line" ]] || continue
-        echo "   → $deferral_line"
+        if ! _g040_print_exact_pair_match "$deferral_line"; then
+          _g040_print_bounded_fallback "$deferral_line"
+        fi
         shown_lines=$((shown_lines + 1))
         if [[ "$shown_lines" -ge 5 ]]; then
           break
         fi
-      done < <(awk "$deferral_strip_awk" "$scope_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" || true)
+      done < <(awk "$deferral_strip_awk" "$scope_path" | _g040_strip_structural_spans | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" || true)
     fi
   done
 
@@ -4228,12 +5041,23 @@ else
     fi
 
     report_deferral_hits="$({
-      awk -v bw="$rpt_before_window" "$deferral_strip_report_awk" "$rpt_path" | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
+      awk -v bw="$rpt_before_window" "$deferral_strip_report_awk" "$rpt_path" | _g040_strip_structural_spans | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" | wc -l || true
     } || true)"
 
     if [[ "$report_deferral_hits" -gt 0 ]]; then
       fail "Report artifact contains $report_deferral_hits deferral language hit(s): ${rpt_path#$feature_dir/} — evidence of deferred work (Gate G040)"
       total_deferral_hits=$((total_deferral_hits + report_deferral_hits))
+      shown_lines=0
+      while IFS= read -r deferral_line; do
+        [[ -n "$deferral_line" ]] || continue
+        if ! _g040_print_exact_pair_match "$deferral_line"; then
+          _g040_print_bounded_fallback "$deferral_line"
+        fi
+        shown_lines=$((shown_lines + 1))
+        if [[ "$shown_lines" -ge 5 ]]; then
+          break
+        fi
+      done < <(awk -v bw="$rpt_before_window" "$deferral_strip_report_awk" "$rpt_path" | _g040_strip_structural_spans | grep -iE "$deferral_pattern" | grep -viE "$deferral_exclusion_pattern" || true)
     fi
   done
 
@@ -4536,10 +5360,13 @@ else
   # The rule is deliberately narrow. Identical output from a RE-RUN of the same
   # command is normal. Deterministic validators can also emit identical output
   # when the same validator category runs independently over distinct targets.
-  # That sibling case is accepted only when family, category, and exit status
-  # agree while target/input closure and execution provenance are all present
-  # and distinct. A substantive collision across incompatible command families
-  # or categories still identifies one result backing unrelated claims.
+  # Category is diagnostic metadata subject only to a known, non-mixed sanity
+  # floor; matching or differing category labels establish neither identity nor
+  # cloning. The sibling case instead requires compatible program/family and
+  # exit status plus present, distinct target/input closure and execution
+  # provenance. A substantive collision across incompatible identities or
+  # unproven target/execution provenance still identifies one result backing
+  # unrelated claims.
   if command -v jq >/dev/null 2>&1; then
     # An EMPTY stdout is excluded, and that exclusion is what makes the rule
     # correct rather than merely narrow. Every command that writes nothing to

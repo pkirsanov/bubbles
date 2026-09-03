@@ -1,7 +1,7 @@
 {
   "version": 1,
   "featureDir": "bugs/BUG-032-planning-maturity-guard-false-positives",
-  "generatedAt": "2026-08-15T11:42:01Z",
+  "generatedAt": "2026-09-02T01:58:50Z",
   "planningOnly": false,
   "scenarios": [
     {
@@ -14,24 +14,52 @@
         "then": "Consumer Impact Sweep is not required"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "bugfix",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-helper assertions classify stale-generation and unrelated-clause inputs as non-mutations without changing the direct-mutation controls.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh"
+        ],
+        "negativeControl": "Restore the broad replacement-or-migration and nearby-interface co-occurrence predicate; the stale-generation fixture must again demand an impact sweep.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "Check 8B transforms repository planning text through a framework CLI and exposes no network request or response contract."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
           "testId": "BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
-        },
-        {
-          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
-          "testId": "BUG032-IV-F2 Check 8B does not bridge cache cleanup to an unchanged public API contract in another clause"
         }
       ],
       "evidenceRefs": [
         "report.md#scope-1-red-evidence",
-        "report.md#scope-1-green-evidence"
+        "report.md#scope-1-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -46,24 +74,52 @@
         "then": "Consumer Impact Sweep is not required"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "bugfix",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-helper assertions classify provider, lifecycle, and generated-artifact replacement independently from consumer-interface mutation.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh"
+        ],
+        "negativeControl": "Treat replace, replaced, or migration as sufficient consumer mutation again; at least one provider or lifecycle fixture must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "This scenario validates deterministic planning-text classification and does not define an HTTP or wire contract."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
           "testId": "BUG-032 Check 8B ignores stale-generation, provider, lifecycle, and artifact replacement semantics"
-        },
-        {
-          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
-          "testId": "BUG032-IV-F2 Check 8B does not bridge cache cleanup to an unchanged public API contract in another clause"
         }
       ],
       "evidenceRefs": [
         "report.md#scope-1-red-evidence",
-        "report.md#scope-1-green-evidence"
+        "report.md#scope-1-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -78,11 +134,43 @@
         "then": "Consumer Impact Sweep and its DoD requirements remain mandatory"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "regression",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-helper assertions retain direct rename and removal classification across route, path, endpoint, contract, and identifier surfaces.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG032-IV-F1 Check 8B triggers on the exact mutation inflections 'renames' and 'removes'",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B still flags all 5 explicit route/path/endpoint/contract/identifier mutations"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh"
+        ],
+        "negativeControl": "Disable direct rename and removal pairing for one declared consumer surface; the positive matrix must fail instead of accepting a broad exemption.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The observable surface is deterministic terminal classification rather than a rendered user interface."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -94,7 +182,8 @@
         }
       ],
       "evidenceRefs": [
-        "report.md#scope-1-green-evidence"
+        "report.md#scope-1-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -109,11 +198,43 @@
         "then": "Stress coverage is not required absent a genuine performance target"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "bugfix",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-predicate assertions classify explicit no-SLA, no-SLO, opted-out, and not-applicable prose as non-affirmative.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG032-IV-F3 Check 5A accepts explicit no-SLA/no-SLO, negated-target, and not-applicable target prose without stress coverage",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG032-IV-F3 Check 5A does not turn explicit negated or not-applicable target posture into an affirmative contract"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Remove explicit opt-out polarity handling; a no-SLO or not-applicable fixture must incorrectly demand stress coverage and fail the regression.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "sla-sensitive",
+        "reason": "This scenario classifies whether planning prose declares a performance contract; it does not assert runtime latency, throughput, or availability."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -126,7 +247,8 @@
       ],
       "evidenceRefs": [
         "report.md#scope-1-red-evidence",
-        "report.md#scope-1-green-evidence"
+        "report.md#scope-1-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -141,11 +263,43 @@
         "then": "Explicit stress coverage remains mandatory"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "regression",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-predicate assertions preserve affirmative classification for availability, latency, throughput, p95, p99, and quantitative no-more-than contracts.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 5A still treats 'no more than 200 ms p95 latency' as an affirmative performance contract",
+            "bubbles/scripts/state-transition-guard-selftest.sh#Check 5A still flags all 5 genuine SLA declarations (p95 latency, throughput, SLA, SLO, p99 response time)"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Let broad negation suppress the quantitative no-more-than p95 fixture; the positive polarity assertion must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "sla-sensitive",
+        "reason": "The behavior under test is the textual planning classifier, not fulfillment of the performance promise contained in its input fixture."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -157,7 +311,8 @@
         }
       ],
       "evidenceRefs": [
-        "report.md#scope-1-green-evidence"
+        "report.md#scope-1-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -165,31 +320,94 @@
     {
       "scenarioId": "SCN-032-006",
       "scope": "02-receipt-clone-execution-identity",
-      "title": "Deterministic validator siblings are independent evidence",
+      "title": "Complete independent validator target sets are sibling evidence",
       "gherkin": {
-        "given": "One validator family runs independently over two targets and emits identical non-empty stdout",
-        "when": "Check 43 evaluates command category, target closure, exit, and execution provenance",
-        "then": "No receipt clone is reported"
+        "given": "One normalized validator program contributes complete target sets with equal numeric exits independent provenance and known non-mixed categories",
+        "when": "Check 43 compares every target for every command identity",
+        "then": "Disjoint complete sets are siblings and any overlap between distinct command identities is a receipt clone"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "bugfix",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production Check 43 assertions accept one normalized validator program over independent targets and provenance even when known non-mixed category labels differ.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 accepts independent deterministic validator siblings over distinct targets",
+            "bubbles/scripts/receipt-identity-selftest.sh#BUG-028 canonical: one validator over three subjects with differing tags is not reported as cloned evidence",
+            "bubbles/scripts/receipt-identity-selftest.sh#BUG-028 canonical: the three-subject group is accepted through the deterministic-sibling path",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 compares complete target sets for every command identity"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Any complete-set overlap and the deterministic same-target control block while complete disjoint sets remain siblings.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 preserves disjoint-target siblings and same-target refusal controls"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh",
+        "bubbles/scripts/receipt-identity-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Project only the first target or require category-label equality; hidden overlap or the differing-label sibling control must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "Receipt identity is a deterministic transition-guard decision over local structured records, not a network API exchange."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
           "testId": "BUG-032 Check 43 accepts independent deterministic validator siblings over distinct targets"
         },
         {
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "testId": "BUG-028 canonical: one validator over three subjects with differing tags is not reported as cloned evidence"
+        },
+        {
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "testId": "BUG-028 canonical: the three-subject group is accepted through the deterministic-sibling path"
+        },
+        {
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "testId": "BUG-028 defect 1: one command tagged test and validate is not reported as cloned evidence"
+        }
+      ],
+      "plannedTests": [
+        {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
-          "testId": "BUG-032 Check 43 preserves BUG-019 equivalent command-spelling normalization"
+          "testId": "BUG-032 Check 43 compares complete target sets for every command identity"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 preserves disjoint-target siblings and same-target refusal controls"
         }
       ],
       "evidenceRefs": [
         "report.md#scope-2-red-evidence",
-        "report.md#scope-2-green-evidence"
+        "report.md#scope-2-green-evidence",
+        "report.md#scope-2-normalized-program-category-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -197,38 +415,95 @@
     {
       "scenarioId": "SCN-032-007",
       "scope": "02-receipt-clone-execution-identity",
-      "title": "Unrelated commands sharing substantive output still block",
+      "title": "Incompatible normalized program identities still block through transparent wrappers",
       "gherkin": {
-        "given": "Incompatible test and lint command families share one substantive stdout hash",
-        "when": "Check 43 evaluates the receipts",
-        "then": "A receipt clone is reported"
+        "given": "Receipts for incompatible underlying programs share one substantive stdout hash and may use the same transparent wrapper",
+        "when": "Check 43 evaluates the wrapped program identities and complete target sets",
+        "then": "A receipt clone names the incompatible programs while the same wrapped validator over disjoint targets remains a sibling"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "regression",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
-      "linkedTests": [
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
         {
-          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
-          "testId": "BUG032-IV-F4 Check 43 blocks substantive stdout reuse across incompatible categories with one normalized command identity"
+          "trait": "pure-calculation",
+          "requiredProof": "Production Check 43 assertions derive the refusal from incompatible normalized program or target identities rather than category-label differences.",
+          "satisfiedBy": [
+            "bubbles/scripts/receipt-identity-selftest.sh#BUG-032 pin: incompatible command families sharing one stdout are still refused",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 blocks substantive stdout reuse across incompatible commands",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 unwraps evidence-capture to compare underlying programs"
+          ]
         },
         {
-          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
-          "testId": "BUG032-IV-F4 Check 43 reports the same-identity incompatible-category receipt clone"
+          "trait": "degraded-state",
+          "requiredProof": "Named fail-closed assertions reject incompatible programs, two identities sharing one target, and cross-spec reuse without a permissive default.",
+          "satisfiedBy": [
+            "bubbles/scripts/receipt-identity-selftest.sh#BUG-028 defect 1 bound: two identities sharing ONE target and one stdout are still refused",
+            "bubbles/scripts/receipt-identity-selftest.sh#BUG-028 bound: a group mixing two specs on one stdout is still refused",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 preserves same-program wrapped siblings over distinct targets"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/evidence-capture.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh",
+        "bubbles/scripts/receipt-identity-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Stop normalization at a transparent wrapper or collapse identity to a category label; an incompatible program pair must escape and fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The refusal is emitted by the local transition-guard CLI over structured receipt fixtures and defines no external API."
+      },
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "testId": "BUG-032 pin: incompatible command families sharing one stdout are still refused"
+        },
+        {
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "testId": "BUG-028 defect 1 bound: two identities sharing ONE target and one stdout are still refused"
+        },
+        {
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "testId": "BUG-028 bound: a group mixing two specs on one stdout is still refused"
         },
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
           "testId": "BUG-032 Check 43 blocks substantive stdout reuse across incompatible commands"
+        }
+      ],
+      "plannedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 43 unwraps evidence-capture to compare underlying programs"
         },
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
-          "testId": "BUG-032 Check 43 reports the incompatible-command receipt clone"
+          "testId": "BUG-032 Check 43 preserves same-program wrapped siblings over distinct targets"
         }
       ],
       "evidenceRefs": [
-        "report.md#scope-2-green-evidence"
+        "report.md#scope-2-green-evidence",
+        "report.md#scope-2-normalized-program-category-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -243,11 +518,43 @@
         "then": "No receipt clone is reported"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "regression",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production Check 43 assertions exempt the canonical empty-stdout digest with or without optional stdoutBytes metadata.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 preserves empty-stdout exemption without stdoutBytes",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 does not treat empty stdout as substantive cloned evidence"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Treat the empty digest as substantive whenever stdoutBytes is absent; the absent-field fixture must produce a false clone and fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The scenario validates a local receipt-classification exemption and has no request-response boundary."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -259,7 +566,8 @@
         }
       ],
       "evidenceRefs": [
-        "report.md#scope-2-green-evidence"
+        "report.md#scope-2-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -274,11 +582,50 @@
         "then": "The guard exits 1 and reports NOT-DELIVERED"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "bugfix",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production G101 assertions resolve product-to-planning mode semantics before deciding whether specs_hardened is delivered.",
+          "satisfiedBy": [
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S13 product-to-planning/specs_hardened is not delivered"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "The required-delivery path emits a named NOT-DELIVERED refusal instead of accepting planning maturity as a plausible delivered default.",
+          "satisfiedBy": [
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S13 reports planning maturity as NOT-DELIVERED"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+        "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/release-delivery-reconciliation-guard.sh"
+        ],
+        "negativeControl": "Restore terminal-for-mode as sufficient delivery evidence; the product-to-planning specs_hardened fixture must become a false DELIVERED result and fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "G101 reconciles local release metadata through a CLI guard and does not expose a wire contract."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
@@ -291,7 +638,8 @@
       ],
       "evidenceRefs": [
         "report.md#scope-3-red-evidence",
-        "report.md#scope-3-green-evidence"
+        "report.md#scope-3-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -306,11 +654,43 @@
         "then": "The guard exits 0 and reports DELIVERED"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "regression",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production G101 assertions retain validate-certified full-delivery done as a delivered result.",
+          "satisfiedBy": [
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S16 full-delivery/done remains delivered",
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S16 reports a delivery-capable validate-certified success"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+        "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/release-delivery-reconciliation-guard.sh"
+        ],
+        "negativeControl": "Reject every terminal alias including full-delivery done; the positive delivery-capable control must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The delivered result is a deterministic local release-guard decision rather than an external service response."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
@@ -322,7 +702,8 @@
         }
       ],
       "evidenceRefs": [
-        "report.md#scope-3-green-evidence"
+        "report.md#scope-3-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -337,11 +718,50 @@
         "then": "The guard exits 1 and reports NOT-DELIVERED"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "regression",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production G101 assertions classify delivered_prototype by assurance semantics rather than generic terminality.",
+          "satisfiedBy": [
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S12 required feature delivered_prototype is refused (prototype never deployable)"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "The prototype path emits a named NOT-DELIVERED result despite validate certification and has no permissive fallback.",
+          "satisfiedBy": [
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S12 reports prototype output as NOT-DELIVERED"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+        "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/release-delivery-reconciliation-guard.sh"
+        ],
+        "negativeControl": "Let validate certification override prototype assurance; the prototype fixture must become falsely delivered and fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "Prototype delivery classification is evaluated by the local G101 command and has no network API surface."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
@@ -353,7 +773,8 @@
         }
       ],
       "evidenceRefs": [
-        "report.md#scope-3-green-evidence"
+        "report.md#scope-3-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -368,11 +789,46 @@
         "then": "Only delivery-capable aliases are reported DELIVERED"
       },
       "gherkinHash": null,
-      "behaviorClass": "api",
+      "behaviorClass": "cli",
       "changeType": "bugfix",
-      "requiredTestType": "e2e-api",
+      "requiredTestType": "functional",
       "regressionRequired": true,
       "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production G101 assertions resolve each alias through its owning mode and reject unknown or explicitly non-delivery modes.",
+          "satisfiedBy": [
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S17 dark-launch-shipped/pending-activation remains delivered",
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S18 rapid-tool-delivery/delivered_fast remains delivered",
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S19 unknown mode gains no pending-activation fallback",
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#S20 product-to-planning/done is incoherent, not delivered"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+        "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+        "bubbles/workflows/modes.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/release-delivery-reconciliation-guard.sh"
+        ],
+        "negativeControl": "Accept a delivery alias from an unknown or non-delivery mode; the S19 or S20 mode-ownership assertion must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "Mode-alias classification is a local release-policy calculation with no request-response contract."
+      },
       "linkedTests": [
         {
           "file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
@@ -392,7 +848,1075 @@
         }
       ],
       "evidenceRefs": [
-        "report.md#scope-3-green-evidence"
+        "report.md#scope-3-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-013",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "An unrelated object mutation is not an interface mutation",
+      "gherkin": {
+        "given": "A scope removes stale cache entries before invoking a route or uses that route while stale cache entries are removed",
+        "when": "Check 8B classifies active and passive ownership through the production helper and real guard",
+        "then": "Cache removal stays with cache entries while active and passive direct route-removal controls remain positive"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B classifies unpunctuated cache removal plus preserved public route as negative"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B finite classifier extracted from production markers (no test/source drift)"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B classifies punctuated and unpunctuated cache removal plus preserved public route as negative"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B keeps active and passive public-route removal direct-positive"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B classifies preserved route plus removed redirect as mixed-surface"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B blocks same-surface mutation and preservation as ambiguous"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B blocks unresolved nearby route mention as ambiguous"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B blocks relevant declarations above 128 tokens as ambiguous"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B keeps a used passive surface separate from an unrelated passive object"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B passive direct-route control remains direct-positive"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-scn-032-013-red-evidence",
+        "report.md#scope-1-scn-032-013-green-evidence",
+        "report.md#2026-09-01-regression-phase-adjudication"
+      ],
+      "behaviorTraits": [
+        "pure-calculation",
+        "shared-consumer"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-helper assertions over every closed Check 8B classification and diagnostic field, including an adversarial mutation that restores the broad false-positive behavior.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B classifies punctuated and unpunctuated cache removal plus preserved public route as negative",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B keeps a used passive surface separate from an unrelated passive object"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Production-helper parity and the current state-transition guard consumer surface both preserve negative, direct, mixed, and ambiguous behavior.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B finite classifier extracted from production markers (no test/source drift)",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B keeps active and passive public-route removal direct-positive",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B passive direct-route control remains direct-positive"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh"
+        ],
+        "negativeControl": "Restore broad co-occurrence or passive backward scanning; cache removal becomes a route mutation while direct controls prevent a blanket exemption.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Check 8B is a deterministic framework CLI classifier with a text diagnostic surface, not a rendered product route."
+      },
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-014",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Unrelated negation cannot suppress a later direct mutation",
+      "gherkin": {
+        "given": "One physical line contains an unrelated leading no clause or nearby without adjunct followed by an active or passive public-route removal",
+        "when": "Check 8B classifies the declaration through the bounded production helper and real guard",
+        "then": "Unrelated negation leaves removal direct-positive while owned will-not preserves route and the will-be control stays direct-positive"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B keeps direct mutations positive after unrelated no or without phrases"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B keeps owned negation negative"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B preserves passive will-not negation"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B passive will-be control remains direct-positive"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-five-finding-red-evidence",
+        "report.md#scope-1-final-five-finding-green-evidence",
+        "report.md#2026-09-01-independent-five-finding-adjudication",
+        "report.md#2026-09-01-regression-phase-adjudication"
+      ],
+      "behaviorTraits": [
+        "pure-calculation",
+        "shared-consumer"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-helper assertions discriminate all four unrelated-negation direct declarations from the four owned-negation negative controls.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B keeps direct mutations positive after unrelated no or without phrases",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B keeps owned negation negative",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B preserves passive will-not negation",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B passive will-be control remains direct-positive"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Real state-transition guard fixtures run the Consumer Impact Sweep section, completion-item, and affected-consumer checks for each direct declaration and none for owned negation.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B keeps owned negation negative",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B keeps direct mutations positive after unrelated no or without phrases",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B passive will-be control remains direct-positive"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh"
+        ],
+        "negativeControl": "Restore line-global negation or drop not from the passive auxiliary; a direct or owned-negation twin must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The shared consumer is the local state-transition guard terminal contract, not a rendered browser or mobile interface."
+      },
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-015",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Trailing artifact nouns remain ambiguous until ownership is explicit",
+      "gherkin": {
+        "given": "An active or passive consumer-surface phrase is followed by an ordinary artifact noun",
+        "when": "Check 8B classifies unresolved direct and explicit-preservation forms",
+        "then": "Every unresolved tail blocks before impact checks while direct and clarified controls retain distinct outcomes"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B blocks trailing artifact nouns as surface-tail"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B discriminates direct and explicitly preserved trailing-noun twins"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B blocks passive artifact tails and accepts explicit passive clarification"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B passive tail direct controls remain positive"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-five-finding-red-evidence",
+        "report.md#scope-1-final-five-finding-green-evidence",
+        "report.md#2026-09-01-independent-five-finding-adjudication",
+        "report.md#2026-09-01-regression-phase-adjudication"
+      ],
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state",
+        "shared-consumer"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-helper assertions classify all four trailing-noun inputs as surface-tail and discriminate each direct and explicitly preserved twin.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B blocks trailing artifact nouns as surface-tail",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B discriminates direct and explicitly preserved trailing-noun twins",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B blocks passive artifact tails and accepts explicit passive clarification"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Every unresolved tail produces a nonzero real-guard result with reason surface-tail, local rewrite guidance, and all three impact fields skipped.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B blocks trailing artifact nouns as surface-tail",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B passive tail direct controls remain positive"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The state-transition guard consumes the production-helper result without reinterpreting the line and runs all three checks only for the direct twin.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B blocks trailing artifact nouns as surface-tail",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B discriminates direct and explicitly preserved trailing-noun twins",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B passive tail direct controls remain positive"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh"
+        ],
+        "negativeControl": "Accept the first active or passive surface head without closing its phrase; an artifact-tail input must become falsely direct.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The scenario exercises local planning-text classification and terminal refusal semantics rather than an HTTP or wire exchange."
+      },
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-016",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Finite limits and classifier errors fail closed before semantic overrun",
+      "gherkin": {
+        "given": "Check 8B receives exact-limit, first-overflow, helper-error, no-process, and mixed-surface discriminator inputs",
+        "when": "The exact marked production helper and real guard evaluate the matrix",
+        "then": "Exact limits classify ordinarily, first overflows and helper errors block before relationship analysis or impact checks, and the per-line path starts zero forbidden normalizer processes"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B admits exactly 128 tokens and rejects token 129 before semantic scan"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B admits exactly eight candidates and rejects candidate nine before relationship analysis"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B guard fails closed on candidate-limit and normalization-error"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B invalid invocation returns a complete invalid-arguments error record"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B finite classifier has one atomic marker block whose pre-source declaration-only detector admits only complete supported function declarations and inert marker-bounded comments"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B exact marked source has no statically admitted process-capable syntax or executable command head"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B hostile shadow command counts remain zero"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 Check 8B mixed surfaces run all three requirements for every direct surface only"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#scope-1-five-finding-red-evidence",
+        "report.md#scope-1-final-five-finding-green-evidence",
+        "report.md#scope-4-final-byte-epoch-evidence",
+        "report.md#2026-09-01-independent-five-finding-adjudication",
+        "report.md#2026-09-01-regression-phase-adjudication"
+      ],
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state",
+        "shared-consumer"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Exact 128/129-token and eight/nine-candidate assertions prove retained lengths, first-overflow precedence, and absence of overflow inputs from relationship analysis.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B admits exactly 128 tokens and rejects token 129 before semantic scan",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B admits exactly eight candidates and rejects candidate nine before relationship analysis"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Candidate overflow and ASCII control-byte normalization failure make the real guard nonzero with stable reasons, local corrections, and all three impact fields skipped.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B guard fails closed on candidate-limit and normalization-error",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B invalid invocation returns a complete invalid-arguments error record"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The exact marked production block is sourceable and process-free, hostile shadow counts stay zero, and mixed-surface guard consumers run all three checks for every direct surface only.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B finite classifier has one atomic marker block whose pre-source declaration-only detector admits only complete supported function declarations and inert marker-bounded comments",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B exact marked source has no statically admitted process-capable syntax or executable command head",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B hostile shadow command counts remain zero",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B mixed surfaces run all three requirements for every direct surface only"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh",
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Move limit checks after whole-line normalization or candidate parsing, restore one per-line external normalizer, or let helper errors continue as negative; the boundary, structural, shadow, or guard-level assertions must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The finite parser and its shared terminal consumer run locally and expose no network request-response contract."
+      },
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-020",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Fixture prose is not an active interface declaration",
+      "gherkin": {
+        "given": "Gherkin Examples or Test Plan fixture context contains mutation prose",
+        "when": "Check 8B scans the complete scope artifact",
+        "then": "Fixture prose is ignored while an identical active declaration remains enforceable"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production guard assertions classify scope structure and exclude fenced Gherkin Examples and Test Plan fixture cells.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B ignores Gherkin Examples and Test Plan fixture prose"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "An identical active declaration remains blocking or positive so context handling cannot become a broad exemption.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 8B still evaluates identical active declarations"]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Scan all scope lines as active prose; fixture text triggers again while the identical active declaration proves the context selector still reaches enforceable content.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The scope-structure decision is local static input to a CLI guard."
+      },
+      "linkedTests": [
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 8B ignores Gherkin Examples and Test Plan fixture prose"},
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 8B still evaluates identical active declarations"}
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-01-convergence-iteration-9-harden-phase",
+        "report.md#2026-09-01-convergence-iteration-9-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-021",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Quoted performance fixtures are not active contracts",
+      "gherkin": {
+        "given": "Gherkin Examples or Test Plan fixture context contains a quantitative performance sentence",
+        "when": "Check 5A scans the complete scope artifact",
+        "then": "Fixture prose is ignored while an identical active performance declaration remains affirmative"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": ["pure-calculation"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production Check 5A assertions distinguish quoted fixture contexts from active quantitative contracts.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 5A ignores quoted Gherkin Examples and Test Plan performance fixtures",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 5A still evaluates identical active performance contracts"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Treat every quantitative fixture as active; the quoted case falsely triggers while the active twin prevents blanket suppression.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "sla-sensitive",
+        "reason": "The scenario tests planning-contract classification and does not assert a runtime latency or throughput target."
+      },
+      "linkedTests": [
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 5A ignores quoted Gherkin Examples and Test Plan performance fixtures"},
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 5A still evaluates identical active performance contracts"}
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-01-convergence-iteration-9-harden-phase",
+        "report.md#2026-09-01-convergence-iteration-9-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-022",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Stress coverage requires a canonical Test Plan row and faithful DoD item",
+      "gherkin": {
+        "given": "An active performance contract has only broad stress prose and no canonical Stress row or matching DoD",
+        "when": "Check 5A validates coverage",
+        "then": "Coverage fails while a canonical Stress row and faithful DoD control passes"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production Check 5A assertions parse canonical Test Plan and DoD structure instead of counting the word stress.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 5A rejects stress-word coverage without a canonical Stress Test Plan row and DoD"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "The missing-row path fails loudly and the structurally complete positive control passes.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 5A accepts a canonical Stress row with faithful DoD"]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Restore broad stress-word matching; the structurally incomplete fixture passes while the canonical-row control prevents universal refusal.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "sla-sensitive",
+        "reason": "This scenario validates planning coverage structure, not achievement of the performance target inside a runtime system."
+      },
+      "linkedTests": [
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 5A rejects stress-word coverage without a canonical Stress Test Plan row and DoD"},
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 5A accepts a canonical Stress row with faithful DoD"}
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-01-convergence-iteration-9-harden-phase",
+        "report.md#2026-09-01-convergence-iteration-9-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-025",
+      "scope": "02-receipt-clone-execution-identity",
+      "title": "Contradictory non-empty hash and zero-byte metadata fails closed",
+      "gherkin": {
+        "given": "A receipt carries a non-empty stdout hash with zero-byte metadata",
+        "when": "Check 43 classifies substantive output",
+        "then": "Contradictory metadata blocks while canonical empty and ordinary non-empty controls retain their contracts"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production Check 43 assertions distinguish canonical empty output ordinary substantive output and contradictory hash-byte metadata.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 preserves canonical empty and ordinary non-empty controls"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "A non-empty hash paired with zero bytes is named and retained in fail-closed analysis rather than discarded.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 Check 43 fails closed on non-empty hash with zero-byte metadata"]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Filter every zero-byte receipt before checking its hash; contradictory metadata disappears while empty and positive-byte controls prove both legitimate branches remain reachable.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The scenario evaluates local receipt metadata and no network boundary."
+      },
+      "linkedTests": [
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh"}
+      ],
+      "plannedTests": [
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 43 fails closed on non-empty hash with zero-byte metadata"},
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 Check 43 preserves canonical empty and ordinary non-empty controls"}
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-01-convergence-iteration-9-harden-phase",
+        "report.md#2026-09-01-convergence-iteration-9-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-026",
+      "scope": "03-g101-delivery-capable-mode-semantics",
+      "title": "Explicit v3 certification is authoritative for delivery",
+      "gherkin": {
+        "given": "A release feature has coherent or conflicting v3 certification or an absent-certification legacy shape",
+        "when": "G101 reconciles delivery required",
+        "then": "Explicit v3 certification wins and legacy compatibility applies only when certification is absent"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production G101 assertions select explicit v3 certification fields before legacy status or phase fields and preserve the absent-certification compatibility branch.",
+          "satisfiedBy": ["bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#BUG-032 G101 preserves coherent v3 and no-certification legacy controls"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Status-mirror divergence and explicit certification overridden by legacy phases both produce NOT-DELIVERED.",
+          "satisfiedBy": [
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#BUG-032 G101 rejects explicit status-mirror divergence",
+            "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh#BUG-032 G101 gives explicit v3 certification precedence over legacy phases"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/release-delivery-reconciliation-guard.sh",
+        "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/release-delivery-reconciliation-guard.sh"],
+        "negativeControl": "Let top-level done or legacy completedPhases override explicit v3 in-progress certification; both conflict cases falsely deliver while coherent v3 and absent-certification legacy controls prevent a blanket refusal.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "G101 is a deterministic release-policy CLI over local state fixtures."
+      },
+      "linkedTests": [
+        {"file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh", "testId": "BUG-032 G101 rejects explicit status-mirror divergence"},
+        {"file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh", "testId": "BUG-032 G101 gives explicit v3 certification precedence over legacy phases"},
+        {"file": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh", "testId": "BUG-032 G101 preserves coherent v3 and no-certification legacy controls"}
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-01-convergence-iteration-9-harden-phase",
+        "report.md#2026-09-01-convergence-iteration-9-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-028",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "G040 matches prohibited phrases at exact boundaries only",
+      "gherkin": {
+        "given": "Active artifact lines contain benign shared prefixes or exact prohibited phrases",
+        "when": "G040 scans incomplete-work language outside historical evidence",
+        "then": "Benign prefixes pass while exact separate-ticket and future-scope phrases block"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production G040 assertions use complete-phrase lexical boundaries for both benign and prohibited inputs.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 G040 permits benign separate-clause and future-workflow wording"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Exact separate-ticket and future-scope phrases remain blocking controls outside historical evidence.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 G040 still blocks exact separate-ticket and future-scope phrases"]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Match prohibited prefixes without lexical completion; benign lines block while exact prohibited controls ensure the detector remains active.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "G040 performs local planning-artifact classification."
+      },
+      "linkedTests": [
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 G040 permits benign separate-clause and future-workflow wording"},
+        {"file": "bubbles/scripts/state-transition-guard-selftest.sh", "testId": "BUG-032 G040 still blocks exact separate-ticket and future-scope phrases"}
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-01-convergence-iteration-9-harden-phase",
+        "report.md#2026-09-01-convergence-iteration-9-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-033",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Context projection failures block both planning classifiers",
+      "gherkin": {
+        "given": "The scope projection completes or fails at its input read producer or consumer trailer",
+        "when": "Check 8B and Check 5A consume the shared projection",
+        "then": "Only a completed projection reaches ordinary classification while every failed prefix is discarded and blocks both consumers without retry"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state",
+        "shared-consumer"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production projection assertions preserve complete empty and active controls while distinguishing producer and input-read completion.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-001 discards partial projection records and preserves complete controls"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Producer input-read prefix and trailer failures emit stable blocking diagnostics discard partial records and never retry.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-001 blocks Check 8B and Check 5A on producer and input-read failure"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "One closed projection state drives both planning consumers and preserves their current terminal dispositions.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-001 discards partial projection records and preserves complete controls",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-001 blocks Check 8B and Check 5A on producer and input-read failure"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Restore non-status-preserving process substitution or commit a valid prefix before completion; an incomplete projection must become an ordinary exemption and fail the regression.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The shared projection and both consumers run inside one local framework CLI and expose no network request-response contract."
+      },
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-001 blocks Check 8B and Check 5A on producer and input-read failure"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-001 discards partial projection records and preserves complete controls"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-02-security-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-034",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Markdown context identity and fixture structure fail closed",
+      "gherkin": {
+        "given": "A scope contains exact or malformed fixture fences Examples tables Test Plan tables and active twins",
+        "when": "The shared projection validates complete Markdown structure",
+        "then": "Valid fixtures remain inactive and the first identity delimiter header separator row or column defect blocks both consumers"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state",
+        "shared-consumer"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production grammar assertions preserve exact fence identity valid table structure structural Test Plan rows and ordinary text-fence activity.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-002 preserves valid fixture suppression and identical active twins"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Marker type marker length closure header delimiter data-row and column-count defects block at the first malformed location.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-002 rejects fence identity and fixture table structure defects in first-error order"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The validated structure supplies one identical active and fixture partition to Check 8B and Check 5A.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-002 preserves valid fixture suppression and identical active twins",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-002 rejects fence identity and fixture table structure defects in first-error order"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Reduce fence identity to three marker bytes or accept table-looking prefixes without full structure; a malformed fixture must hide an active declaration and fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "Markdown context validation is a deterministic local CLI decision over inert planning text."
+      },
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-002 rejects fence identity and fixture table structure defects in first-error order"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-002 preserves valid fixture suppression and identical active twins"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-02-security-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-035",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "G040 recognizes equivalent horizontal separators",
+      "gherkin": {
+        "given": "A physical line contains an exact prohibited pair or a benign lexical near miss",
+        "when": "G040 matches case-insensitively across approved horizontal separators",
+        "then": "Only the exact token pair with complete punctuation boundaries blocks and the match never crosses a newline"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production G040 assertions match both exact token pairs across case spaces tabs hyphens mixtures and complete punctuation boundaries.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-003 matches exact G040 phrases across case and horizontal separators"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Prefix suffix second-token and newline near misses remain allowed while every exact variant names its canonical and original form.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-003 preserves punctuation boundaries and benign near-miss twins"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Use literal single spaces or match either first token alone; approved separator variants or benign near misses must expose the defect.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "G040 classifies one local planning-artifact line and defines no external wire surface."
+      },
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-003 matches exact G040 phrases across case and horizontal separators"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-003 preserves punctuation boundaries and benign near-miss twins"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-02-security-planning-reconciliation"
+      ],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-032-036",
+      "scope": "01-semantic-consumer-and-sla-classifiers",
+      "title": "Line and token byte limits bound Check 8B work",
+      "gherkin": {
+        "given": "Check 8B receives exact and first-overflow line token token-count candidate-count and oversized one-token inputs",
+        "when": "Byte admission runs before tokenization candidate discovery and relationship analysis",
+        "then": "Exact limits proceed and the first excess byte reports its stable reason boundary correction and skipped impact checks"
+      },
+      "gherkinHash": null,
+      "behaviorClass": "cli",
+      "changeType": "bugfix",
+      "requiredTestType": "functional",
+      "regressionRequired": true,
+      "lockdown": false,
+      "behaviorTraits": [
+        "pure-calculation",
+        "degraded-state",
+        "shared-consumer"
+      ],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-helper assertions preserve exact 4096 and 256-byte admission plus existing 128-token and eight-candidate controls.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-004 enforces exact 4096 and 4097 line-byte boundaries",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-004 enforces exact 256 and 257 token-byte boundaries",
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-004 preserves 128 and 129 token and eight and nine candidate controls"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Line byte 4097 token byte 257 and the oversized one-token input stop before semantic work with exact reason boundary and correction records.",
+          "satisfiedBy": [
+            "bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-004 bounds oversized one-token input before semantic work"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The state-transition guard consumes byte-bound helper records unchanged and skips all three impact checks on overflow.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-004 preserves 128 and 129 token and eight and nine candidate controls",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-004 enforces exact 4096 and 4097 line-byte boundaries",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-032 SEC-004 enforces exact 256 and 257 token-byte boundaries"
+          ]
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/guards/planning-checks.sh",
+        "bubbles/scripts/state-transition-guard.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": [
+          "bubbles/scripts/guards/planning-checks.sh",
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Measure or normalize the complete line or token before its sentinel; the 4097-byte 257-byte or 100000-byte control must exceed its bounded work record.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "api-contract",
+        "reason": "The byte-bound classifier and terminal consumer are local framework logic with no network request-response boundary."
+      },
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-004 enforces exact 4096 and 4097 line-byte boundaries"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-004 enforces exact 256 and 257 token-byte boundaries"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-004 preserves 128 and 129 token and eight and nine candidate controls"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "BUG-032 SEC-004 bounds oversized one-token input before semantic work"
+        }
+      ],
+      "evidenceRefs": [
+        "report.md#2026-09-02-security-planning-reconciliation"
       ],
       "replacedBy": null,
       "invalidatedBy": null
