@@ -23,6 +23,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SNAPSHOT="$SCRIPT_DIR/state-snapshot.sh"
 BINDING="$SCRIPT_DIR/repository-binding.sh"
+STATE_IO="$SCRIPT_DIR/session-state-io.py"
+PYTHON3="$(command -v python3 2>/dev/null || true)"
 
 if [[ ! -x "$SNAPSHOT" ]]; then
   echo "FAIL: state-snapshot.sh is not executable at $SNAPSHOT" >&2
@@ -282,6 +284,7 @@ run_atomic_success_case() {
   local control_file
   local binding_packet
   local session_file="$root/.specify/memory/bubbles.session.json"
+  local runtime_lock="$root/.specify/runtime/session-state/bubbles.session.json.flock"
   local snapshot_output
   local snapshot_rc
 
@@ -308,6 +311,12 @@ run_atomic_success_case() {
   else
     fail "normal and convergence snapshot updates should succeed (exit=$snapshot_rc)"
     echo "  output: $snapshot_output"
+  fi
+
+  if [[ -f "$runtime_lock" && ! -e "$root/.specify/memory/bubbles.session.json.flock" ]]; then
+    pass "state snapshot keeps its persistent flock artifact under ignored runtime state"
+  else
+    fail "state snapshot must not leave a persistent flock artifact beside session memory"
   fi
 
   # SCOPE-6: the snapshot must be self-describing about the posture that
@@ -505,7 +514,7 @@ run_rename_failure_cleanup_case() {
     --session-id "$session_id" --session-control-file "$control_file" \
     --binding-packet-file "$binding_packet" \
     --phase "phase_${case_name}_execute" --mode start \
-    "${convergence_args[@]}" 2>&1)"
+    ${convergence_args[@]+"${convergence_args[@]}"} 2>&1)"
   snapshot_rc=$?
   set -e
 
@@ -557,7 +566,9 @@ case1_control="$BOUND_CONTROL"
 case1_packet="$BOUND_PACKET"
 # Note: empty/missing session file should be created by the snapshot script.
 
-case1_out="$(BUBBLES_AGENT_NAME="bubbles.workflow" bash "$SNAPSHOT" \
+# BUG-037: invoke the platform /bin/bash explicitly. On macOS this is Bash 3.2
+# and protects the empty optional goal-node argument expansion from nounset.
+case1_out="$(BUBBLES_AGENT_NAME="bubbles.workflow" /bin/bash "$SNAPSHOT" \
   --session-id "$case1_session_id" --session-control-file "$case1_control" \
   --binding-packet-file "$case1_packet" \
   --phase phase_1_plan --mode start --note "starting batch 2A" 2>&1)"
@@ -954,6 +965,7 @@ jq -n \
   }' > "$case13_session"
 
 case13_prior_snapshot="$(jq -c '.turnSnapshots[0]' "$case13_session")"
+case13_legacy_loop="$(jq -c --arg spec "$case13_spec_dir" '.convergenceLoops[] | select(.specDir == $spec)' "$case13_session")"
 case13_unrelated_loop="$(jq -c '.convergenceLoops[] | select(.specDir == "specs/unrelated")' "$case13_session")"
 cp "$case13_control" "$case13_control_baseline"
 
@@ -989,15 +1001,18 @@ fi
 
 if jq -e \
   --arg spec "$case13_spec_dir" \
+  --arg session "$case13_session_id" \
+  --argjson legacy "$case13_legacy_loop" \
   --argjson unrelated "$case13_unrelated_loop" '
-  (.convergenceLoops | length) == 2
-  and ([.convergenceLoops[] | select(.specDir == $spec and .agent == "bubbles.goal")] | length) == 1
-  and (.convergenceLoops[] | select(.specDir == $spec and .agent == "bubbles.goal") | .iterationCount) == 4
+  (.convergenceLoops | length) == 3
+  and ([.convergenceLoops[] | select(.hostSessionId == $session and .specDir == $spec and .agent == "bubbles.goal")] | length) == 1
+  and (.convergenceLoops[] | select(.hostSessionId == $session and .specDir == $spec and .agent == "bubbles.goal") | .iterationCount) == 4
+  and (.convergenceLoops[] | select((has("hostSessionId") | not) and .specDir == $spec and .agent == "bubbles.goal")) == $legacy
   and (.convergenceLoops[] | select(.specDir == "specs/unrelated")) == $unrelated
 ' "$case13_session" >/dev/null 2>&1; then
-  pass "Goal-node convergence updates only the matching entry and preserves unrelated entries"
+  pass "Goal-node convergence updates only the exact session key and preserves legacy and unrelated entries"
 else
-  fail "Goal-node convergence must update only the matching entry and preserve unrelated entries"
+  fail "Goal-node convergence must update only the exact session key and preserve legacy and unrelated entries"
 fi
 
 if cmp -s "$case13_control_baseline" "$case13_control"; then
@@ -1080,6 +1095,77 @@ else
   fail "Goal-node snapshot refusals must leave external control byte-identical"
 fi
 
+# ---- Case 14: BUG-037 session + spec + agent convergence key ---------------
+
+cases=$((cases + 1))
+case14_root="$TMP_ROOT/case14"
+case14_session="$case14_root/.specify/memory/bubbles.session.json"
+case14_spec="bugs/BUG-037-session-cap-cross-session-attribution"
+case14_agent="bubbles.goal"
+
+prepare_bound_repo "$case14_root" "host-a"
+case14_control_a="$BOUND_CONTROL"
+case14_packet_a="$BOUND_PACKET"
+prepare_bound_repo "$case14_root" "host-b"
+case14_control_b="$BOUND_CONTROL"
+case14_packet_b="$BOUND_PACKET"
+
+cat > "$case14_session" <<'JSON'
+{
+  "legacyMarker": "preserve-root",
+  "turnSnapshots": [],
+  "convergenceLoops": [
+    {
+      "specDir": "bugs/BUG-037-session-cap-cross-session-attribution",
+      "agent": "bubbles.goal",
+      "iterationCount": 99,
+      "lastUpdated": "2025-01-01T00:00:00Z",
+      "legacyMarker": "preserve-row"
+    }
+  ]
+}
+JSON
+case14_legacy_before="$(jq -c '.convergenceLoops[0]' "$case14_session")"
+
+BUBBLES_AGENT_NAME="$case14_agent" bash "$SNAPSHOT" \
+  --session-id host-a --session-control-file "$case14_control_a" \
+  --binding-packet-file "$case14_packet_a" \
+  --phase phase_bug037 --mode start \
+  --convergence-iteration 2 --spec-dir "$case14_spec" >/dev/null
+
+BUBBLES_AGENT_NAME="$case14_agent" bash "$SNAPSHOT" \
+  --session-id host-b --session-control-file "$case14_control_b" \
+  --binding-packet-file "$case14_packet_b" \
+  --phase phase_bug037 --mode start \
+  --convergence-iteration 7 --spec-dir "$case14_spec" >/dev/null
+
+BUBBLES_AGENT_NAME="$case14_agent" bash "$SNAPSHOT" \
+  --session-id host-a --session-control-file "$case14_control_a" \
+  --binding-packet-file "$case14_packet_a" \
+  --phase phase_bug037 --mode end \
+  --convergence-iteration 4 --spec-dir "$case14_spec" >/dev/null
+
+if jq -e \
+  --arg spec "$case14_spec" \
+  --arg agent "$case14_agent" \
+  --argjson legacy "$case14_legacy_before" '
+    .legacyMarker == "preserve-root"
+    and (.turnSnapshots | length) == 3
+    and ([.turnSnapshots[].hostSessionId] | sort) == ["host-a", "host-a", "host-b"]
+    and (.convergenceLoops | length) == 3
+    and ([.convergenceLoops[] | select(.hostSessionId == "host-a" and .specDir == $spec and .agent == $agent)] | length) == 1
+    and (.convergenceLoops[] | select(.hostSessionId == "host-a" and .specDir == $spec and .agent == $agent) | .iterationCount) == 4
+    and ([.convergenceLoops[] | select(.hostSessionId == "host-b" and .specDir == $spec and .agent == $agent)] | length) == 1
+    and (.convergenceLoops[] | select(.hostSessionId == "host-b" and .specDir == $spec and .agent == $agent) | .iterationCount) == 7
+    and ([.convergenceLoops[] | select((has("hostSessionId") | not) and .specDir == $spec and .agent == $agent)] | length) == 1
+    and (.convergenceLoops[] | select((has("hostSessionId") | not) and .specDir == $spec and .agent == $agent)) == $legacy
+  ' "$case14_session" >/dev/null 2>&1; then
+  pass "BUG-037 convergence updates use the exact session, spec, and agent key while preserving legacy rows"
+else
+  fail "BUG-037 convergence updates lost, merged, or reassigned a same-spec same-agent session row"
+  jq -c '{turnSnapshots, convergenceLoops}' "$case14_session" 2>/dev/null || true
+fi
+
 # ---- Case 11: --help contract ----------------------------------------------
 
 if "$SNAPSHOT" --help >/dev/null 2>&1; then
@@ -1127,6 +1213,691 @@ if [[ "$cb_noid_rc" -eq 2 ]] &&
   pass "host-checkpoint without a checkpoint id is rejected"
 else
   fail "host-checkpoint without an id should exit 2 (got $cb_noid_rc)"
+fi
+
+# ---- Scope 1: SCN-B037-009 authority precedes repository side effects -----
+
+echo "SCENARIO: SCN-B037-009 authority fails before repository side effects"
+
+run_scope1_authority_refusal() {
+  local variant="$1"
+  local root="$TMP_ROOT/scope1-authority-$variant"
+  local wrong_root="$TMP_ROOT/scope1-authority-$variant-wrong-root"
+  local session_id="scope1-authority-$variant"
+  local control_file
+  local valid_packet
+  local invalid_packet="$TMP_ROOT/scope1-authority-$variant.invalid.packet.json"
+  local sentinel="$root/authority-sentinel.txt"
+  local sentinel_before="$TMP_ROOT/scope1-authority-$variant.sentinel.before"
+  local before_entries
+  local snapshot_output
+  local snapshot_rc
+
+  prepare_bound_repo "$root" "$session_id"
+  control_file="$BOUND_CONTROL"
+  valid_packet="$BOUND_PACKET"
+  rm -rf "$root/.specify"
+  mkdir -p "$wrong_root"
+  printf 'authority-sentinel-%s\n' "$variant" > "$sentinel"
+  cp "$sentinel" "$sentinel_before"
+  before_entries="$(directory_entry_count "$root")"
+
+  case "$variant" in
+    stale)
+      jq '.repositoryResolution.controlRevision += 1' "$valid_packet" > "$invalid_packet"
+      ;;
+    malformed)
+      printf '%s\n' '{not-json' > "$invalid_packet"
+      ;;
+    non-actionable)
+      jq '.repositoryResolution.actionable = false' "$valid_packet" > "$invalid_packet"
+      ;;
+    wrong-root)
+      jq --arg root "$wrong_root" '.repositoryRoot = $root' "$valid_packet" > "$invalid_packet"
+      ;;
+    *)
+      fail "SCN-B037-009 fixture requested an unknown authority variant"
+      return
+      ;;
+  esac
+
+  set +e
+  snapshot_output="$(BUBBLES_AGENT_NAME="bubbles.workflow" /bin/bash "$SNAPSHOT" \
+    --session-id "$session_id" --session-control-file "$control_file" \
+    --binding-packet-file "$invalid_packet" \
+    --phase phase_scope1_authority --mode start 2>&1)"
+  snapshot_rc=$?
+  set -e
+
+  if [[ "$snapshot_rc" -ne 0 ]]; then
+    pass "SCN-B037-009 $variant packet is refused"
+  else
+    fail "SCN-B037-009 $variant packet should be refused"
+    echo "  output: $snapshot_output"
+  fi
+
+  if [[ ! -e "$root/.specify" && ! -e "$wrong_root/.specify" ]] &&
+     [[ "$(directory_entry_count "$root")" == "$before_entries" ]]; then
+    pass "SCN-B037-009 $variant refusal creates no repository-local entry"
+  else
+    fail "SCN-B037-009 $variant refusal must precede every repository-local entry"
+  fi
+
+  if cmp -s "$sentinel_before" "$sentinel"; then
+    pass "SCN-B037-009 $variant refusal preserves existing repository bytes"
+  else
+    fail "SCN-B037-009 $variant refusal changed existing repository bytes"
+  fi
+}
+
+cases=$((cases + 4))
+run_scope1_authority_refusal stale
+run_scope1_authority_refusal malformed
+run_scope1_authority_refusal non-actionable
+run_scope1_authority_refusal wrong-root
+
+# ---- Scope 1: SCN-B037-010 descriptor-safe capture and lock targets --------
+
+echo "SCENARIO: SCN-B037-010 safe lock targets cannot redirect or corrupt state"
+cases=$((cases + 1))
+
+if [[ -z "$PYTHON3" || ! -f "$STATE_IO" ]]; then
+  fail "SCN-B037-010 standard-library session-state-io helper is present"
+else
+  scope1_io_root="$TMP_ROOT/scope1-safe-io"
+  scope1_io_memory="$scope1_io_root/.specify/memory"
+  scope1_io_marker="$TMP_ROOT/scope1-safe-io.marker"
+  scope1_io_sentinel="$TMP_ROOT/scope1-safe-io.sentinel"
+  scope1_io_sentinel_before="$TMP_ROOT/scope1-safe-io.sentinel.before"
+  scope1_io_capture="$TMP_ROOT/scope1-safe-io.capture"
+  scope1_flock="$scope1_io_memory/bubbles.session.json.flock"
+  scope1_mkdir="$scope1_io_memory/bubbles.session.json.lock"
+  mkdir -p "$scope1_io_memory"
+  printf '%s\n' 'descriptor-sentinel-bytes' > "$scope1_io_sentinel"
+  cp "$scope1_io_sentinel" "$scope1_io_sentinel_before"
+
+  printf '%s\n' 'immutable-capture-bytes' > "$scope1_io_memory/source.json"
+  scope1_capture_output="$("$PYTHON3" "$STATE_IO" capture \
+    --root "$scope1_io_root" \
+    --relative-path '.specify/memory/source.json' \
+    --destination "$scope1_io_capture" 2>&1)"
+  scope1_capture_rc=$?
+  scope1_capture_sha="$(/usr/bin/shasum -a 256 "$scope1_io_memory/source.json")"
+  if [[ "$scope1_capture_rc" -eq 0 ]] &&
+     cmp -s "$scope1_io_memory/source.json" "$scope1_io_capture" &&
+     [[ "$(jq -r '.revision' <<< "$scope1_capture_output")" == "sha256:${scope1_capture_sha%% *}" ]]; then
+    pass "SCN-B037-010 immutable capture returns exact bytes and their SHA-256 revision"
+  else
+    fail "SCN-B037-010 immutable capture did not preserve exact source bytes and revision"
+  fi
+  rm -f "$scope1_io_capture" "$scope1_io_memory/source.json"
+
+  set +e
+  "$PYTHON3" "$STATE_IO" capture \
+    --root "$scope1_io_root" \
+    --relative-path '.specify/memory/missing.json' \
+    --destination "$scope1_io_capture" >/dev/null 2>&1
+  scope1_capture_missing_rc=$?
+  set -e
+  if [[ "$scope1_capture_missing_rc" -eq 4 && ! -e "$scope1_io_capture" ]]; then
+    pass "SCN-B037-010 immutable capture distinguishes an absent source"
+  else
+    fail "SCN-B037-010 absent immutable capture should exit 4 without a destination"
+  fi
+
+  ln -s "$scope1_io_sentinel" "$scope1_io_memory/source.json"
+  set +e
+  "$PYTHON3" "$STATE_IO" capture \
+    --root "$scope1_io_root" \
+    --relative-path '.specify/memory/source.json' \
+    --destination "$scope1_io_capture" >/dev/null 2>&1
+  scope1_capture_symlink_rc=$?
+  set -e
+  if [[ "$scope1_capture_symlink_rc" -ne 0 && ! -e "$scope1_io_capture" ]] &&
+     cmp -s "$scope1_io_sentinel_before" "$scope1_io_sentinel"; then
+    pass "SCN-B037-010 immutable capture rejects a symlink without changing its target"
+  else
+    fail "SCN-B037-010 immutable capture followed a symlink or created output"
+  fi
+  rm -f "$scope1_io_memory/source.json"
+
+  mkdir -p "$TMP_ROOT/scope1-safe-io-outside"
+  printf '%s\n' 'outside-parent-bytes' > "$TMP_ROOT/scope1-safe-io-outside/source.json"
+  ln -s "$TMP_ROOT/scope1-safe-io-outside" "$scope1_io_root/linked-parent"
+  set +e
+  "$PYTHON3" "$STATE_IO" capture \
+    --root "$scope1_io_root" \
+    --relative-path 'linked-parent/source.json' \
+    --destination "$scope1_io_capture" >/dev/null 2>&1
+  scope1_capture_parent_symlink_rc=$?
+  set -e
+  if [[ "$scope1_capture_parent_symlink_rc" -ne 0 && ! -e "$scope1_io_capture" ]]; then
+    pass "SCN-B037-010 immutable capture rejects a symlink parent component"
+  else
+    fail "SCN-B037-010 immutable capture traversed a symlink parent component"
+  fi
+
+  ln -s "$scope1_io_sentinel" "$scope1_flock"
+  set +e
+  "$PYTHON3" "$STATE_IO" flock-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.flock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_flock_symlink_rc=$?
+  set -e
+  if [[ "$scope1_flock_symlink_rc" -ne 0 && ! -e "$scope1_io_marker" ]] &&
+     cmp -s "$scope1_io_sentinel_before" "$scope1_io_sentinel"; then
+    pass "SCN-B037-010 flock open rejects a symlink without truncating sentinel bytes"
+  else
+    fail "SCN-B037-010 flock open followed a symlink or ran the protected command"
+  fi
+  rm -f "$scope1_flock"
+
+  mkfifo "$scope1_flock"
+  set +e
+  "$PYTHON3" "$STATE_IO" flock-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.flock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_flock_fifo_rc=$?
+  set -e
+  if [[ "$scope1_flock_fifo_rc" -ne 0 && -p "$scope1_flock" && ! -e "$scope1_io_marker" ]]; then
+    pass "SCN-B037-010 flock open rejects a non-regular target without blocking"
+  else
+    fail "SCN-B037-010 flock open should reject a FIFO before opening it"
+  fi
+  rm -f "$scope1_flock"
+
+  ln "$scope1_io_sentinel" "$scope1_flock"
+  set +e
+  "$PYTHON3" "$STATE_IO" flock-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.flock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_flock_alias_rc=$?
+  set -e
+  if [[ "$scope1_flock_alias_rc" -ne 0 && ! -e "$scope1_io_marker" ]] &&
+     cmp -s "$scope1_io_sentinel_before" "$scope1_io_sentinel"; then
+    pass "SCN-B037-010 flock identity checks reject a planted hard-link target"
+  else
+    fail "SCN-B037-010 flock identity checks accepted a planted hard-link target"
+  fi
+  rm -f "$scope1_flock"
+
+  printf '%s\n' 'existing-regular-lock-bytes' > "$scope1_flock"
+  cp "$scope1_flock" "$TMP_ROOT/scope1-flock-regular.before"
+  "$PYTHON3" "$STATE_IO" flock-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.flock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_flock_safe_rc=$?
+  if [[ "$scope1_flock_safe_rc" -eq 0 && -f "$scope1_flock" && -e "$scope1_io_marker" ]] &&
+     cmp -s "$TMP_ROOT/scope1-flock-regular.before" "$scope1_flock"; then
+    pass "SCN-B037-010 flock holds one safe non-truncating persistent lock file for the command"
+  else
+    fail "SCN-B037-010 safe flock transaction changed an existing regular lock or skipped the command"
+  fi
+  rm -f "$scope1_io_marker"
+
+  scope1_hold_script="$TMP_ROOT/scope1-lock-holder.py"
+  scope1_hold_ready="$TMP_ROOT/scope1-lock-holder.ready"
+  scope1_hold_release="$TMP_ROOT/scope1-lock-holder.release"
+  scope1_contender_marker="$TMP_ROOT/scope1-lock-contender.ran"
+  cat > "$scope1_hold_script" <<'PY'
+import pathlib
+import sys
+import time
+
+ready = pathlib.Path(sys.argv[1])
+release = pathlib.Path(sys.argv[2])
+ready.touch()
+for _ in range(500):
+    if release.exists():
+        raise SystemExit(0)
+    time.sleep(0.01)
+raise SystemExit(9)
+PY
+  "$PYTHON3" "$STATE_IO" flock-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.flock' \
+    --timeout-seconds 5 -- "$PYTHON3" "$scope1_hold_script" \
+    "$scope1_hold_ready" "$scope1_hold_release" >/dev/null 2>&1 &
+  scope1_holder_pid=$!
+  scope1_ready_attempt=0
+  while [[ ! -e "$scope1_hold_ready" && "$scope1_ready_attempt" -lt 200 ]]; do
+    sleep 0.01
+    scope1_ready_attempt=$((scope1_ready_attempt + 1))
+  done
+  "$PYTHON3" "$STATE_IO" flock-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.flock' \
+    --timeout-seconds 5 -- /usr/bin/touch "$scope1_contender_marker" >/dev/null 2>&1 &
+  scope1_contender_pid=$!
+  sleep 0.2
+  mv "$scope1_flock" "$scope1_flock.opened"
+  printf '%s\n' 'replacement-lock-entry' > "$scope1_flock"
+  touch "$scope1_hold_release"
+  set +e
+  wait "$scope1_holder_pid"
+  scope1_holder_rc=$?
+  wait "$scope1_contender_pid"
+  scope1_contender_rc=$?
+  set -e
+  if [[ "$scope1_holder_rc" -eq 0 && "$scope1_contender_rc" -ne 0 &&
+        ! -e "$scope1_contender_marker" ]] &&
+     [[ "$(cat "$scope1_flock")" == "replacement-lock-entry" ]]; then
+    pass "SCN-B037-010 flock refuses a replaced entry after acquiring the opened inode"
+  else
+    fail "SCN-B037-010 flock replacement race did not refuse before the contender command"
+  fi
+  rm -f "$scope1_flock" "$scope1_flock.opened"
+
+  ln -s "$scope1_io_sentinel" "$scope1_mkdir"
+  set +e
+  "$PYTHON3" "$STATE_IO" mkdir-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.lock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_mkdir_symlink_rc=$?
+  set -e
+  if [[ "$scope1_mkdir_symlink_rc" -ne 0 && ! -e "$scope1_io_marker" ]] &&
+     cmp -s "$scope1_io_sentinel_before" "$scope1_io_sentinel"; then
+    pass "SCN-B037-010 mkdir lock rejects a symlink without touching sentinel bytes"
+  else
+    fail "SCN-B037-010 mkdir lock followed or replaced a symlink"
+  fi
+  rm -f "$scope1_mkdir"
+
+  printf '%s\n' 'not-a-directory' > "$scope1_mkdir"
+  set +e
+  "$PYTHON3" "$STATE_IO" mkdir-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.lock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_mkdir_file_rc=$?
+  set -e
+  if [[ "$scope1_mkdir_file_rc" -ne 0 && -f "$scope1_mkdir" && ! -e "$scope1_io_marker" ]]; then
+    pass "SCN-B037-010 mkdir lock rejects a non-directory entry"
+  else
+    fail "SCN-B037-010 mkdir lock accepted or replaced a non-directory entry"
+  fi
+  rm -f "$scope1_mkdir"
+
+  mkdir "$scope1_mkdir"
+  printf '%s\n' '{"schemaVersion":1,"pid":99999999,"token":"dead-holder"}' > "$scope1_mkdir/holder.json"
+  "$PYTHON3" "$STATE_IO" mkdir-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.lock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_mkdir_stale_rc=$?
+  if [[ "$scope1_mkdir_stale_rc" -eq 0 && -e "$scope1_io_marker" && ! -e "$scope1_mkdir" ]]; then
+    pass "SCN-B037-010 mkdir lock claims one identity-checked stale instance and releases its own instance"
+  else
+    fail "SCN-B037-010 mkdir lock did not recover the exact dead-holder instance safely"
+  fi
+  rm -f "$scope1_io_marker"
+
+  mkdir "$scope1_mkdir"
+  printf '%s\n' '{"schemaVersion":1,"pid":"changed","token":"identity-mismatch"}' > "$scope1_mkdir/holder.json"
+  cp "$scope1_mkdir/holder.json" "$TMP_ROOT/scope1-mkdir-holder.before"
+  set +e
+  "$PYTHON3" "$STATE_IO" mkdir-run \
+    --root "$scope1_io_root" \
+    --relative-lock '.specify/memory/bubbles.session.json.lock' \
+    --timeout-seconds 1 -- /usr/bin/touch "$scope1_io_marker" >/dev/null 2>&1
+  scope1_mkdir_identity_rc=$?
+  set -e
+  if [[ "$scope1_mkdir_identity_rc" -ne 0 && ! -e "$scope1_io_marker" ]] &&
+     cmp -s "$TMP_ROOT/scope1-mkdir-holder.before" "$scope1_mkdir/holder.json"; then
+    pass "SCN-B037-010 mkdir lock refuses malformed or changed holder identity without removal"
+  else
+    fail "SCN-B037-010 mkdir lock removed or accepted a changed holder identity"
+  fi
+  rm -rf "$scope1_mkdir"
+
+  scope1_writer_root="$TMP_ROOT/scope1-writer-lock-refusal"
+  scope1_writer_session_id="scope1-writer-lock-refusal"
+  prepare_bound_repo "$scope1_writer_root" "$scope1_writer_session_id"
+  scope1_writer_control="$BOUND_CONTROL"
+  scope1_writer_packet="$BOUND_PACKET"
+  scope1_writer_session="$scope1_writer_root/.specify/memory/bubbles.session.json"
+  scope1_writer_runtime="$scope1_writer_root/.specify/runtime/session-state"
+  scope1_writer_flock="$scope1_writer_runtime/bubbles.session.json.flock"
+  scope1_writer_mkdir="$scope1_writer_runtime/bubbles.session.json.lock"
+  mkdir -p "$scope1_writer_runtime"
+  printf '%s\n' '{"preservedState":"writer-lock-sentinel"}' > "$scope1_writer_session"
+  cp "$scope1_writer_session" "$TMP_ROOT/scope1-writer-session.before"
+  printf '%s\n' 'writer-flock-target-bytes' > "$TMP_ROOT/scope1-writer-flock-target"
+  cp "$TMP_ROOT/scope1-writer-flock-target" "$TMP_ROOT/scope1-writer-flock-target.before"
+  ln -s "$TMP_ROOT/scope1-writer-flock-target" "$scope1_writer_flock"
+  set +e
+  BUBBLES_STATE_SNAPSHOT_LOCK_TRANSACTION=flock \
+    BUBBLES_AGENT_NAME="bubbles.workflow" /bin/bash "$SNAPSHOT" \
+    --session-id "$scope1_writer_session_id" \
+    --session-control-file "$scope1_writer_control" \
+    --binding-packet-file "$scope1_writer_packet" \
+    --phase phase_scope1_lock_refusal --mode start >/dev/null 2>&1
+  scope1_writer_flock_rc=$?
+  set -e
+  if [[ "$scope1_writer_flock_rc" -ne 0 ]] &&
+     cmp -s "$TMP_ROOT/scope1-writer-session.before" "$scope1_writer_session" &&
+     cmp -s "$TMP_ROOT/scope1-writer-flock-target.before" "$TMP_ROOT/scope1-writer-flock-target"; then
+    pass "SCN-B037-010 production flock refusal preserves planted target and session bytes"
+  else
+    fail "SCN-B037-010 production flock refusal changed planted target or session bytes"
+  fi
+  rm -f "$scope1_writer_flock"
+  cp "$TMP_ROOT/scope1-writer-session.before" "$scope1_writer_session"
+  printf '%s\n' 'writer-mkdir-target-bytes' > "$scope1_writer_mkdir"
+  cp "$scope1_writer_mkdir" "$TMP_ROOT/scope1-writer-mkdir-target.before"
+  set +e
+  BUBBLES_STATE_SNAPSHOT_LOCK_TRANSACTION=mkdir \
+    BUBBLES_AGENT_NAME="bubbles.workflow" /bin/bash "$SNAPSHOT" \
+    --session-id "$scope1_writer_session_id" \
+    --session-control-file "$scope1_writer_control" \
+    --binding-packet-file "$scope1_writer_packet" \
+    --phase phase_scope1_lock_refusal --mode start >/dev/null 2>&1
+  scope1_writer_mkdir_rc=$?
+  set -e
+  if [[ "$scope1_writer_mkdir_rc" -ne 0 ]] &&
+     cmp -s "$TMP_ROOT/scope1-writer-session.before" "$scope1_writer_session" &&
+     cmp -s "$TMP_ROOT/scope1-writer-mkdir-target.before" "$scope1_writer_mkdir"; then
+    pass "SCN-B037-010 production mkdir refusal preserves planted lock and session bytes"
+  else
+    fail "SCN-B037-010 production mkdir refusal changed planted lock or session bytes"
+  fi
+fi
+
+# ---- Scope 1: SCN-B037-011 exact-session append-only policy history --------
+
+echo "SCENARIO: SCN-B037-011 exact-session policy histories remain independent"
+cases=$((cases + 1))
+
+scope1_first_policy_root="$TMP_ROOT/scope1-first-policy"
+scope1_first_policy_session_id="scope1-first-policy-host"
+scope1_first_policy_budget='{"schemaVersion":1,"maxTotalConvergenceIterations":2,"maxWallClockMinutes":180,"maxToolCalls":350,"maxSingleToolResultBytes":50000,"maxCumulativeToolResultBytes":250000,"maxPromptTokensPerRequest":null,"maxCumulativePromptTokens":null}'
+prepare_bound_repo "$scope1_first_policy_root" "$scope1_first_policy_session_id"
+scope1_first_policy_control="$BOUND_CONTROL"
+scope1_first_policy_packet="$BOUND_PACKET"
+scope1_first_policy_session="$scope1_first_policy_root/.specify/memory/bubbles.session.json"
+rm -rf "$scope1_first_policy_root/.specify"
+set +e
+scope1_first_policy_output="$(BUBBLES_STATE_SNAPSHOT_LOCK_TRANSACTION=flock \
+  BUBBLES_AGENT_NAME="bubbles.goal" /bin/bash "$SNAPSHOT" \
+  --session-id "$scope1_first_policy_session_id" \
+  --session-control-file "$scope1_first_policy_control" \
+  --binding-packet-file "$scope1_first_policy_packet" \
+  --phase phase_scope1_first_policy --mode start \
+  --session-budget-json "$scope1_first_policy_budget" \
+  --expected-session-budget-revision 0 2>&1)"
+scope1_first_policy_rc=$?
+set -e
+if [[ "$scope1_first_policy_rc" -eq 0 ]] &&
+   jq -e \
+     --arg session "$scope1_first_policy_session_id" \
+     --argjson budget "$scope1_first_policy_budget" '
+       (.sessionBudgetHistory | length) == 1
+       and .sessionBudgetHistory[0].hostSessionId == $session
+       and .sessionBudgetHistory[0].revision == 1
+       and .sessionBudgetHistory[0].supersedesRevision == null
+       and .sessionBudgetHistory[0].budget == $budget
+       and (.turnSnapshots | length) == 1
+       and .turnSnapshots[0].hostSessionId == $session
+     ' "$scope1_first_policy_session" >/dev/null 2>&1; then
+  pass "SCN-B037-011 first exact-session policy write creates revision one from absent session state"
+else
+  fail "SCN-B037-011 first exact-session policy write should create state without a legacy seed"
+  printf '  exit=%s output=%s\n' "$scope1_first_policy_rc" "$scope1_first_policy_output"
+fi
+
+scope1_policy_root="$TMP_ROOT/scope1-policy"
+scope1_policy_session="$scope1_policy_root/.specify/memory/bubbles.session.json"
+scope1_policy_spec="bugs/BUG-037-session-cap-cross-session-attribution"
+scope1_budget_a='{"schemaVersion":1,"maxTotalConvergenceIterations":2,"maxWallClockMinutes":180,"maxToolCalls":350,"maxSingleToolResultBytes":50000,"maxCumulativeToolResultBytes":250000,"maxPromptTokensPerRequest":null,"maxCumulativePromptTokens":null}'
+scope1_budget_a2='{"schemaVersion":1,"maxTotalConvergenceIterations":3,"maxWallClockMinutes":180,"maxToolCalls":350,"maxSingleToolResultBytes":50000,"maxCumulativeToolResultBytes":250000,"maxPromptTokensPerRequest":null,"maxCumulativePromptTokens":null}'
+scope1_budget_a3='{"schemaVersion":1,"maxTotalConvergenceIterations":4,"maxWallClockMinutes":180,"maxToolCalls":350,"maxSingleToolResultBytes":50000,"maxCumulativeToolResultBytes":250000,"maxPromptTokensPerRequest":null,"maxCumulativePromptTokens":null}'
+scope1_budget_b='{"schemaVersion":1,"maxTotalConvergenceIterations":null,"maxWallClockMinutes":null,"maxToolCalls":null,"maxSingleToolResultBytes":null,"maxCumulativeToolResultBytes":null,"maxPromptTokensPerRequest":null,"maxCumulativePromptTokens":null}'
+
+scope1_policy_host_a="scope1-policy-host-a"
+scope1_policy_host_b="scope1-policy-host-b"
+prepare_bound_repo "$scope1_policy_root" "$scope1_policy_host_a"
+scope1_policy_control_a="$BOUND_CONTROL"
+scope1_policy_packet_a="$BOUND_PACKET"
+prepare_bound_repo "$scope1_policy_root" "$scope1_policy_host_b"
+scope1_policy_control_b="$BOUND_CONTROL"
+scope1_policy_packet_b="$BOUND_PACKET"
+
+cat > "$scope1_policy_session" <<'JSON'
+{
+  "legacyMarker": "preserve-unrelated-root",
+  "sessionBudget": {
+    "maxToolCalls": 777,
+    "legacyMarker": "preserve-unscoped-policy"
+  },
+  "turnSnapshots": [],
+  "convergenceLoops": [
+    {
+      "specDir": "bugs/BUG-037-session-cap-cross-session-attribution",
+      "agent": "bubbles.goal",
+      "iterationCount": 99,
+      "legacyMarker": "preserve-unattributed-convergence"
+    }
+  ]
+}
+JSON
+scope1_legacy_budget_before="$(jq -c '.sessionBudget' "$scope1_policy_session")"
+scope1_legacy_loop_before="$(jq -c '.convergenceLoops[0]' "$scope1_policy_session")"
+
+run_scope1_policy_write() {
+  local session_id="$1"
+  local control_file="$2"
+  local packet_file="$3"
+  local budget_json="$4"
+  local expected_revision="$5"
+  local iteration="$6"
+  local mode="$7"
+  local lock_strategy="$8"
+  local output
+  local rc
+
+  set +e
+  output="$(BUBBLES_STATE_SNAPSHOT_LOCK_TRANSACTION="$lock_strategy" \
+    BUBBLES_AGENT_NAME="bubbles.goal" /bin/bash "$SNAPSHOT" \
+    --session-id "$session_id" --session-control-file "$control_file" \
+    --binding-packet-file "$packet_file" \
+    --phase phase_scope1_policy --mode "$mode" \
+    --convergence-iteration "$iteration" --spec-dir "$scope1_policy_spec" \
+    --session-budget-json "$budget_json" \
+    --expected-session-budget-revision "$expected_revision" 2>&1)"
+  rc=$?
+  set -e
+  printf '%s\n%s' "$rc" "$output"
+}
+
+scope1_policy_result_a="$(run_scope1_policy_write "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" "$scope1_budget_a" 0 2 start flock)"
+scope1_policy_rc_a="${scope1_policy_result_a%%$'\n'*}"
+scope1_policy_result_b="$(run_scope1_policy_write "$scope1_policy_host_b" "$scope1_policy_control_b" "$scope1_policy_packet_b" "$scope1_budget_b" 0 7 start mkdir)"
+scope1_policy_rc_b="${scope1_policy_result_b%%$'\n'*}"
+scope1_policy_repeat="$(run_scope1_policy_write "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" "$scope1_budget_a" 0 4 start flock)"
+scope1_policy_repeat_rc="${scope1_policy_repeat%%$'\n'*}"
+
+scope1_policy_ready=false
+if [[ "$scope1_policy_rc_a" -eq 0 && "$scope1_policy_rc_b" -eq 0 && "$scope1_policy_repeat_rc" -eq 0 ]] &&
+   jq -e \
+     --arg hostA "$scope1_policy_host_a" \
+     --arg hostB "$scope1_policy_host_b" \
+     --argjson budgetA "$scope1_budget_a" \
+     --argjson budgetB "$scope1_budget_b" '
+       ([.sessionBudgetHistory[] | select(.hostSessionId == $hostA)] | length) == 1
+       and ([.sessionBudgetHistory[] | select(.hostSessionId == $hostB)] | length) == 1
+       and (.sessionBudgetHistory[] | select(.hostSessionId == $hostA) | .revision) == 1
+       and (.sessionBudgetHistory[] | select(.hostSessionId == $hostA) | .budget) == $budgetA
+       and (.sessionBudgetHistory[] | select(.hostSessionId == $hostB) | .budget) == $budgetB
+     ' "$scope1_policy_session" >/dev/null 2>&1; then
+  scope1_policy_ready=true
+  pass "SCN-B037-011 first writes and an identical retry preserve one policy record per exact session"
+  pass "TP-01-02 valid exact-session policy writes execute through forced flock and mkdir transactions"
+else
+  fail "SCN-B037-011 exact-session first writes or idempotent retry did not produce independent revision-one records"
+  printf '  host-a result: %s\n' "$scope1_policy_result_a"
+  printf '  host-b result: %s\n' "$scope1_policy_result_b"
+  printf '  repeat result: %s\n' "$scope1_policy_repeat"
+  jq -c '{sessionBudget, sessionBudgetHistory, turnSnapshots, convergenceLoops}' "$scope1_policy_session" 2>/dev/null || true
+fi
+
+if [[ "$scope1_policy_ready" == true ]] &&
+   [[ "$(jq -c '.sessionBudget' "$scope1_policy_session")" == "$scope1_legacy_budget_before" ]] &&
+   [[ "$(jq -c '.convergenceLoops[] | select(has("hostSessionId") | not)' "$scope1_policy_session")" == "$scope1_legacy_loop_before" ]] &&
+   jq -e \
+     --arg hostA "$scope1_policy_host_a" \
+     --arg hostB "$scope1_policy_host_b" \
+     --arg spec "$scope1_policy_spec" '
+       .legacyMarker == "preserve-unrelated-root"
+       and (.turnSnapshots | length) == 3
+       and ([.turnSnapshots[].hostSessionId] | sort) == [$hostA, $hostA, $hostB]
+       and ([.convergenceLoops[] | select(.hostSessionId == $hostA and .specDir == $spec and .agent == "bubbles.goal")] | length) == 1
+       and (.convergenceLoops[] | select(.hostSessionId == $hostA and .specDir == $spec and .agent == "bubbles.goal") | .iterationCount) == 4
+       and ([.convergenceLoops[] | select(.hostSessionId == $hostB and .specDir == $spec and .agent == "bubbles.goal")] | length) == 1
+       and (.convergenceLoops[] | select(.hostSessionId == $hostB and .specDir == $spec and .agent == "bubbles.goal") | .iterationCount) == 7
+     ' "$scope1_policy_session" >/dev/null 2>&1; then
+  pass "SCN-B037-011 policy writes preserve legacy policy, turns, exact convergence mappings, and unrelated state"
+else
+  fail "SCN-B037-011 policy writes changed legacy or unrelated state or lost exact turn and convergence mappings"
+fi
+
+if [[ "$scope1_policy_ready" == true ]]; then
+  scope1_policy_correction="$(run_scope1_policy_write "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" "$scope1_budget_a2" 1 5 end mkdir)"
+  scope1_policy_correction_rc="${scope1_policy_correction%%$'\n'*}"
+  if [[ "$scope1_policy_correction_rc" -eq 0 ]] &&
+     jq -e \
+       --arg hostA "$scope1_policy_host_a" \
+       --arg hostB "$scope1_policy_host_b" \
+       --argjson expected "$scope1_budget_a2" '
+         ([.sessionBudgetHistory[] | select(.hostSessionId == $hostA)] | length) == 2
+         and ([.sessionBudgetHistory[] | select(.hostSessionId == $hostB)] | length) == 1
+         and (.sessionBudgetHistory[] | select(.hostSessionId == $hostA and .revision == 2) | .supersedesRevision) == 1
+         and (.sessionBudgetHistory[] | select(.hostSessionId == $hostA and .revision == 2) | .budget) == $expected
+       ' "$scope1_policy_session" >/dev/null 2>&1; then
+    pass "SCN-B037-011 compare-and-append correction adds one linear revision without changing the sibling chain"
+  else
+    fail "SCN-B037-011 valid compare-and-append correction did not add revision two"
+    scope1_policy_ready=false
+  fi
+fi
+
+if [[ "$scope1_policy_ready" == true ]]; then
+  scope1_policy_valid_baseline="$TMP_ROOT/scope1-policy.valid-baseline.json"
+  cp "$scope1_policy_session" "$scope1_policy_valid_baseline"
+
+  jq '.repositoryResolution.controlRevision += 1' \
+    "$scope1_policy_packet_a" > "$TMP_ROOT/scope1-policy.stale-authority.packet.json"
+  cp "$scope1_policy_session" "$TMP_ROOT/scope1-policy.stale-authority-before.json"
+  scope1_stale_authority_result="$(run_scope1_policy_write \
+    "$scope1_policy_host_a" "$scope1_policy_control_a" \
+    "$TMP_ROOT/scope1-policy.stale-authority.packet.json" \
+    "$scope1_budget_a3" 2 6 start flock)"
+  scope1_stale_authority_rc="${scope1_stale_authority_result%%$'\n'*}"
+  if [[ "$scope1_stale_authority_rc" -ne 0 ]] &&
+     cmp -s "$TMP_ROOT/scope1-policy.stale-authority-before.json" "$scope1_policy_session"; then
+    pass "SCN-B037-011 stale policy authority is rejected with byte-identical state"
+  else
+    fail "SCN-B037-011 stale policy authority changed state or succeeded"
+  fi
+
+  cp "$scope1_policy_session" "$TMP_ROOT/scope1-policy.duplicate-option-before.json"
+  set +e
+  BUBBLES_STATE_SNAPSHOT_LOCK_TRANSACTION=flock \
+    BUBBLES_AGENT_NAME="bubbles.goal" /bin/bash "$SNAPSHOT" \
+    --session-id "$scope1_policy_host_a" \
+    --session-control-file "$scope1_policy_control_a" \
+    --binding-packet-file "$scope1_policy_packet_a" \
+    --phase phase_scope1_duplicate_policy --mode start \
+    --session-budget-json "$scope1_budget_a2" \
+    --session-budget-json "$scope1_budget_a3" \
+    --expected-session-budget-revision 2 >/dev/null 2>&1
+  scope1_duplicate_option_rc=$?
+  set -e
+  if [[ "$scope1_duplicate_option_rc" -eq 2 ]] &&
+     cmp -s "$TMP_ROOT/scope1-policy.duplicate-option-before.json" "$scope1_policy_session"; then
+    pass "SCN-B037-011 duplicate policy options are rejected before state mutation"
+  else
+    fail "SCN-B037-011 duplicate policy options must fail with byte-identical state"
+    cp "$scope1_policy_valid_baseline" "$scope1_policy_session"
+  fi
+
+  scope1_stale_before="$TMP_ROOT/scope1-policy.stale-before.json"
+  cp "$scope1_policy_session" "$scope1_stale_before"
+  scope1_stale_result="$(run_scope1_policy_write "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" "$scope1_budget_a3" 1 6 start flock)"
+  scope1_stale_rc="${scope1_stale_result%%$'\n'*}"
+  if [[ "$scope1_stale_rc" -ne 0 ]] && cmp -s "$scope1_stale_before" "$scope1_policy_session"; then
+    pass "SCN-B037-011 stale expected revision is rejected with byte-identical state"
+  else
+    fail "SCN-B037-011 stale expected revision changed state or succeeded"
+  fi
+
+  jq '.sessionBudgetHistory += [.sessionBudgetHistory[0]]' \
+    "$scope1_policy_valid_baseline" > "$scope1_policy_session"
+  cp "$scope1_policy_session" "$TMP_ROOT/scope1-policy.duplicate-before.json"
+  scope1_duplicate_result="$(run_scope1_policy_write "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" "$scope1_budget_a3" 2 6 start mkdir)"
+  scope1_duplicate_rc="${scope1_duplicate_result%%$'\n'*}"
+  if [[ "$scope1_duplicate_rc" -ne 0 ]] &&
+     cmp -s "$TMP_ROOT/scope1-policy.duplicate-before.json" "$scope1_policy_session"; then
+    pass "SCN-B037-011 duplicate policy revision is rejected without state mutation"
+  else
+    fail "SCN-B037-011 duplicate policy revision did not fail closed"
+  fi
+
+  jq --arg hostA "$scope1_policy_host_a" '
+    .sessionBudgetHistory += [
+      (.sessionBudgetHistory[] | select(.hostSessionId == $hostA and .revision == 2)
+       | .revision = 3
+       | .supersedesRevision = 1
+       | .recordedAt = "2026-09-01T00:00:03Z")
+    ]
+  ' "$scope1_policy_valid_baseline" > "$scope1_policy_session"
+  cp "$scope1_policy_session" "$TMP_ROOT/scope1-policy.branch-before.json"
+  scope1_branch_result="$(run_scope1_policy_write "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" "$scope1_budget_a3" 2 6 start flock)"
+  scope1_branch_rc="${scope1_branch_result%%$'\n'*}"
+  if [[ "$scope1_branch_rc" -ne 0 ]] &&
+     cmp -s "$TMP_ROOT/scope1-policy.branch-before.json" "$scope1_policy_session"; then
+    pass "SCN-B037-011 branching policy chain is rejected without state mutation"
+  else
+    fail "SCN-B037-011 branching policy chain did not fail closed"
+  fi
+
+  jq --arg hostA "$scope1_policy_host_a" '
+    .sessionBudgetHistory += [
+      (.sessionBudgetHistory[] | select(.hostSessionId == $hostA and .revision == 2)
+       | .revision = 3
+       | .supersedesRevision = 2
+       | .recordedAt = "2026-09-01T00:00:04Z"
+       | .budget.unknownCap = 1)
+    ]
+  ' "$scope1_policy_valid_baseline" > "$scope1_policy_session"
+  cp "$scope1_policy_session" "$TMP_ROOT/scope1-policy.malformed-before.json"
+  scope1_malformed_result="$(run_scope1_policy_write "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" "$scope1_budget_a3" 2 6 start mkdir)"
+  scope1_malformed_rc="${scope1_malformed_result%%$'\n'*}"
+  if [[ "$scope1_malformed_rc" -ne 0 ]] &&
+     cmp -s "$TMP_ROOT/scope1-policy.malformed-before.json" "$scope1_policy_session"; then
+    pass "SCN-B037-011 malformed policy record is rejected without state mutation"
+  else
+    fail "SCN-B037-011 malformed policy record did not fail closed"
+  fi
+
+  cp "$scope1_policy_valid_baseline" "$scope1_policy_session"
+  cp "$scope1_policy_session" "$TMP_ROOT/scope1-policy.malformed-write-before.json"
+  scope1_malformed_write_result="$(run_scope1_policy_write \
+    "$scope1_policy_host_a" "$scope1_policy_control_a" "$scope1_policy_packet_a" \
+    '{"schemaVersion":1,"unknownCap":1}' 2 6 start flock)"
+  scope1_malformed_write_rc="${scope1_malformed_write_result%%$'\n'*}"
+  if [[ "$scope1_malformed_write_rc" -ne 0 ]] &&
+     cmp -s "$TMP_ROOT/scope1-policy.malformed-write-before.json" "$scope1_policy_session"; then
+    pass "SCN-B037-011 malformed requested policy write is rejected without state mutation"
+  else
+    fail "SCN-B037-011 malformed requested policy write did not fail closed"
+  fi
+else
+  fail "SCN-B037-011 invalid-chain checks require successful exact-session policy setup"
 fi
 
 if [[ "$failures" -gt 0 ]]; then

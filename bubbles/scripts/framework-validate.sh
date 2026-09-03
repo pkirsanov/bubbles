@@ -435,11 +435,10 @@ core_check_label() {
       *"guard-lib timeout fallback"*) # portable-ok: case pattern matching a check NAME, not a timeout invocation
       return 0
       ;;
-    # The one LIVE check in core: 14s, and the cheapest detector of a stale
-    # committed release manifest. Without it a stale manifest survives the core
-    # tier and only surfaces in a full validate, where one root cause presents
-    # as many unrelated-looking failures (interop, install provenance, trust doctor).
-    *"Release manifest freshness"*)
+    # The LIVE checks in core are cheap blockers: release-manifest freshness
+    # catches a stale generated artifact, while G128 enforces the authoritative
+    # host-session budget on every executing tier.
+    *"Release manifest freshness"* | *"Session cap guard (live, G128)"*)
       return 0
       ;;
     *) return 1 ;;
@@ -1084,7 +1083,264 @@ run_check_self_only "BUG-021 portable framework deadline regression" bash "$REPO
 run_check_self_only "BUG-029 human acceptance terminal regression (G136)" bash "$REPO_ROOT/tests/regression/test_35_human_acceptance_terminal.sh"
 run_check "Convergence cap guard selftest" bash "$SCRIPT_DIR/convergence-cap-guard-selftest.sh"
 run_check "Session cap guard selftest (G128)" bash "$SCRIPT_DIR/session-cap-guard-selftest.sh"
-run_check "Session cap guard (live, G128)" env BUBBLES_REPO_ROOT="$REPO_ROOT" bash "$SCRIPT_DIR/session-cap-guard.sh" --quiet
+fv_run_stable_session_guard() {
+  local output_file="$1"
+  shift
+  local state_helper="$SCRIPT_DIR/session-state-io.py"
+  local python_bin=""
+  local source_path="$SCRIPT_DIR/session-cap-guard.sh"
+  local capture_dir=""
+  local before_path=""
+  local preflight_path=""
+  local after_path=""
+  local shim_dir=""
+  local dirname_shim=""
+  local real_dirname=""
+  local before_meta=""
+  local preflight_meta=""
+  local after_meta=""
+  local child_rc=9
+
+  python_bin="$(command -v python3 2>/dev/null || true)"
+  real_dirname="$(command -v dirname 2>/dev/null || true)"
+  [[ -n "$python_bin" && -n "$real_dirname" ]] || return 9
+  [[ -f "$state_helper" && ! -L "$state_helper" ]] || return 9
+  [[ -f "$source_path" && ! -L "$source_path" && -x "$source_path" ]] || return 9
+  [[ -f "$output_file" && ! -L "$output_file" ]] || return 9
+
+  capture_dir="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-stable-guard.XXXXXX" 2>/dev/null || true)"
+  [[ -n "$capture_dir" && -d "$capture_dir" ]] || return 9
+  before_path="$capture_dir/guard.before.sh"
+  preflight_path="$capture_dir/guard.preflight.sh"
+  after_path="$capture_dir/guard.after.sh"
+  shim_dir="$capture_dir/bin"
+  dirname_shim="$shim_dir/dirname"
+  mkdir "$shim_dir" || {
+    rm -rf "$capture_dir"
+    return 9
+  }
+
+  if ! before_meta="$("$python_bin" "$state_helper" capture \
+      --root "$SCRIPT_DIR" --relative-path 'session-cap-guard.sh' \
+      --destination "$before_path" 2>/dev/null)" ||
+    [[ ! -x "$source_path" || -L "$source_path" ]] ||
+    ! preflight_meta="$("$python_bin" "$state_helper" capture \
+      --root "$SCRIPT_DIR" --relative-path 'session-cap-guard.sh' \
+      --destination "$preflight_path" 2>/dev/null)" ||
+    [[ ! -x "$source_path" || -L "$source_path" ]] ||
+    ! jq -e --argjson other "$preflight_meta" '
+      type == "object" and .status == "captured"
+      and ($other | type == "object" and .status == "captured")
+      and .revision == $other.revision
+      and .device == $other.device
+      and .inode == $other.inode
+    ' <<<"$before_meta" >/dev/null 2>&1; then
+    rm -rf "$capture_dir"
+    return 9
+  fi
+
+  cat >"$dirname_shim" <<'EOF'
+#!/bin/sh
+if [ "$#" -eq 1 ] && [ "$1" = "$BUBBLES_STABLE_SCRIPT_PATH" ]; then
+  printf '.\n'
+else
+  exec "$BUBBLES_STABLE_REAL_DIRNAME" "$@"
+fi
+EOF
+  chmod 700 "$dirname_shim" || {
+    rm -rf "$capture_dir"
+    return 9
+  }
+
+  (
+    cd "$SCRIPT_DIR" || exit 9
+    PATH="$shim_dir:$PATH" \
+      BUBBLES_STABLE_SCRIPT_PATH="$before_path" \
+      BUBBLES_STABLE_REAL_DIRNAME="$real_dirname" \
+      BUBBLES_REPO_ROOT="$REPO_ROOT" \
+      "$BASH" "$before_path" "$@"
+  ) >"$output_file" 2>&1
+  child_rc=$?
+
+  if ! after_meta="$("$python_bin" "$state_helper" capture \
+      --root "$SCRIPT_DIR" --relative-path 'session-cap-guard.sh' \
+      --destination "$after_path" 2>/dev/null)" ||
+    [[ ! -x "$source_path" || -L "$source_path" ]] ||
+    ! jq -e --argjson other "$after_meta" '
+      type == "object" and .status == "captured"
+      and ($other | type == "object" and .status == "captured")
+      and .revision == $other.revision
+      and .device == $other.device
+      and .inode == $other.inode
+    ' <<<"$before_meta" >/dev/null 2>&1; then
+    rm -rf "$capture_dir"
+    return 9
+  fi
+
+  rm -rf "$capture_dir"
+  return "$child_rc"
+}
+
+fv_parse_session_guard_result() {
+  local process_exit="$1"
+  local session_id="$2"
+  local output_file="$3"
+  local python_bin=""
+
+  python_bin="$(command -v python3 2>/dev/null || true)"
+  [[ -n "$python_bin" && -f "$output_file" && ! -L "$output_file" ]] || return 9
+  "$python_bin" -c '
+import json
+import re
+import sys
+from pathlib import Path
+
+process_exit_raw, session_id, output_path = sys.argv[1:]
+try:
+    process_exit = int(process_exit_raw)
+    raw = Path(output_path).read_bytes()
+    if b"\x00" in raw or b"\r" in raw:
+        raise ValueError
+    text = raw.decode("utf-8")
+    candidates = [line for line in text.split("\n") if line.startswith("G128 status")]
+    if len(candidates) != 1:
+        raise ValueError
+    json_string = "\"(?:[^\"\\\\]|\\\\.)*\""
+    pattern = re.compile(
+        rf"^G128 status=(?P<status>[A-Z][A-Z-]*) exit=(?P<exit>[0-9]+)"
+        rf"(?: session=(?P<session>{json_string}))?"
+        r"(?: reason=(?P<reason>[a-z0-9][a-z0-9-]*))?$"
+    )
+    matrix = {0: {"NO-ACTIVE-BUDGET", "PASS", "SOFT-BOUNDARY"}, 1: {"BREACH"}, 2: {"INPUT-ERROR"}}
+    match = pattern.fullmatch(candidates[0])
+    if match is None:
+        raise ValueError
+    status = match.group("status")
+    declared_exit = int(match.group("exit"))
+    if declared_exit != process_exit or status not in matrix.get(declared_exit, set()):
+        raise ValueError
+    session_token = match.group("session")
+    if session_token is not None:
+        if json.loads(session_token) != session_id:
+            raise ValueError
+    elif status not in {"NO-ACTIVE-BUDGET", "INPUT-ERROR"}:
+        raise ValueError
+    reason = match.group("reason")
+    if (status in {"NO-ACTIVE-BUDGET", "INPUT-ERROR"}) != (reason is not None):
+        raise ValueError
+except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError):
+    sys.exit(2)
+print(json.dumps({"exit": declared_exit, "status": status}, separators=(",", ":"), sort_keys=True))
+' "$process_exit" "$session_id" "$output_file"
+}
+
+run_live_session_cap_guard() {
+  local session_id="${BUBBLES_SESSION_ID:-}"
+  local control_file="${BUBBLES_SESSION_CONTROL_FILE:-}"
+  local packet_file="${BUBBLES_BINDING_PACKET_FILE:-}"
+  local scenario_file="${BUBBLES_BINDING_SCENARIO_FILE:-}"
+  local node_id="${BUBBLES_BINDING_NODE_ID:-}"
+  local validator="$SCRIPT_DIR/repository-binding.sh"
+  local state_helper="$SCRIPT_DIR/session-state-io.py"
+  local python_bin=""
+  local validator_output=""
+  local output_file=""
+  local parsed=""
+  local status=""
+  local reason=""
+  local rc=2
+  local validator_args=()
+
+  if [[ -z "$session_id" || -z "$control_file" || -z "$packet_file" ]]; then
+    printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority\n'
+    return 2
+  fi
+  if [[ -n "$scenario_file" || -n "$node_id" ]]; then
+    if [[ -z "$scenario_file" || -z "$node_id" ]]; then
+      printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority\n'
+      return 2
+    fi
+  fi
+  if [[ ! -f "$validator" || -L "$validator" || ! -x "$validator" ]]; then
+    printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority\n'
+    return 2
+  fi
+
+  validator_args=(validate-packet
+    --session-id "$session_id"
+    --session-control-file "$control_file"
+    --packet-file "$packet_file")
+  if [[ -n "$scenario_file" ]]; then
+    validator_args+=(--scenario-file "$scenario_file" --node-id "$node_id")
+  fi
+  validator_args+=(--emit-redacted-projection)
+
+  if ! validator_output="$("$BASH" "$validator" "${validator_args[@]}" 2>&1)"; then
+    printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority\n'
+    return 2
+  fi
+  case "$validator_output" in
+    *$'\n'*)
+      printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority\n'
+      return 2
+      ;;
+  esac
+  if ! jq -e --arg sessionId "$session_id" '
+      type == "object"
+      and .repositoryRoot == "<redacted-local-root>"
+      and .repositoryResolution.sessionId == $sessionId
+      and .repositoryResolution.pathVisibility == "redacted"
+      and .repositoryResolution.actionable == false
+    ' <<<"$validator_output" >/dev/null 2>&1; then
+    printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority\n'
+    return 2
+  fi
+
+  python_bin="$(command -v python3 2>/dev/null || true)"
+  if [[ -z "$python_bin" || ! -f "$state_helper" || -L "$state_helper" ]]; then
+    printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=guard-unavailable\n'
+    return 2
+  fi
+
+  output_file="$(mktemp "${TMPDIR:-/tmp}/bubbles-framework-g128-output.XXXXXX")"
+  chmod 600 "$output_file"
+  if fv_run_stable_session_guard "$output_file" \
+      --session-id "$session_id" --quiet; then
+    rc=0
+  else
+    rc=$?
+  fi
+
+  if ! parsed="$(fv_parse_session_guard_result "$rc" \
+      "$session_id" "$output_file" 2>/dev/null)"; then
+    reason="invalid-child-result"
+    if [[ "$rc" -gt 2 ]]; then
+      reason="guard-unavailable"
+    fi
+    printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=%s\n' "$reason"
+    rm -f "$output_file"
+    return 2
+  fi
+
+  cat "$output_file"
+  rm -f "$output_file"
+  status="$(jq -r '.status' <<<"$parsed")"
+  case "$status" in
+    NO-ACTIVE-BUDGET | PASS | SOFT-BOUNDARY)
+      printf 'Framework check PASS G128 status=%s exit=0 source=guard\n' "$status"
+      return 0
+      ;;
+    BREACH)
+      printf 'Framework check FAIL G128 status=BREACH exit=1 source=guard\n'
+      return 1
+      ;;
+    INPUT-ERROR)
+      printf 'Framework check FAIL G128 status=INPUT-ERROR exit=2 source=guard\n'
+      return 2
+      ;;
+  esac
+}
+run_check "Session cap guard (live, G128)" run_live_session_cap_guard
 run_check "Compaction discipline guard selftest" bash "$SCRIPT_DIR/compaction-discipline-guard-selftest.sh"
 run_check "Pre-existing deferral guard selftest" bash "$SCRIPT_DIR/pre-existing-deferral-guard-selftest.sh"
 run_check "Discovered-issue disposition guard selftest (G095)" bash "$SCRIPT_DIR/discovered-issue-disposition-guard-selftest.sh"

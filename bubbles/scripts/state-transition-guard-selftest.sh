@@ -23,8 +23,14 @@ failures=0
 cleanup() {
   if [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; then
     rm -rf "$tmp_root"
+    if [[ -n "${scope4_binding_root:-}" ]]; then
+      rm -rf "$scope4_binding_root"
+    fi
   else
     echo "Preserving selftest workspace: $tmp_root"
+    if [[ -n "${scope4_binding_root:-}" ]]; then
+      echo "Preserving Scope 4 binding workspace: $scope4_binding_root"
+    fi
   fi
 }
 
@@ -2321,7 +2327,49 @@ unknown_runner_grant_dir="$unknown_runner_grant_root/specs/952-transition-guard-
 mkdir -p "$tmp_root/specs"
 clone_framework_surface "$tmp_root"
 git -C "$tmp_root" init -q
+cp "$SCRIPT_DIR/../../VERSION" "$tmp_root/VERSION"
+cp "$SCRIPT_DIR/../../install.sh" "$tmp_root/install.sh"
+chmod 700 "$tmp_root/install.sh" "$tmp_root/bubbles/scripts/cli.sh"
+git -C "$tmp_root" config user.name "Bubbles Fixture"
+git -C "$tmp_root" config user.email "fixture@example.invalid"
+git -C "$tmp_root" add VERSION install.sh bubbles/scripts/cli.sh agents/bubbles.workflow.agent.md
+git -C "$tmp_root" commit -q -m "fixture repository"
 export BUBBLES_REPO_ROOT="$tmp_root"
+
+scope4_binding_root="$(cd "$(mktemp -d "$selftest_tmp_base/bubbles-transition-binding.XXXXXX")" && pwd -P)"
+chmod 700 "$scope4_binding_root"
+scope4_control_file="$scope4_binding_root/repository-binding.json"
+scope4_packet_file="$scope4_binding_root/actionable-packet.json"
+set +e
+scope4_preflight_output="$(bash "$tmp_root/bubbles/scripts/repository-binding.sh" preflight \
+  --session-id host-current \
+  --session-control-file "$scope4_control_file" \
+  --expected-control-revision 0 \
+  --request-class TARGETLESS_MODE \
+  --workspace-root "$tmp_root" \
+  --repository-root "$tmp_root" 2>&1)"
+scope4_preflight_rc=$?
+set -e
+if [[ "$scope4_preflight_rc" -ne 0 ]]; then
+  printf 'state-transition-guard-selftest: Scope 4 binding preflight failed (exit=%s)\n%s\n' \
+    "$scope4_preflight_rc" "$scope4_preflight_output" >&2
+  exit 2
+fi
+scope4_packet_json=""
+while IFS= read -r scope4_preflight_line; do
+  case "$scope4_preflight_line" in
+    \{*) scope4_packet_json="$scope4_preflight_line" ;;
+  esac
+done <<<"$scope4_preflight_output"
+if [[ -z "$scope4_packet_json" ]]; then
+  printf 'state-transition-guard-selftest: Scope 4 preflight emitted no actionable packet\n' >&2
+  exit 2
+fi
+printf '%s\n' "$scope4_packet_json" >"$scope4_packet_file"
+chmod 600 "$scope4_packet_file"
+export BUBBLES_SESSION_ID=host-current
+export BUBBLES_SESSION_CONTROL_FILE="$scope4_control_file"
+export BUBBLES_BINDING_PACKET_FILE="$scope4_packet_file"
 
 dogfood_done_dir="$tmp_root/specs/899-transition-guard-selftest-dogfood-done"
 mkdir -p "$dogfood_done_dir"
@@ -2670,7 +2718,6 @@ repo_root_isolation_log="$tmp_root/repo-root-isolation-guard.log"
 repo_root_isolation_status="$(
   cd "$repo_root_isolation_ambient_dir"
   run_capture "$repo_root_isolation_log" \
-    env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
     bash "$GUARD_SCRIPT" "$repo_root_isolation_feature_dir"
 )"
 if [[ "$repo_root_isolation_status" -eq 0 ]]; then
@@ -2682,9 +2729,28 @@ fi
 assert_log_not_contains "$repo_root_isolation_log" \
   "$repo_root_isolation_ambient_dir/.github/bubbles-project.yaml" \
   "Guard ignores ambient project config outside the guarded repository"
-assert_log_contains "$repo_root_isolation_log" \
-  "Retro convergence health SLO is pass/degraded (Gate G090)" \
-  "G090 evaluates convergence health against the guarded repository root"
+
+repo_root_isolation_g090_log="$tmp_root/repo-root-isolation-g090.log"
+repo_root_isolation_g090_status="$(
+  cd "$repo_root_isolation_ambient_dir"
+  run_capture "$repo_root_isolation_g090_log" \
+    bash "$SCRIPT_DIR/retro-convergence-health.sh" \
+      "$repo_root_isolation_feature_dir" \
+      --repo-root "$tmp_root" \
+      --schema full
+)"
+if [[ "$repo_root_isolation_g090_status" -eq 0 ]]; then
+  pass "G090 evaluates convergence health against the guarded repository root"
+else
+  fail "G090 should evaluate convergence health against the guarded repository root"
+  sed -n '1,220p' "$repo_root_isolation_g090_log"
+fi
+assert_log_contains "$repo_root_isolation_g090_log" \
+  '"slo":"skipped"' \
+  "G090 reports the manual-runtime SLO as skipped"
+assert_log_contains "$repo_root_isolation_g090_log" \
+  "executionRuntime=manual" \
+  "G090 resolves the guarded repository session runtime"
 
 # --- G053 Check 13B: shell (.sh) runtime-path recognition ---
 # Regression guard for the G053<->G093 alignment fix. The G093 delivery-delta
@@ -5458,6 +5524,414 @@ assert_log_contains "$bug013_escape_log" "completedPhaseClaims has 10 $BUG013_UN
   "BUG-013: a claim declared unreconciled on a short reason stays IN the analysed set (count is still 10)"
 assert_log_not_contains "$bug013_escape_log" "completedPhaseClaims declares unreconciled claim timestamps" \
   "BUG-013: a sub-threshold reason does not register as a declared unreconciled claim"
+
+# =============================================================================
+# Check 23 / G082 and Check 40 / G128 — BUG-037 authoritative callers
+# =============================================================================
+# Exercise the real state-transition parent plus its sourced tail fragment.
+# Old-session rows are deliberately larger than current-session rows. G082 must
+# retain the current target-spec maximum, while G128 sums the current session
+# across specs and agents.
+echo "Running Check 23 and Check 40 authoritative caller selftest (BUG-037)..."
+
+g128_session_file="$tmp_root/.specify/memory/bubbles.session.json"
+g128_session_baseline="$tmp_root/g128-session-baseline.json"
+g128_transition_guard="$tmp_root/bubbles/scripts/state-transition-guard.sh"
+g082_child_guard="$tmp_root/bubbles/scripts/convergence-cap-guard.sh"
+g128_child_guard="$tmp_root/bubbles/scripts/session-cap-guard.sh"
+cp "$g128_session_file" "$g128_session_baseline"
+
+cat > "$g128_session_file" <<JSON
+{
+  "sessionBudget": { "maxTotalConvergenceIterations": 1 },
+  "sessionBudgetHistory": [{
+    "recordSchemaVersion": 1,
+    "hostSessionId": "host-current",
+    "revision": 1,
+    "supersedesRevision": null,
+    "recordedAt": "2026-09-01T00:00:00Z",
+    "budget": { "schemaVersion": 1, "maxTotalConvergenceIterations": 10 }
+  }],
+  "convergenceLoops": [
+    { "hostSessionId": "host-old", "specDir": "$positive_feature_dir", "agent": "bubbles.goal", "iterationCount": 99 },
+    { "hostSessionId": "host-current", "specDir": "$positive_feature_dir", "agent": "bubbles.goal", "iterationCount": 7 },
+    { "hostSessionId": "host-current", "specDir": "specs/current-other", "agent": "bubbles.workflow", "iterationCount": 1 }
+  ]
+}
+JSON
+g128_pass_before="$tmp_root/g128-pass-before.json"
+cp "$g128_session_file" "$g128_pass_before"
+g128_pass_log="$tmp_root/g128-check40-pass.log"
+g128_pass_status="$(run_capture "$g128_pass_log" env BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_pass_status" -eq 0 ]]; then
+  pass "BUG-037 Check 23 and Check 40 share host-current authority without sharing aggregation"
+else
+  fail "BUG-037 exact-session callers should pass despite larger host-old rows (exit=$g128_pass_status)"
+fi
+assert_log_contains "$g128_pass_log" "observed=7" \
+  "BUG-037 Check 23 retains the host-current target-spec maximum"
+assert_log_contains "$g128_pass_log" "G082 status=PASS exit=0 session=\"host-current\" spec=\"$positive_feature_dir\"" \
+  "BUG-037 Check 23 replays one exact-session G082 final record"
+assert_log_contains "$g128_pass_log" "Check 23 PASS G082 status=PASS exit=0 source=guard" \
+  "BUG-037 Check 23 accepts the exact PASS and exit 0 pair"
+assert_log_contains "$g128_pass_log" "G128 dimension name=maxTotalConvergenceIterations cap=10 state=MEASURED observed=8" \
+  "BUG-037 Check 40 sums host-current across specs and agents"
+assert_log_contains "$g128_pass_log" "G128 status=SOFT-BOUNDARY exit=0 session=\"host-current\"" \
+  "BUG-037 Check 40 preserves the current-session soft boundary with child exit 0"
+assert_log_contains "$g128_pass_log" "Check 40 PASS G128 status=SOFT-BOUNDARY exit=0 source=guard" \
+  "BUG-037 Check 40 accepts the current-session soft boundary with child exit 0"
+if cmp -s "$g128_pass_before" "$g128_session_file"; then
+  pass "BUG-037 Check 23 and Check 40 leave retained session history byte-identical"
+else
+  fail "BUG-037 blocking callers modified retained session history"
+fi
+
+cat > "$g128_session_file" <<'JSON'
+{
+  "sessionBudgetHistory": [{
+    "recordSchemaVersion": 1,
+    "hostSessionId": "host-current",
+    "revision": 1,
+    "supersedesRevision": null,
+    "recordedAt": "2026-09-01T00:00:00Z",
+    "budget": { "schemaVersion": 1, "maxTotalConvergenceIterations": 2 }
+  }],
+  "convergenceLoops": [
+    { "hostSessionId": "host-current", "specDir": "specs/current", "agent": "bubbles.goal", "iterationCount": 3 }
+  ]
+}
+JSON
+g128_breach_log="$tmp_root/g128-check40-breach.log"
+g128_breach_status="$(run_capture "$g128_breach_log" env BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_breach_status" -ne 0 ]]; then
+  pass "BUG-037 Check 40 blocks an exact current-session breach"
+else
+  fail "BUG-037 Check 40 should block a current-session breach"
+fi
+assert_log_contains "$g128_breach_log" "G128 status=BREACH exit=1 session=\"host-current\"" \
+  "BUG-037 Check 40 preserves the direct breach verdict"
+assert_log_contains "$g128_breach_log" "Check 40 FAIL G128 status=BREACH exit=1 source=guard" \
+  "BUG-037 Check 40 maps child exit 1 only to BREACH"
+assert_log_not_contains "$g128_breach_log" "status=INPUT-ERROR exit=1" \
+  "BUG-037 Check 40 never labels child exit 1 as an input error"
+
+cat > "$g128_session_file" <<'JSON'
+{
+  "sessionBudgetHistory": [{
+    "recordSchemaVersion": 1,
+    "hostSessionId": "host-current",
+    "revision": 1,
+    "supersedesRevision": null,
+    "recordedAt": "2026-09-01T00:00:00Z",
+    "budget": { "schemaVersion": 1, "maxTotalConvergenceIterations": 2 }
+  }],
+  "convergenceLoops": [
+    { "hostSessionId": "host-current", "specDir": "specs/current", "agent": "bubbles.goal", "iterationCount": 1 }
+  ]
+}
+JSON
+g128_input_log="$tmp_root/g128-check40-input-error.log"
+g128_input_status="$(run_capture "$g128_input_log" env BUBBLES_SESSION_ID= bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_input_status" -ne 0 ]]; then
+  pass "BUG-037 Check 40 blocks an active budget with no exact identity"
+else
+  fail "BUG-037 Check 40 should block missing identity under an active budget"
+fi
+assert_log_contains "$g128_input_log" "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority" \
+  "BUG-037 Check 23 owns missing-authority INPUT-ERROR"
+assert_log_contains "$g128_input_log" "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority" \
+  "BUG-037 Check 40 owns missing-authority INPUT-ERROR"
+
+g082_child_baseline="$tmp_root/g082-child-baseline.sh"
+g128_child_baseline="$tmp_root/g128-child-baseline.sh"
+cp "$g082_child_guard" "$g082_child_baseline"
+cp "$g128_child_guard" "$g128_child_baseline"
+g082_invocation_sentinel="$tmp_root/g082-child-invoked"
+g128_invocation_sentinel="$tmp_root/g128-child-invoked"
+cat >"$g082_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g082_invocation_sentinel"
+printf 'G082 status=PASS exit=0 session="host-current" spec="$positive_feature_dir"\n'
+exit 0
+EOF
+cat >"$g128_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g128_invocation_sentinel"
+printf 'G128 status=PASS exit=0 session="host-current"\n'
+exit 0
+EOF
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+rm -f "$g082_invocation_sentinel" "$g128_invocation_sentinel"
+g128_missing_packet_log="$tmp_root/g128-check40-missing-packet.log"
+g128_missing_packet_status="$(run_capture "$g128_missing_packet_log" env -u BUBBLES_BINDING_PACKET_FILE \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_missing_packet_status" -ne 0 ]]; then
+  pass "BUG-037 Check 40 blocks missing actionable packet authority"
+else
+  fail "BUG-037 Check 40 should block missing actionable packet authority"
+fi
+assert_log_contains "$g128_missing_packet_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority" \
+  "BUG-037 Check 23 emits caller-owned INPUT-ERROR for missing authority"
+assert_log_contains "$g128_missing_packet_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority" \
+  "BUG-037 Check 40 emits caller-owned INPUT-ERROR for missing authority"
+if [[ ! -e "$g082_invocation_sentinel" && ! -e "$g128_invocation_sentinel" ]]; then
+  pass "BUG-037 Check 23 and Check 40 validate authority before guard invocation"
+else
+  fail "BUG-037 a blocking caller invoked its guard before validating authority"
+fi
+rm -f "$g082_invocation_sentinel" "$g128_invocation_sentinel"
+g128_mismatched_session_log="$tmp_root/g128-mismatched-session.log"
+g128_mismatched_session_status="$(run_capture "$g128_mismatched_session_log" env \
+  BUBBLES_SESSION_ID=host-other bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_mismatched_session_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers reject a forwarded session that differs from the packet"
+else
+  fail "BUG-037 blocking callers should reject a forwarded-session packet mismatch"
+fi
+assert_log_contains "$g128_mismatched_session_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority" \
+  "BUG-037 Check 23 owns forwarded-session mismatch INPUT-ERROR"
+assert_log_contains "$g128_mismatched_session_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-authority" \
+  "BUG-037 Check 40 owns forwarded-session mismatch INPUT-ERROR"
+if [[ ! -e "$g082_invocation_sentinel" && ! -e "$g128_invocation_sentinel" ]]; then
+  pass "BUG-037 forwarded-session mismatch blocks both guards before invocation"
+else
+  fail "BUG-037 a blocking caller invoked its guard with a mismatched forwarded session"
+fi
+cp "$g082_child_baseline" "$g082_child_guard"
+cp "$g128_child_baseline" "$g128_child_guard"
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+
+cat >"$g082_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g082_invocation_sentinel"
+printf 'G082 status=PASS exit=0 session="host-current" spec="$positive_feature_dir"\n'
+printf 'G082 status=PASS exit=0 session="host-current" spec="$positive_feature_dir"\n'
+exit 0
+EOF
+cat >"$g128_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g128_invocation_sentinel"
+printf 'G128 status=UNKNOWN exit=0 session="host-current"\n'
+exit 0
+EOF
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+rm -f "$g082_invocation_sentinel" "$g128_invocation_sentinel"
+g128_invalid_child_log="$tmp_root/g128-invalid-child.log"
+g128_invalid_child_status="$(run_capture "$g128_invalid_child_log" env \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_invalid_child_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers reject duplicate and unknown child finals"
+else
+  fail "BUG-037 blocking callers should reject invalid child finals"
+fi
+assert_log_contains "$g128_invalid_child_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=invalid-child-result" \
+  "BUG-037 Check 23 owns duplicate-final INPUT-ERROR"
+assert_log_contains "$g128_invalid_child_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-child-result" \
+  "BUG-037 Check 40 owns unknown-final INPUT-ERROR"
+assert_log_not_contains "$g128_invalid_child_log" "G082 status=PASS exit=0" \
+  "BUG-037 Check 23 does not replay rejected child finals"
+assert_log_not_contains "$g128_invalid_child_log" "G128 status=UNKNOWN" \
+  "BUG-037 Check 40 does not replay rejected child finals"
+if [[ "$(wc -l <"$g082_invocation_sentinel")" -eq 1 && "$(wc -l <"$g128_invocation_sentinel")" -eq 1 ]]; then
+  pass "BUG-037 each blocking caller invokes its stable child exactly once"
+else
+  fail "BUG-037 a blocking caller did not invoke its stable child exactly once"
+fi
+cp "$g082_child_baseline" "$g082_child_guard"
+cp "$g128_child_baseline" "$g128_child_guard"
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+
+cat >"$g082_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g082_invocation_sentinel"
+printf 'diagnostic-without-final\n'
+exit 0
+EOF
+cat >"$g128_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g128_invocation_sentinel"
+printf 'G128 status=PASS exit=1 session="host-current"\n'
+exit 1
+EOF
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+rm -f "$g082_invocation_sentinel" "$g128_invocation_sentinel"
+g128_empty_contradictory_log="$tmp_root/g128-empty-contradictory.log"
+g128_empty_contradictory_status="$(run_capture "$g128_empty_contradictory_log" env \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_empty_contradictory_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers reject empty and contradictory child finals"
+else
+  fail "BUG-037 blocking callers should reject empty and contradictory child finals"
+fi
+assert_log_contains "$g128_empty_contradictory_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=invalid-child-result" \
+  "BUG-037 Check 23 owns empty-final INPUT-ERROR"
+assert_log_contains "$g128_empty_contradictory_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-child-result" \
+  "BUG-037 Check 40 owns contradictory status-exit INPUT-ERROR"
+assert_log_not_contains "$g128_empty_contradictory_log" "diagnostic-without-final" \
+  "BUG-037 Check 23 does not replay output without a final record"
+assert_log_not_contains "$g128_empty_contradictory_log" "G128 status=PASS exit=1" \
+  "BUG-037 Check 40 does not replay contradictory child output"
+
+cat >"$g082_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g082_invocation_sentinel"
+printf 'G082 status=PASS exit=0 session="host-current"\n'
+exit 0
+EOF
+cat >"$g128_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g128_invocation_sentinel"
+printf 'G128 status=PASS exit=0 session="host-other"\n'
+exit 0
+EOF
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+rm -f "$g082_invocation_sentinel" "$g128_invocation_sentinel"
+g128_malformed_mismatched_log="$tmp_root/g128-malformed-mismatched.log"
+g128_malformed_mismatched_status="$(run_capture "$g128_malformed_mismatched_log" env \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_malformed_mismatched_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers reject malformed and identity-mismatched child finals"
+else
+  fail "BUG-037 blocking callers should reject malformed and mismatched child finals"
+fi
+assert_log_contains "$g128_malformed_mismatched_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=invalid-child-result" \
+  "BUG-037 Check 23 owns malformed-final INPUT-ERROR"
+assert_log_contains "$g128_malformed_mismatched_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=invalid-child-result" \
+  "BUG-037 Check 40 owns child-session mismatch INPUT-ERROR"
+assert_log_not_contains "$g128_malformed_mismatched_log" "G082 status=PASS exit=0 session=\"host-current\"" \
+  "BUG-037 Check 23 does not replay malformed child output"
+assert_log_not_contains "$g128_malformed_mismatched_log" "G128 status=PASS exit=0 session=\"host-other\"" \
+  "BUG-037 Check 40 does not replay mismatched child output"
+
+cat >"$g082_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g082_invocation_sentinel"
+printf 'G082 status=INPUT-ERROR exit=2 session="host-current" spec="$positive_feature_dir" reason=fixture-input\n'
+exit 2
+EOF
+cat >"$g128_child_guard" <<EOF
+#!/usr/bin/env bash
+printf 'invoked\n' >>"$g128_invocation_sentinel"
+printf 'G128 status=INPUT-ERROR exit=2 session="host-current" reason=fixture-input\n'
+exit 2
+EOF
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+rm -f "$g082_invocation_sentinel" "$g128_invocation_sentinel"
+g128_valid_input_error_log="$tmp_root/g128-valid-input-error.log"
+g128_valid_input_error_status="$(run_capture "$g128_valid_input_error_log" env \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_valid_input_error_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers preserve valid child INPUT-ERROR and exit 2 pairs"
+else
+  fail "BUG-037 blocking callers should block valid child INPUT-ERROR results"
+fi
+assert_log_contains "$g128_valid_input_error_log" \
+  "G082 status=INPUT-ERROR exit=2 session=\"host-current\" spec=\"$positive_feature_dir\" reason=fixture-input" \
+  "BUG-037 Check 23 safely replays a valid child INPUT-ERROR"
+assert_log_contains "$g128_valid_input_error_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=guard" \
+  "BUG-037 Check 23 preserves child INPUT-ERROR attribution"
+assert_log_contains "$g128_valid_input_error_log" \
+  "G128 status=INPUT-ERROR exit=2 session=\"host-current\" reason=fixture-input" \
+  "BUG-037 Check 40 safely replays a valid child INPUT-ERROR"
+assert_log_contains "$g128_valid_input_error_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=guard" \
+  "BUG-037 Check 40 preserves child INPUT-ERROR attribution"
+cp "$g082_child_baseline" "$g082_child_guard"
+cp "$g128_child_baseline" "$g128_child_guard"
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+
+rm -f "$g082_child_guard"
+ln -s "$g082_child_baseline" "$g082_child_guard"
+cp "$g128_child_baseline" "$g128_child_guard"
+chmod 600 "$g128_child_guard"
+g128_unavailable_log="$tmp_root/g128-unavailable.log"
+g128_unavailable_status="$(run_capture "$g128_unavailable_log" env \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_unavailable_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers reject symlink and non-executable guards"
+else
+  fail "BUG-037 blocking callers should reject symlink and non-executable guards"
+fi
+assert_log_contains "$g128_unavailable_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=guard-unavailable" \
+  "BUG-037 Check 23 owns symlink-guard INPUT-ERROR"
+assert_log_contains "$g128_unavailable_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=guard-unavailable" \
+  "BUG-037 Check 40 owns non-executable-guard INPUT-ERROR"
+rm -f "$g082_child_guard"
+cp "$g082_child_baseline" "$g082_child_guard"
+cp "$g128_child_baseline" "$g128_child_guard"
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+
+rm -f "$g082_child_guard"
+mkdir "$g082_child_guard"
+rm -f "$g128_child_guard"
+g128_missing_nonregular_log="$tmp_root/g128-missing-nonregular.log"
+g128_missing_nonregular_status="$(run_capture "$g128_missing_nonregular_log" env \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_missing_nonregular_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers reject non-regular and missing guards"
+else
+  fail "BUG-037 blocking callers should reject non-regular and missing guards"
+fi
+assert_log_contains "$g128_missing_nonregular_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=guard-unavailable" \
+  "BUG-037 Check 23 owns non-regular-guard INPUT-ERROR"
+assert_log_contains "$g128_missing_nonregular_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=guard-unavailable" \
+  "BUG-037 Check 40 owns missing-guard INPUT-ERROR"
+rm -rf "$g082_child_guard"
+cp "$g082_child_baseline" "$g082_child_guard"
+cp "$g128_child_baseline" "$g128_child_guard"
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+
+cat >"$g082_child_guard" <<EOF
+#!/usr/bin/env bash
+cp "$g082_child_baseline" convergence-cap-guard.replacement
+chmod 700 convergence-cap-guard.replacement
+mv convergence-cap-guard.replacement convergence-cap-guard.sh
+printf 'G082 status=PASS exit=0 session="host-current" spec="$positive_feature_dir"\n'
+exit 0
+EOF
+cat >"$g128_child_guard" <<EOF
+#!/usr/bin/env bash
+cp "$g128_child_baseline" session-cap-guard.replacement
+chmod 700 session-cap-guard.replacement
+mv session-cap-guard.replacement session-cap-guard.sh
+printf 'G128 status=PASS exit=0 session="host-current"\n'
+exit 0
+EOF
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+g128_replaced_log="$tmp_root/g128-replaced.log"
+g128_replaced_status="$(run_capture "$g128_replaced_log" env \
+  BUBBLES_SESSION_ID=host-current bash "$g128_transition_guard" "$positive_feature_dir")"
+if [[ "$g128_replaced_status" -ne 0 ]]; then
+  pass "BUG-037 blocking callers reject guards replaced during invocation"
+else
+  fail "BUG-037 blocking callers should reject replaced guards"
+fi
+assert_log_contains "$g128_replaced_log" \
+  "Check 23 FAIL G082 status=INPUT-ERROR exit=2 source=caller reason=guard-unavailable" \
+  "BUG-037 Check 23 owns replaced-guard INPUT-ERROR"
+assert_log_contains "$g128_replaced_log" \
+  "Check 40 FAIL G128 status=INPUT-ERROR exit=2 source=caller reason=guard-unavailable" \
+  "BUG-037 Check 40 owns replaced-guard INPUT-ERROR"
+cp "$g082_child_baseline" "$g082_child_guard"
+cp "$g128_child_baseline" "$g128_child_guard"
+chmod 700 "$g082_child_guard" "$g128_child_guard"
+
+cp "$g128_session_baseline" "$g128_session_file"
 
 echo "----------------------------------------"
 if [[ "$failures" -gt 0 ]]; then
