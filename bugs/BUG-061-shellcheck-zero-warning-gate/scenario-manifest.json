@@ -11,7 +11,7 @@
       "riskTier": "high",
       "obligations": [{"trait":"degraded-state","requiredProof":"warning-level ShellCheck zero-finding result plus disabled-adapter behavior preservation","satisfiedBy":["bubbles/scripts/shellcheck-lint.sh","bubbles/scripts/research-admission-cli-selftest.sh"]}],
       "linkedTests": ["bubbles/scripts/shellcheck-lint.sh", "bubbles/scripts/research-admission-cli-selftest.sh"],
-      "evidenceRefs": ["report.md#exact-five-warning-before-fix"],
+      "evidenceRefs": ["report.md#exact-five-warning-before-fix", "report.md#independent-test-t1-t5", "report.md#independent-test-t6", "report.md#independent-test-t9"],
       "implementationRefs": ["bubbles/adapters/research/disabled.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"ephemeral-real","productionOwners":["bubbles/adapters/research/disabled.sh"],"negativeControl":"Restore CDPATH= cd. Focused warning-level ShellCheck must emit SC1007 and exit 1.","negativeControlMechanism":"mutation"},
       "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"The defect is a static tracked-shell quality-gate failure."}
@@ -25,7 +25,7 @@
       "riskTier": "high",
       "obligations": [{"trait":"degraded-state","requiredProof":"warning-level ShellCheck zero-finding result plus local-command behavior preservation","satisfiedBy":["bubbles/scripts/shellcheck-lint.sh","bubbles/scripts/research-admission-cli-selftest.sh"]}],
       "linkedTests": ["bubbles/scripts/shellcheck-lint.sh", "bubbles/scripts/research-admission-cli-selftest.sh"],
-      "evidenceRefs": ["report.md#exact-five-warning-before-fix"],
+      "evidenceRefs": ["report.md#exact-five-warning-before-fix", "report.md#independent-test-t1-t5", "report.md#independent-test-t6", "report.md#independent-test-t9"],
       "implementationRefs": ["bubbles/adapters/research/local-command.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"ephemeral-real","productionOwners":["bubbles/adapters/research/local-command.sh"],"negativeControl":"Restore CDPATH= cd. Focused warning-level ShellCheck must emit SC1007 and exit 1.","negativeControlMechanism":"mutation"},
       "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"The defect is a static tracked-shell quality-gate failure."}
@@ -39,7 +39,7 @@
       "riskTier": "high",
       "obligations": [{"trait":"degraded-state","requiredProof":"warning-level ShellCheck zero-finding result plus usage-adapter behavior preservation","satisfiedBy":["bubbles/scripts/shellcheck-lint.sh","bubbles/scripts/usage-adapter-v2-selftest.sh"]}],
       "linkedTests": ["bubbles/scripts/shellcheck-lint.sh", "bubbles/scripts/usage-adapter-v2-selftest.sh"],
-      "evidenceRefs": ["report.md#exact-five-warning-before-fix"],
+      "evidenceRefs": ["report.md#exact-five-warning-before-fix", "report.md#independent-test-t1-t5", "report.md#independent-test-t7", "report.md#independent-test-t9"],
       "implementationRefs": ["bubbles/adapters/usage/reference-test.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"ephemeral-real","productionOwners":["bubbles/adapters/usage/reference-test.sh"],"negativeControl":"Restore an unread EMPTY_DIGEST assignment. Focused warning-level ShellCheck must emit SC2034 and exit 1.","negativeControlMechanism":"mutation"},
       "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"The defect is a static tracked-shell quality-gate failure."}
@@ -53,7 +53,7 @@
       "riskTier": "high",
       "obligations": [{"trait":"degraded-state","requiredProof":"warning-level ShellCheck zero-finding result plus research runtime behavior preservation","satisfiedBy":["bubbles/scripts/shellcheck-lint.sh","bubbles/scripts/research-admission-cli-selftest.sh"]}],
       "linkedTests": ["bubbles/scripts/shellcheck-lint.sh", "bubbles/scripts/research-admission-cli-selftest.sh"],
-      "evidenceRefs": ["report.md#exact-five-warning-before-fix"],
+      "evidenceRefs": ["report.md#exact-five-warning-before-fix", "report.md#independent-test-t1-t5", "report.md#independent-test-t6", "report.md#independent-test-t9"],
       "implementationRefs": ["bubbles/scripts/research-run.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"ephemeral-real","productionOwners":["bubbles/scripts/research-run.sh"],"negativeControl":"Restore CDPATH= cd. Focused warning-level ShellCheck must emit SC1007 and exit 1.","negativeControlMechanism":"mutation"},
       "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"The defect is a static tracked-shell quality-gate failure."}
@@ -67,7 +67,7 @@
       "riskTier": "high",
       "obligations": [{"trait":"degraded-state","requiredProof":"warning-level ShellCheck zero-finding result plus fallback-directory assertion preservation","satisfiedBy":["bubbles/scripts/shellcheck-lint.sh","bubbles/scripts/scenario-manifest-migrate-selftest.sh"]}],
       "linkedTests": ["bubbles/scripts/shellcheck-lint.sh", "bubbles/scripts/scenario-manifest-migrate-selftest.sh"],
-      "evidenceRefs": ["report.md#exact-five-warning-before-fix"],
+      "evidenceRefs": ["report.md#exact-five-warning-before-fix", "report.md#independent-test-t1-t5", "report.md#independent-test-t8", "report.md#independent-test-t9", "report.md#independent-test-t10"],
       "implementationRefs": ["bubbles/scripts/scenario-manifest-migrate-selftest.sh"],
       "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"ephemeral-real","productionOwners":["bubbles/scripts/scenario-manifest-migrate-selftest.sh"],"negativeControl":"Restore XDG_RUNTIME_DIR= python3. Focused warning-level ShellCheck must emit SC1007 and exit 1.","negativeControlMechanism":"mutation"},
       "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"The defect is a static tracked-shell quality-gate failure."}

@@ -561,3 +561,221 @@ Audit has not run.
 
 All unresolved implementation and verification obligations are recorded under
 the corresponding unchecked items in [scopes.md](scopes.md#definition-of-done).
+
+## Independent Test Phase Evidence
+
+**Executed:** YES (current session)
+**Phase:** test
+**Claim Source:** executed
+**Tested Source:** `d7eb1f2d8c9c8eb1989bbd99ea0f9b1a3c78d26c`
+**Branch:** `fix/ozhiva-transition-unblock`
+**Repository Decision:** `rb:vscode-2913ac96e8446707d06d7b480573b88f:4`
+
+The tracked/index state was clean before execution. The only worktree entry was
+the untracked `.specify/memory/bubbles.session.json`, which remained uncommitted.
+No active process referenced this checkout or any BUG-061 test runner.
+
+### Independent Test T1-T5
+
+**Executed:** YES (current session)
+**Phase:** test
+**Claim Source:** executed
+**Severity:** `warning`
+**Formatter:** `gcc`
+
+| ID | Canonical inner command | Exit | Output SHA-256 | Tool-log row | Receipt stdoutHash | Input closure |
+| --- | --- | ---: | --- | ---: | --- | ---: |
+| T1 | `shellcheck -S warning -f gcc bubbles/adapters/research/disabled.sh` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 467 | `95068175ece24f88f43fdfd170630fcb5ade4dcec62205c91a38132a2feedc3b` | 6 |
+| T2 | `shellcheck -S warning -f gcc bubbles/adapters/research/local-command.sh` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 468 | `315f3e15a1f9ff76a7068593a26d8525079885c64b36266c70ed7f4635dc3244` | 6 |
+| T3 | `shellcheck -S warning -f gcc bubbles/adapters/usage/reference-test.sh` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 469 | `b0b5b99a7cd2b6c9b4758a559259d8a0f9aafca396df570267fa6e48aec494bc` | 6 |
+| T4 | `shellcheck -S warning -f gcc bubbles/scripts/research-run.sh` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 470 | `2bc9437624be471c7650012576bc2b91d8c8a0f0195a62e04fd51c2f023a99ed` | 6 |
+| T5 | `shellcheck -S warning -f gcc bubbles/scripts/scenario-manifest-migrate-selftest.sh` | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 471 | `4ef3a0e104d9031365d840bc6142fe67108e4bdfd0fefb5cf2e801c387654a0b` | 6 |
+
+Each command emitted zero lines. The empty-stream digest above is therefore the
+direct zero-finding signal, not a filtered or discarded result. Every receipt
+has zero unreadable input-closure entries and binds its declared mutation
+control to the tested source revision.
+
+### Independent Test T6
+
+**Executed:** YES (current session)
+**Phase:** test
+**Command:** `bash bubbles/scripts/research-admission-cli-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output SHA-256:** `105bf8196416b890f33e7de5927799542da0cfbef74a9169efaf0b72af67e93b`
+**Tool-log row:** 472
+**Receipt stdoutHash:** `12256cf5a7fc032333d39c5555d39c52ba454437d1ab85befa857c761028dc6a`
+**Input closure:** 37 files; zero unreadable entries
+
+```text
+PASS: CLI help advertises research
+PASS: research status delegates to the runtime check contract
+PASS: research status reports the real runtime verdict
+PASS: research is default-off without project activation
+PASS: research does not invent hosted routes
+PASS: research activation remains parked
+PASS: unsupported host-native enforcement fails loud
+PASS: research local command has an external side effect
+PASS: config contract documents neutral dispatch adapter
+research-admission-cli-selftest: PASS=48 FAIL=0
+```
+
+### Independent Test T7
+
+**Executed:** YES (current session)
+**Phase:** test
+**Command:** `bash bubbles/scripts/usage-adapter-v2-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output SHA-256:** `aa32006dcd2b633db64d3b7b16c83c335dfb73e329f4ad0d42471ed4ecdc4516`
+**Tool-log row:** 473
+**Receipt stdoutHash:** `821acbdfde44e20eb0f2cc39c878e441ba9ba5645e4bbcc22231d6b2eee22443`
+**Input closure:** 12 files; zero unreadable entries
+
+```text
+ok 1 - none v1 bytes remain compatible
+ok 2 - none v2 declares every dimension unsupported
+ok 3 - default absence stays none and configured typo fails loud
+ok 4 - one explicit supported host record identifies exactly
+ok 5 - zero, multiple, and schema-drift identity inputs refuse
+ok 6 - unmeasured remains explicit and never becomes measured zero
+ok 7 - reference lifecycle is explicit, disabled by default, and adapter-originated
+ok 8 - none and vscode remain enforcement-ineligible negative controls
+ok 9 - v2 surfaces expose no bypass flags
+usage-adapter-v2-selftest: PASS (9 checks)
+```
+
+### Independent Test T8
+
+**Executed:** YES (current session)
+**Phase:** test
+**Command:** `bash bubbles/scripts/scenario-manifest-migrate-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output SHA-256:** `e004411d33db66b9cef7fefb2ac4637657541aa4cad0bfa88e53d7eb0a3edd0a`
+**Tool-log row:** 474
+**Receipt stdoutHash:** `ae2d8fbe113eb6cdc2697ac947c659cef3e2e4ecba8feb233c5a18e8d425f96a`
+**Input closure:** 8 files; zero unreadable entries
+
+```text
+PASS: symlink XDG runtime directory is rejected in favor of secure fallback
+PASS: symlink advisory lock directory refuses
+PASS: precreated fallback lock directory with hostile mode refuses
+PASS: symlink advisory lock refuses without touching its target
+PASS: precreated advisory lock with hostile mode refuses
+PASS: precreated advisory lock with foreign owner refuses where testable
+PASS: advisory lock contention deterministically refuses a cooperating migrator
+PASS: intermediate directory aliases share one migration lock identity
+PASS: unavailable atomic exchange primitive fails closed instead of weakening write safety
+scenario-manifest-migrate-selftest: PASS
+```
+
+The default Homebrew Python lacked `jsonschema`, which would make this selftest
+emit a valid dependency `SKIP`. That probe was not counted as T8. The executed
+T8 used the already-installed `/usr/local/bin/python3` with `jsonschema` and the
+repo-approved MacPorts GNU compatibility shim for `mktemp`; all 117 output lines
+ran, so T8 is a behavioral pass rather than a skip.
+
+### Independent Test T9
+
+**Executed:** YES (current session)
+**Phase:** test
+**Command:** `bash bubbles/scripts/shellcheck-lint.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output SHA-256:** `ab177e5a066145010668821ec9167f18e9e06968ccca9b42264b597add16cac9`
+**Tool-log row:** 475
+**Receipt stdoutHash:** `64eeb5288dc9f099fb7666f22d7f9364028f79209008cebbd3dab7c0e1eb1541`
+**Input closure:** 610 files; zero unreadable entries
+
+```text
+shellcheck-lint: PASS — 605 script(s) clean at -S warning
+```
+
+The earlier implementation-phase T9 failure remains valid for its older source
+epoch. At the independently tested aggregate HEAD, IMP-056 commit
+`5620ac49d13447bde8c0ad41541fd36339717828` and BUG-038 commit
+`16cfe0c65a728e4cf2642aa49fa42dd011dfa01e` have separately repaired their own
+warnings, so the canonical gate is now clean without adding either foreign path
+to BUG-061's implementation range.
+
+### Independent Test T10
+
+**Executed:** YES (current session)
+**Phase:** test
+**Command:** `bash bubbles/scripts/macos-portability-guard.sh bubbles/adapters/research/disabled.sh bubbles/adapters/research/local-command.sh bubbles/adapters/usage/reference-test.sh bubbles/scripts/research-run.sh bubbles/scripts/scenario-manifest-migrate-selftest.sh`
+**Exit Code:** 0
+**Claim Source:** executed
+**Output SHA-256:** `bb7ff668e143da447782c30a36c945f2c447ca41635b703b80811323b492d3ae`
+**Tool-log row:** 476
+**Receipt stdoutHash:** `5a02e3fc32f21e42c23b68d43c502639035cb6e37bb75663d361cc058beb0070`
+**Input closure:** 11 files; zero unreadable entries
+
+```text
+== macOS portability guard -- scanning 5 file(s) ==
+ok   class-1 raw-timeout: none
+ok   class-2 in-place-sed: none
+ok   class-3 date-d-parse: none
+ok   class-4 stat-c-mtime: none
+ok   class-5 readlink-f-absolutize: none
+ok   class-6 grep-pcre: none
+ok   class-7 bracket-v-isset: none
+ok   class-8 mapfile-readarray: none
+ok   class-9 mktemp-suffix: none
+ok   class-10 df-output: none
+ok   class-11 bin-true-false: none
+ok   class-12 paste-no-stdin-operand: none
+ok   class-13 date-nanoseconds: none
+ok   class-14 mktemp-parent-dir: none
+ok   class-15 mktemp-nontrailing-x: none
+ok   class-16 awk-3arg-match: none
+PASS: the scanned surface is WSL+macOS portable.
+```
+
+### Independent Supporting Checks
+
+**Executed:** YES (current session)
+**Phase:** test
+**Claim Source:** executed
+
+| Check | Exit | Output SHA-256 | Tool-log row | Receipt stdoutHash | Input closure |
+| --- | ---: | --- | ---: | --- | ---: |
+| Exact combined five-file ShellCheck | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 459 | `867e0ad05949c1c8ef2ed0e148f4495c3a6961dea645211b28c4677698d85321` | 10 |
+| Five-file `bash -n` syntax | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` | 460 | `f55f781f0dd1443c257e7cb6091fa36a3b05ec3e9d9be1f15ef200167a2cdb77` | 10 |
+| Obligation, mechanism, linked-test, and planning traceability sequence | 0 | `458e78cfa9f41977f8c9722af508850f748677e358d6d4678291be21c319fd70` | 462 | `8c0ad3d9856f4cc2157123d4612c49b0558200eedd52f62eaae1a94e984080e0` | 17 |
+| Bugfix regression-quality guard | 0 | `de9fb72a55d598d7f4a08c7006db716380af5589c3787d2d56e44d90723f2f3a` | 463 | `fffb98db10d6caaaa0b0428ebfd5750c329b3756500e99f7bb9ddb99630ebad1` | 11 |
+| Changed-file, excluded-owner, and config boundary | 0 | `ae47962de686765eb5a62eb23ca38f944ed387c247217d847f95c6a824cacc03` | 464 | `1b60bd4d9247f701097f56971238014576de12c097f364f08bb092d9f3d3ada1` | 18 |
+
+The contract sequence resolved all 10 linked tests, accepted all five declared
+mechanisms and mutation controls, and ended with `RESULT: PASSED (0 warnings)`.
+The regression-quality guard scanned four linked scripts and reported zero
+violations and zero warnings. The BUG-061 implementation range contained only
+its five source files, release manifest, and owned BUG-061 execution metadata;
+the IMP-056 and BUG-038 source files had zero diff in that range. Project config
+declares neither `testImpact` nor `traceContracts`, so no impact plan, trace, or
+SLO capture applies to this packet.
+
+### Carried IMP-056 Observation
+
+**Executed:** NO
+**Phase:** test
+**Claim Source:** not-run
+
+The operator supplied the observation that IMP-056 validation is Linux-only.
+This invocation did not rerun IMP-056 or promote that observation into a
+cross-platform pass. T10 proves portability only for BUG-061's five changed
+files. The observation is preserved unchanged for `bubbles.regression`.
+
+### Reserved T11 and Later Phases
+
+**Executed:** NO
+**Phase:** test
+**Claim Source:** not-run
+**Command:** `bash bubbles/scripts/cli.sh framework-validate`
+
+T11 was not executed because the operator reserved one combined framework run
+for BUG-047 through BUG-061. No exit code, output hash, or receipt is claimed.
+The regression, simplify, gaps, harden, stabilize, devops, security, validate,
+audit, and finalize phases remain unclaimed. Certification fields and terminal
+status remain unchanged.

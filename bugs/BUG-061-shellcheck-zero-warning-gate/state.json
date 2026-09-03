@@ -31,14 +31,14 @@
   "requiresRevalidation": false,
   "execution": {
     "goalContractRef": null,
-    "activeAgent": "bubbles.implement",
-    "currentPhase": "implement",
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
     "currentScope": 1,
-    "substate": "implemented",
-    "completedPhaseClaims": ["implement"],
+    "substate": "independently_verified",
+    "completedPhaseClaims": ["implement", "test"],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.test",
-    "nextRequiredAction": "Independently replay BUG-061 T1-T10 from the committed source SHA, retain and classify the four excluded-owner T9 warnings, and run T11 framework-validate without weakening the gate.",
+    "nextRequiredOwner": "bubbles.regression",
+    "nextRequiredAction": "Run the single reserved combined T11 framework validation for BUG-047 through BUG-061, preserve the IMP-056 Linux-only observation, and continue the remaining mode phases without weakening the gate.",
     "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
   },
   "certification": {
@@ -73,13 +73,26 @@
       "evidenceRef": "bugs/BUG-061-shellcheck-zero-warning-gate/report.md#focused-shellcheck-green",
       "addressedFindings": ["F-B061-001", "F-B061-002", "F-B061-003", "F-B061-004", "F-B061-005"],
       "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-restore-tracked-shell-zero-warning-contract",
+      "phasesExecuted": ["test"],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-03T06:11:17Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-061-shellcheck-zero-warning-gate/report.md#independent-test-phase-evidence",
+      "addressedFindings": ["F-B061-001", "F-B061-002", "F-B061-003", "F-B061-004", "F-B061-005"],
+      "unresolvedFindings": []
     }
   ],
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
-  "lastUpdatedAt": "2026-09-03T05:32:23Z",
+  "lastUpdatedAt": "2026-09-03T06:12:20Z",
   "scopeLayout": "single-file",
   "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
-  "notes": "Implementation repaired the five assigned warnings and recorded T1-T10 evidence. T9 remains nonzero only for the four excluded-owner warnings. Independent test, T11, and certification remain unclaimed."
+  "notes": "Independent test replay at d7eb1f2d8c9c8eb1989bbd99ea0f9b1a3c78d26c passed T1-T10 with no skips. T11 remains reserved for the combined BUG-047 through BUG-061 framework run; later phases and certification remain unclaimed."
 }
