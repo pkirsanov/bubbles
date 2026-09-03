@@ -9402,7 +9402,7 @@ if ! bug032_insert_before_exact_line \
 fi
 if ! bug032_insert_before_exact_line \
   "$bug032_scn022_control_dir/scopes.md" \
-  "| Regression E2E | \`e2e-ui\` | $positive_feature_dir/tests/docs-broader-regression.e2e.spec.ts | Broader regression row required by the guard. | \`selftest:broader-regression\` | Yes |" \
+  "| Regression E2E | \`e2e-ui\` | \`$positive_feature_dir/tests/docs-broader-regression.e2e.spec.ts\` | Broader regression row required by the guard. | \`selftest:broader-regression\` | Yes |" \
   "| Stress | \`stress\` | $bug032_scn022_control_dir/tests/docs-scenario-regression.e2e.spec.ts | Exercise the active p95 latency budget under pressure. | \`selftest:stress-regression\` | No |"; then
   bug032_scn022_control_setup_failures=$((bug032_scn022_control_setup_failures + 1))
 fi
