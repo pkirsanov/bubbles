@@ -858,7 +858,9 @@ if [[ "${BUBBLES_STATE_TRANSITION_GUARD_G061_ONLY:-0}" == "1" ]]; then
 fi
 
 if [[ "${BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FOCUS:-}" \
-  != "TP-01-04-security-boundary-group" ]]; then
+  != "TP-01-04-security-boundary-group" ]] \
+  && [[ "${BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FOCUS:-}" \
+    != "BUG032-REG-C5A-TYPE-COLUMN-001" ]]; then
   run_g061_regression_cases
 fi
 
@@ -2260,6 +2262,104 @@ with open(path, "w", encoding="utf-8") as handle:
 PY
 }
 
+run_bug032_c5a_type_column_regression() {
+  local base_fixture="$1"
+  local fixture_root="$2"
+  local type_first_dir="$fixture_root/bug032-c5a-type-first-control"
+  local type_third_dir="$fixture_root/bug032-c5a-type-third-adversarial"
+  local type_first_log="$fixture_root/bug032-c5a-type-first-control.log"
+  local type_third_log="$fixture_root/bug032-c5a-type-third-adversarial.log"
+  local type_first_status=0
+  local type_third_status=0
+  local type_first_mismatches=0
+  local type_third_mismatches=0
+
+  printf '%s\n' \
+    'BUG032_C5A_SCENARIO_BINDING finding=BUG032-REG-C5A-TYPE-COLUMN-001 scenario=SCN-032-022 negativeControl=Type-first-equivalent'
+
+  cp -R "$base_fixture" "$type_first_dir"
+  cat <<EOF >> "$type_first_dir/scopes.md"
+
+### Performance Contract
+
+The p95 latency budget is 200 ms.
+
+### Test Plan
+
+| Type | Test ID | Description | File/Location | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| Stress | TP-C5A-TYPE-COLUMN | Exercise the active p95 latency budget of 200 ms under pressure. | $type_first_dir/tests/docs-scenario-regression.e2e.spec.ts | selftest:stress-regression | No |
+
+### Definition of Done
+
+- [x] SCN-032-022 stress test verifies the active p95 latency budget of 200 ms. -> Evidence: report.md#test-evidence
+EOF
+  type_first_status="$(run_capture "$type_first_log" \
+    bash "$GUARD_SCRIPT" "$type_first_dir")"
+  [[ "$type_first_status" -eq 0 ]] \
+    || type_first_mismatches=$((type_first_mismatches + 1))
+  grep -Fq -- 'SLA-sensitive scope includes stress coverage: scopes.md' \
+    "$type_first_log" \
+    || type_first_mismatches=$((type_first_mismatches + 1))
+  if [[ "$type_first_mismatches" -eq 0 ]]; then
+    pass "BUG-032 SCN-032-022 Type-first canonical Stress row remains accepted"
+  else
+    printf 'BUG032_C5A_TYPE_FIRST_CONTROL_MISMATCH status=%s mismatches=%s\n' \
+      "$type_first_status" "$type_first_mismatches"
+    fail "BUG-032 SCN-032-022 Type-first canonical Stress row remains accepted"
+  fi
+
+  cp -R "$base_fixture" "$type_third_dir"
+  cat <<EOF >> "$type_third_dir/scopes.md"
+
+### Performance Contract
+
+The p95 latency budget is 200 ms.
+
+### Test Plan
+
+| Test ID | Description | Type | File/Location | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| TP-C5A-TYPE-COLUMN | Exercise the active p95 latency budget of 200 ms under pressure. | Stress | $type_third_dir/tests/docs-scenario-regression.e2e.spec.ts | selftest:stress-regression | No |
+
+### Definition of Done
+
+- [x] SCN-032-022 stress test verifies the active p95 latency budget of 200 ms. -> Evidence: report.md#test-evidence
+EOF
+  type_third_status="$(run_capture "$type_third_log" \
+    bash "$GUARD_SCRIPT" "$type_third_dir")"
+  [[ "$type_third_status" -eq 0 ]] \
+    || type_third_mismatches=$((type_third_mismatches + 1))
+  grep -Fq -- 'SLA-sensitive scope includes stress coverage: scopes.md' \
+    "$type_third_log" \
+    || type_third_mismatches=$((type_third_mismatches + 1))
+  if [[ "$type_third_mismatches" -eq 0 ]]; then
+    pass "BUG032-REG-C5A-TYPE-COLUMN-001 / SCN-032-022 accepts Stress when Type is the third column"
+  else
+    printf 'BUG032_C5A_TYPE_THIRD_MISMATCH scenario=SCN-032-022 status=%s mismatches=%s missingStressRow=%s missingStressDod=%s\n' \
+      "$type_third_status" "$type_third_mismatches" \
+      "$(grep -Fq -- 'SLA-sensitive scope is missing canonical Stress Test Plan row' "$type_third_log" && printf 1 || printf 0)" \
+      "$(grep -Fq -- 'SLA-sensitive scope is missing faithful stress DoD item' "$type_third_log" && printf 1 || printf 0)"
+    fail "BUG032-REG-C5A-TYPE-COLUMN-001 / SCN-032-022 accepts Stress when Type is the third column"
+  fi
+}
+
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FOCUS:-}" \
+  == "BUG032-REG-C5A-TYPE-COLUMN-001" ]]; then
+  bug032_c5a_focus_base="$tmp_root/bug032-c5a-focus-base"
+  bug032_c5a_initial_failures="$failures"
+  emit_base_fixture "$bug032_c5a_focus_base"
+  mutate_delivery_contract "$bug032_c5a_focus_base/state.json"
+  run_bug032_c5a_type_column_regression "$bug032_c5a_focus_base" "$tmp_root"
+  if [[ "$failures" -eq "$bug032_c5a_initial_failures" ]]; then
+    printf 'BUG032_C5A_FOCUSED_VERDICT=PASS\n'
+    exit 0
+  fi
+  printf 'BUG032_C5A_FOCUSED_VERDICT=RED failures=%s\n' \
+    "$((failures - bug032_c5a_initial_failures))"
+  exit 1
+fi
+
 run_bug032_iteration10_security_assertions() {
   local focus_root="$tmp_root/bug032-iteration10-security"
   local focus_repo="$focus_root/repo"
@@ -2275,8 +2375,6 @@ run_bug032_iteration10_security_assertions() {
   local counter_file=""
   local first_scope=""
   local second_scope=""
-  local diagnostic_payload=""
-  local diagnostic_sentinel="BUG032_SEC005_FAR_TAIL_SENTINEL"
   local sec001_failures=0
   local sec003_failures=0
 
@@ -2301,7 +2399,7 @@ run_bug032_iteration10_security_assertions() {
         "$finding_id" "$polarity"
       case "$finding_id" in
         BUG032-SEC-001*) sec001_failures=$((sec001_failures + 1)) ;;
-        BUG032-SEC-003*|BUG032-SEC-005*) sec003_failures=$((sec003_failures + 1)) ;;
+        BUG032-SEC-003*) sec003_failures=$((sec003_failures + 1)) ;;
       esac
     fi
   }
@@ -2513,39 +2611,6 @@ EOF
     printf 'BUG032_SEC003A_LINE_CONTROL_MISMATCH cases=%s\n' \
       "$line_control_mismatches"
     bug032_iter10_assertion BUG032-SEC-003A-LINE-WIDE-EXCLUSION control 1
-  fi
-
-  diagnostic_payload=$'This work remains deferred. \033[31m'
-  while [[ "${#diagnostic_payload}" -lt 5000 ]]; do
-    diagnostic_payload="${diagnostic_payload}0123456789"
-  done
-  diagnostic_payload="$diagnostic_payload $diagnostic_sentinel"
-  case_dir="$focus_repo/specs/988-bug032-sec005-diagnostic-injection"
-  emit_g040_fixture "$case_dir" "done" "$diagnostic_payload" no no
-  case_log="$focus_root/sec005-diagnostic-injection.log"
-  run_capture "$case_log" bash "$GUARD_SCRIPT" "$case_dir" >/dev/null
-  if grep -Fq -- 'deferral language hit' "$case_log" \
-    && ! LC_ALL=C grep -q $'\033' "$case_log" \
-    && ! grep -Fq -- "$diagnostic_sentinel" "$case_log"; then
-    bug032_iter10_assertion BUG032-SEC-005-G040-DIAGNOSTIC-INJECTION adversarial 0
-  else
-    printf 'BUG032_SEC005_DIAGNOSTIC_INJECTION_MISMATCH escBytes=%s sentinelRetained=%s\n' \
-      "$(LC_ALL=C grep -q $'\033' "$case_log" && printf 1 || printf 0)" \
-      "$(grep -Fq -- "$diagnostic_sentinel" "$case_log" && printf 1 || printf 0)"
-    bug032_iter10_assertion BUG032-SEC-005-G040-DIAGNOSTIC-INJECTION adversarial 1
-  fi
-
-  case_dir="$focus_repo/specs/989-bug032-sec005-short-control"
-  emit_g040_fixture "$case_dir" "done" 'This work is deferred.' no no
-  case_log="$focus_root/sec005-short-control.log"
-  run_capture "$case_log" bash "$GUARD_SCRIPT" "$case_dir" >/dev/null
-  if grep -Fq -- 'deferral language hit' "$case_log" \
-    && grep -Fq -- 'This work is deferred.' "$case_log" \
-    && ! LC_ALL=C grep -q $'\033' "$case_log"; then
-    bug032_iter10_assertion BUG032-SEC-005-G040-DIAGNOSTIC-INJECTION control 0
-  else
-    printf 'BUG032_SEC005_SHORT_CONTROL_MISMATCH\n'
-    bug032_iter10_assertion BUG032-SEC-005-G040-DIAGNOSTIC-INJECTION control 1
   fi
 
   BUG032_ITER10_SEC001_FAILURES="$sec001_failures"
@@ -9419,6 +9484,8 @@ if [[ "$bug032_scn022_control_setup_failures" -eq 0 ]] \
 else
   fail "BUG-032 Check 5A canonical Stress control has setup=$bug032_scn022_control_setup_failures status=$bug032_scn022_control_status"
 fi
+run_bug032_c5a_type_column_regression "$positive_feature_dir" "$tmp_root"
+unset -f run_bug032_c5a_type_column_regression
 unset -f bug032_insert_before_exact_line
 
 # Regression: bugs/BUG-032-planning-maturity-guard-false-positives,

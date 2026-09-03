@@ -55,19 +55,19 @@
     },
     "activeAgent": "bubbles.plan",
     "currentPhase": "bootstrap",
-    "currentPhaseDetail": "security-scenario-planning-reconciliation",
+    "currentPhaseDetail": "convergence-iteration-10-sec005-adjudication",
     "currentScope": 1,
-    "runStartedAt": "2026-09-02T01:58:50Z",
+    "runStartedAt": "2026-09-03T05:49:47Z",
     "completedPhaseClaims": [],
     "pendingTransitionRequests": [],
     "nextRequiredOwner": "bubbles.test",
-    "nextRequiredAction": "Replay the unchanged row-145 family and record its exact result without assigning a cause. Then add only the ten TP-01-04 persistent identifiers for SCN-032-033 through SCN-032-036. Capture all four security findings at RED against unchanged production hashes before any repair. B-RED waits for independent A verification. C-GREEN remains independently verified and receives no writer.",
-    "currentEvidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-02-security-planning-reconciliation",
+    "nextRequiredAction": "Remove the BUG032-SEC-005-G040-DIAGNOSTIC-INJECTION variables, fixtures, assertions, and SEC-003 failure-counter fold from bubbles/scripts/state-transition-guard-selftest.sh while preserving the BUG032-REG-C5A-TYPE-COLUMN-001 hunk byte-for-byte. Retain only the authorized SEC-001 through SEC-004 security identities. Do not run the complete transition selftest until the test-owned oracle is coherent.",
+    "currentEvidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md#convergence-iteration-10-sec-005-adjudication",
     "substate": "needs_reverification",
     "parallelReadyOwners": [
       {
         "owner": "bubbles.test",
-        "lane": "A-SECURITY-RED",
+        "lane": "A-SECURITY-ORACLE-CORRECTION",
         "scope": 1
       }
     ],
@@ -819,12 +819,32 @@
       ],
       "nextRequiredOwner": "bubbles.test",
       "nextRequiredAction": "Perform the test-only A oracle correction before any A production work. Remove the rejected G068 same-ID assertion, fold candidate test bindings into surviving scenarios, and capture clean A-RED against unchanged production. B waits for A. C is independently GREEN."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 convergence iteration 10 SEC-005 planning adjudication",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-03T05:53:25Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md#convergence-iteration-10-sec-005-adjudication",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "BUG032-REG-SEC005-TRACE-002",
+        "BUG032-REG-C5A-TYPE-COLUMN-001"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "nextRequiredAction": "Remove the unplanned SEC-005 variables, fixtures, assertions, and SEC-003 counter fold while preserving the C5A Type-third RED hunk byte-for-byte. Return the coherent test oracle before any implementation owner acts."
     }
   ],
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
-  "lastUpdatedAt": "2026-09-02T01:58:50Z",
+  "lastUpdatedAt": "2026-09-03T05:53:25Z",
   "scopeLayout": "single-file",
   "artifacts": {
     "bug": "bug.md",
@@ -864,5 +884,5 @@
     ],
     "bugDoneRequires": "All four scopes are done, pre-fix and post-fix evidence is recorded, focused and full validation pass, and bubbles.validate certifies promotion."
   },
-  "notes": "Goal Contract revision 4 governs the existing work boundary. The active specification and scopes preserve the prior 22 behaviors and add SCN-032-033 through SCN-032-036 for exactly 26 active scenarios. All four active scopes remain in progress. Validate-owned certification stays unchanged as an earlier projection. Row 144 remains prior accepted A-RED. Row 145 remains failed and nonterminal with no inferred cause. The first executable route is the unchanged baseline replay followed by A-SECURITY-RED under bubbles.test. B waits for independent A verification. C-GREEN remains independently verified. BUG035-D14-EMPTY-OUTPUT-COUNT remains independently routed to the existing BUG-035 packet and is not an in-boundary BUG-032 blocker. No terminal status, certification mutation, human acceptance, deployment, promotion, host mutation, model selection, commit, or push is claimed."
+  "notes": "Goal Contract revision 4 governs the existing work boundary. The active specification and scopes preserve the prior 22 behaviors and add SCN-032-033 through SCN-032-036 for exactly 26 active scenarios. Convergence iteration 10 assigns no scenario or Test Plan identity to SEC-005 because its fallback diagnostic behavior is not part of the active requirement and design contract. All four active scopes remain in progress. Validate-owned certification stays unchanged as an earlier projection. Row 144 remains prior accepted A-RED. Row 145 remains failed and nonterminal with no inferred cause. The first executable route is test-owned SEC-005 oracle removal while preserving the C5A Type-third RED hunk. Production rollback remains implementation-owned and cannot begin before the coherent test oracle returns. B waits for independent A verification. C-GREEN remains independently verified. BUG035-D14-EMPTY-OUTPUT-COUNT remains independently routed to the existing BUG-035 packet and is not an in-boundary BUG-032 blocker. No terminal status, certification mutation, human acceptance, deployment, promotion, host mutation, model selection, commit, or push is claimed."
 }

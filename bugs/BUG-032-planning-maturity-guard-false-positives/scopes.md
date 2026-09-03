@@ -383,6 +383,33 @@ Feature: Planning declaration classification
     And the existing eight and nine candidate outcomes remain unchanged
 ```
 
+  ### Convergence Iteration 10 SEC-005 Adjudication
+
+  `BUG032-REG-SEC005-TRACE-002` does not create an active BUG-032 behavior
+  scenario. The specification and design define the security set as
+  `BUG032-SEC-001` through `BUG032-SEC-004`. They bind G040 to SEC-003 lexical
+  matching only. Neither artifact requires control-byte neutralization or a
+  512-byte bound for fallback diagnostic text. Those output-safety semantics are
+  independent of SCN-032-035 and must not be folded into SEC-003.
+
+  The design's bounded-original-form rule applies to the exact-pair record owned
+  by SCN-032-035. The committed `_g040_print_bounded_fallback` path instead
+  removes C0 and DEL bytes and clips a legacy prohibited-phrase source line to
+  512 bytes after exact-pair extraction declines that line. Checkpoint `dca8427f`
+  introduced that helper and the SEC-005 assertions together without an active
+  requirement, scenario, or Test Plan identity.
+
+  The Scope 1 security RED must therefore contain no
+  `BUG032-SEC-005-G040-DIAGNOSTIC-INJECTION` identity or associated fixtures.
+  `bubbles.test` owns removal of the SEC-005 variables, fixtures, assertion calls,
+  and SEC-003 failure-counter fold. It must preserve the independent C5A
+  Type-third RED hunk byte-for-byte. Once that test-owned oracle is coherent,
+  `bubbles.implement` owns removal of `_g040_print_bounded_fallback` and restoration
+  of its two call sites to the authorized pre-SEC005 diagnostic path. This
+  adjudication allocates no scenario ID and adds no Test Plan identity. It grants
+  no production credit and authorizes no production or certification change in
+  this planning run.
+
 ### Implementation Plan
 
 1. Preserve row 144 as accepted A-RED for its recorded pre-repair byte epoch.
