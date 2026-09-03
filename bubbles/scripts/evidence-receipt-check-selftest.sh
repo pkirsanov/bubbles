@@ -174,6 +174,33 @@ else
   fail "SCN-B050-002 expected one named admitted stale receipt (rc=$rc, out=$out)"
 fi
 
+# BUG-050 SCN-B050-005: RED proves historical ordering against its captured
+# source. A transition-admitted view may retain that stale closure only when a
+# later matching IMPLEMENT receipt exists. Ordinary full-log diagnostics remain
+# strict, and the GREEN receipt still uses current bytes.
+historical_red_log="$d/historical-red.jsonl"
+historical_red_hash="$(sha "$admitted_path")"
+printf 'post-red implementation bytes\n' > "$admitted_path"
+current_hash="$(sha "$admitted_path")"
+printf '{"schemaVersion":3,"ts":"2026-09-02T08:10:00Z","sessionId":"bug050-red","spec":"BUG-050","scope":"SCOPE-01","cmd":"bash focused-red.sh","exitCode":1,"inputClosure":[{"path":"admitted.txt","sha256":"%s"}],"scenarioBinding":{"scenarioId":"SCN-B050-005","phase":"red","testIdentity":"BUG-050::historical-red","sourceRevision":"0000000000000000000000000000000000000001","negativeControl":"restore current-byte equality for historical RED","claim":"historical RED remains ordered proof"}}\n' \
+  "$historical_red_hash" > "$historical_red_log"
+printf '{"schemaVersion":3,"ts":"2026-09-02T08:11:00Z","sessionId":"bug050-implement","spec":"BUG-050","scope":"SCOPE-01","cmd":"bash focused-implement.sh","exitCode":0,"inputClosure":[{"path":"admitted.txt","sha256":"%s"}],"scenarioBinding":{"scenarioId":"SCN-B050-005","phase":"implement","testIdentity":"BUG-050::historical-red","sourceRevision":"0000000000000000000000000000000000000002","negativeControl":"restore current-byte equality for historical RED","claim":"implementation follows historical RED"}}\n' \
+  "$current_hash" >> "$historical_red_log"
+printf '{"schemaVersion":3,"ts":"2026-09-02T08:12:00Z","sessionId":"bug050-green","spec":"BUG-050","scope":"SCOPE-01","cmd":"bash focused-green.sh","exitCode":0,"inputClosure":[{"path":"admitted.txt","sha256":"%s"}],"scenarioBinding":{"scenarioId":"SCN-B050-005","phase":"green","testIdentity":"BUG-050::historical-red","sourceRevision":"0000000000000000000000000000000000000002","negativeControl":"restore current-byte equality for historical RED","claim":"current GREEN remains current-byte compatible"}}\n' \
+  "$current_hash" >> "$historical_red_log"
+out="$(bash "$CHECK" --log "$historical_red_log" --repo-root "$d" --strict)" && rc=0 || rc=$?
+if [[ "$rc" -eq 1 && "$(field "$out" stale)" -eq 1 ]]; then
+  pass "SCN-B050-005 ordinary full-log freshness still reports the stale RED closure"
+else
+  fail "SCN-B050-005 ordinary mode unexpectedly relaxed RED freshness (rc=$rc, out=$out)"
+fi
+out="$(bash "$CHECK" --log "$historical_red_log" --repo-root "$d" --transition-admitted --strict)" && rc=0 || rc=$?
+if [[ "$rc" -eq 0 && "$(field "$out" historical)" -eq 1 && "$(field "$out" stale)" -eq 0 && "$(field "$out" valid)" -eq 2 ]]; then
+  pass "SCN-B050-005 admitted historical RED survives current-byte drift after matching IMPLEMENT"
+else
+  fail "SCN-B050-005 admitted historical RED was not preserved (rc=$rc, out=$out)"
+fi
+
 echo
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "evidence-receipt-check-selftest FAILED with $FAILURES issue(s)."

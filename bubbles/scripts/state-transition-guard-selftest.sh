@@ -15,7 +15,13 @@ source "$SCRIPT_DIR/guard-lib.sh"
 # them out of this cumulative fixture suite to avoid repeated heavy scans.
 export BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1
 
-selftest_tmp_base="${TMPDIR:-$HOME/.cache}"
+# Strict path-containment checks resolve fixture paths against the surrounding
+# Git worktree. Keep ephemeral fixtures under that worktree on platforms whose
+# default TMPDIR is external (notably macOS), then remove the fixture root on exit.
+if ! selftest_repo_root="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null)"; then
+  selftest_repo_root="$(pwd)"
+fi
+selftest_tmp_base="$selftest_repo_root/.specify/runtime"
 mkdir -p "$selftest_tmp_base"
 tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXXXX")"
 failures=0
@@ -159,6 +165,7 @@ run_strict_manifest_containment_regressions() {
   emit_honest_planning_fixture "$basename_planning_dir"
   emit_honest_planning_fixture "$basename_delivery_dir"
   for feature_dir in "$basename_planning_dir" "$basename_delivery_dir"; do
+    # shellcheck disable=SC2016
     bubbles_sed_inplace \
       's;^| Broader regression |.*$;| Broader regression | `regression` | `rlbasenameonlyfixture.js` | Preserve planning and delivery profile isolation. | `bash rlbasenameonlyfixture.js` | No |;' \
       "$feature_dir/scopes.md"
@@ -5430,7 +5437,7 @@ if [[ -z "$c43_predicate" ]]; then
   fail "Check 43 clone predicate could not be extracted from $GUARD_SCRIPT (guard shape changed)"
 elif [[ "$c43_empty_sha" != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" ]]; then
   fail "Check 43 empty-stdout constant is not the SHA-256 of the empty string (got: '${c43_empty_sha}')"
-elif ! echo "$c43_predicate" | grep -qF '$empty_sha'; then
+elif ! echo "$c43_predicate" | grep -qF "\$empty_sha"; then
   fail "Check 43 clone predicate lost its empty-stdout exemption — BUG-007 regressed"
   echo "--- extracted predicate ---"
   echo "$c43_predicate"
@@ -5802,6 +5809,7 @@ check8_basename_delivery_dir="$tmp_root/specs/932-check8-basename-delivery"
 emit_honest_planning_fixture "$check8_basename_planning_dir"
 emit_honest_planning_fixture "$check8_basename_delivery_dir"
 for check8_basename_dir in "$check8_basename_planning_dir" "$check8_basename_delivery_dir"; do
+  # shellcheck disable=SC2016
   bubbles_sed_inplace \
     's;^| Broader regression |.*$;| Broader regression | `regression` | `rlbasenameonlyfixture.js` | Preserve planning and delivery profile isolation. | `bash rlbasenameonlyfixture.js` | No |;' \
     "$check8_basename_dir/scopes.md"
@@ -6182,6 +6190,7 @@ fi
 # ----------------------------------------------------------------------------
 echo "Running Check 7A declared-reconstructed overlap contract..."
 
+# shellcheck disable=SC2016
 c7a_an_start="$(grep -n 'exec_history_analysis="\$(python3' "$GUARD_SCRIPT" | head -n 1 | cut -d: -f1 || true)"
 if [[ -z "$c7a_an_start" ]]; then
   fail "Check 7A: analyzer block absent from guard source — the check was removed or renamed"
@@ -6268,6 +6277,7 @@ fi
 # ----------------------------------------------------------------------------
 echo "Running Check 7C phase-claim execution backing (A-017-08)..."
 
+# shellcheck disable=SC2016
 c7c_start="$(grep -n 'claim_backing_analysis="\$(python3' "$GUARD_SCRIPT" | head -n 1 | cut -d: -f1 || true)"
 if [[ -z "$c7c_start" ]]; then
   fail "Check 7C: analyzer block absent from guard source — the check was removed or renamed"
@@ -6424,6 +6434,7 @@ c43_dir="$tmp_root/c43-human-acceptance"
 mkdir -p "$c43_dir"
 
 # shellcheck source=acceptance-authority-lib.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/acceptance-authority-lib.sh"
 
 cat <<'EOF' > "$c43_dir/mixed.md"
