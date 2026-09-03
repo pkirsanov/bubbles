@@ -1,0 +1,141 @@
+{
+  "version": 3,
+  "bugId": "BUG-038",
+  "featureDir": "bugs/BUG-038-progress-timeout-bsd-wc-padding",
+  "featureName": "Progress Timeout Aborts On BSD wc Padding",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packet": "micro",
+  "packetResolution": "Compact micro-fix packet. All 8 admission conditions in bubbles/registry/micro-fix-packet.yaml answered admissibly in bug.md and confirmed by bubbles/scripts/micro-fix-admission.sh. One-line portability normalization in one file; the adversarial regression was already committed as guard-lib-timeout-selftest.sh and was failing at HEAD.",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-038-progress-timeout-bsd-wc-padding"],
+    "allowedPaths": [
+      "bugs/BUG-038-progress-timeout-bsd-wc-padding/**",
+      "bubbles/scripts/guard-lib.sh"
+    ],
+    "explicitlyOutOfBoundary": [
+      "bugs/BUG-037-uservalidation-opt-out-acceptance/**",
+      "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/**",
+      "bugs/BUG-032-planning-maturity-guard-false-positives/**",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/receipt-identity-selftest.sh"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "implemented",
+    "activeAgent": "bubbles.bug",
+    "currentPhase": "validate",
+    "currentScope": 1,
+    "completedPhaseClaims": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.bug",
+        "claimedAt": "2026-08-23T23:12:17Z",
+        "completedAt": "2026-08-23T23:12:17Z",
+        "evidenceRef": "report.md#code-diff-evidence",
+        "note": "Timestamp is the measured modification time of bubbles/scripts/guard-lib.sh, the only tracked source file this packet changed. Re-derived 2026-08-25T19:26:06Z as IMPL_MTIME=2026-08-23T23:12:17Z and recorded verbatim at report.md section 'Green stage — re-execution'."
+      },
+      {
+        "phase": "test",
+        "agent": "bubbles.bug",
+        "claimedAt": "2026-08-25T19:26:33Z",
+        "completedAt": "2026-08-25T19:26:33Z",
+        "evidenceRef": "report.md#test-evidence",
+        "note": "Red stage exit 1 with 4 of 10 failing, recorded by the originating session at report.md section 'Reproduction BEFORE fix'. Green stage exit 0 with 10 of 10 passing, run twice against the unmodified selftest: originating session, and re-executed 2026-08-25T19:26:06Z to 19:26:33Z with SELFTEST_EXIT=0."
+      }
+    ],
+    "phaseStubs": {
+      "simplify": {
+        "reason": "No simpler correct form of this fix exists. The change is one fork-free parameter expansion, ${current_size//[[:space:]]/}, placed immediately before the pre-existing ^[0-9]+$ test at guard-lib.sh:138. Removing it reinstates the defect. Replacing the regex instead would discard the unreadable-log fail-loud path that the 'lost progress log fails loud through bounded cleanup' case asserts. No helper, branch, or capability probe was introduced, so there is nothing to consolidate, extract, or de-duplicate.",
+        "justification": "Stubbed as genuinely no-work-needed, not skipped. git diff --stat reports 6 insertions in one file and zero deletions; five of the six lines are the explanatory comment. A simplify pass has no surface to act on."
+      },
+      "stabilize": {
+        "reason": "This packet authored and modified zero tests, so it created no new flake surface to stabilize. The single timing-sensitive suite involved, guard-lib-timeout-selftest.sh, is the pre-existing adversarial regression; git diff --stat over it is empty, and editing it would void the contract-preserving micro-fix admission answer in bug.md. Its wall-clock sensitivity is disclosed at report.md section 'Flake disclosure', and it returned 10 of 10 on two independent runs two days apart, so the observed result is not a single-sample fluke.",
+        "justification": "Stubbed as genuinely no-work-needed, not skipped. Stabilization acts on tests this packet owns; it owns none. The one suite it depends on is explicitly protected from modification by the packet's own admission answers."
+      },
+      "security": {
+        "reason": "The value this fix touches is the byte count of a progress log that the runner itself created, captured with wc -c. It carries no credential, key, token, session identity, or caller-supplied input. The normalization only strips whitespace from a value that must then still satisfy ^[0-9]+$, so it cannot widen what the numeric test accepts, and an unreadable log still yields the empty string and still fails loud. guard-lib.sh contains no authentication, authorization, payment, secret-handling, or deployment code.",
+        "justification": "Stubbed as genuinely no-work-needed, not skipped. This is the same finding the micro-fix admission answers no-auth-surface, no-secret-surface, no-payment-surface and no-deployment-surface record in bug.md, each confirmed mechanically by micro-fix-admission.sh."
+      }
+    },
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "Run framework-validate and release-check on the combined source revision to confirm no other guard regressed, then independently certify the BUG-038 RED-to-GREEN evidence and execute the regression, validate and audit phases, which this packet deliberately leaves unrecorded because they did not happen. Neither long-running suite was authorized in the originating session or in the 2026-08-25 packet-completion session. Two residual guard objections are NOT this packet's to clear: the stale evidence receipts are all owned by bugs/BUG-033 (DI-038-03), and Gate G027 contradicts Check 5 on the compact packet form (DI-038-04), whose repair lives in state-transition-guard.sh, outside this packet's boundary.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Portable wc-count normalization in bubbles_run_with_progress_timeout",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "bug.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {"active": false, "lockedScenarioIds": []}
+  },
+  "policySnapshot": {
+    "grill": {"mode": "off", "source": "user-request", "provenance": "operator-request"},
+    "tdd": {"mode": "scenario-first", "source": "workflow-forced", "provenance": "bugfix-fastlane-contract"},
+    "autoCommit": {"mode": "off", "source": "user-request", "provenance": "operator-request"},
+    "lockdown": {"mode": "unlocked", "source": "repo-default", "provenance": "framework-default"},
+    "regression": {"mode": "required", "source": "repo-default", "provenance": "framework-default"},
+    "validation": {"mode": "required", "source": "repo-default", "provenance": "framework-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.bug",
+      "phasesExecuted": ["implement", "test"],
+      "provenanceMode": "specialist",
+      "at": "2026-08-23T23:12:17Z",
+      "evidenceRef": "report.md",
+      "note": "Originating session. Applied the one-line wc normalization in bubbles/scripts/guard-lib.sh and ran the pre-existing adversarial regression at both stages: exit 1 with 4 of 10 failing before the fix, exit 0 with 10 of 10 passing after it. Both captures are recorded verbatim in report.md with real exit codes and capture hashes."
+    },
+    {
+      "agent": "bubbles.implement",
+      "phasesExecuted": ["test"],
+      "provenanceMode": "specialist",
+      "at": "2026-08-25T19:26:33Z",
+      "evidenceRef": "report.md#green-stage--re-execution",
+      "note": "Packet-completion session. Re-executed bubbles/scripts/guard-lib-timeout-selftest.sh unmodified against the current tree to confirm the passing result still describes it: SELFTEST_EXIT=0, 10 of 10, 2026-08-25T19:26:06Z to 19:26:33Z. Also re-derived the fix site, the diffstat and shellcheck -x. No source file was changed by this session."
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "report": "report.md",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": ["not_started", "in_progress", "blocked", "specs_hardened", "docs_updated", "validated", "done"],
+    "scopePickupRule": "Single scope; no dependsOn.",
+    "bugDoneRequires": "guard-lib-timeout-selftest.sh passes with a real exit code (recorded: exit 0, 10/10), full framework validation and release readiness pass on the combined revision, and bubbles.validate certifies promotion. This session ran neither long-running suite by instruction, so status stays in_progress."
+  },
+  "notes": "Fix applied and proven RED-to-GREEN against the already-committed adversarial regression, which was failing at HEAD and was NOT modified. Regression obligation is satisfied by that pre-existing selftest rather than a new test. Status remains in_progress: certification is validate-owned and framework-validate / release-check were explicitly out of scope for this session."
+}

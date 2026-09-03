@@ -50,16 +50,24 @@
     ]
   },
   "certifiedAt": null,
-  "requiresRevalidation": false,
+  "requiresRevalidation": true,
   "execution": {
-    "activeAgent": "bubbles.implement",
-    "currentPhase": "implement",
-    "currentScope": 4,
-    "runStartedAt": "2026-08-23T17:36:33Z",
-    "completedPhaseClaims": [],
+    "substate": "independently_verified",
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "runStartedAt": "2026-09-02T06:45:27Z",
+    "completedAt": "2026-09-02T06:46:08Z",
+    "completedPhaseClaims": [
+      "test",
+      "regression",
+      "simplify",
+      "gaps",
+      "implement"
+    ],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.validate",
-    "nextRequiredAction": "Scopes 1, 2 and 3 are complete with executed evidence recorded in report.md. Scope 4's CONTENT is complete: 11 of its 13 DoD items are met and closed with executed evidence (G136.description rewritten with both false assertions removed; quality-gates.md, test-core.md and skills/bubbles-quality-gates-catalog/SKILL.md rewritten to the opt-out contract; CHANGELOG.md carries the BUG-037 entry with the full D-1 upgrade note, the backfilled IMP-047 PD-12 entry, and the corrected BUG-029 entry; G057.description carries the D-3 three-way split and declares rows 2 and 3 advisory, proven by control-plane-checks.sh containing zero uservalidation references; improvements/INDEX.md carries the D-4 verbatim text and S4-T9 proves no path under bugs/BUG-032- was modified; all three generated artifacts regenerate byte-identically; the design.md section 2.5 sweep re-run returns 16 of 16 needing no change). Scope 4 remains BLOCKED on exactly two DoD items, which remain UNCHECKED and whose wording was not weakened: S4-T5 'framework-validate passes end to end with a real exit code' and S4-T6 'release-check passes with a real exit code'. BOTH PREVIOUSLY RECORDED BLOCKERS ARE NOW RESOLVED. (1) OW-009, the pre-existing macOS portability defect in the progress-aware timeout runner, was fixed under its own packet bugs/BUG-038-progress-timeout-bsd-wc-padding/ by normalizing the BSD wc fixed-width padding out of current_size before the numeric test in bubbles_run_with_progress_timeout (bubbles/scripts/guard-lib.sh:137); bash bubbles/scripts/guard-lib-timeout-selftest.sh -> exit 0, 11 lines, sha256 06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102. (2) The BUG-033 Check-43 / evidence-admission blocker is ALSO resolved: BUG-033's selftest migration removed the evidence-admission receipt-clone failure, and the most recent framework-validate run REACHED AND PASSED all three Check 43 acceptance cases, including BUG-037's own: 'PASS: Check 43: one checked plus one unchecked item is detected as unaccepted (BUG-029 shape)', 'PASS: Check 43 adversarial: a fully checked checklist reports no unchecked item, and a [ ] outside the Checklist section is ignored', and 'PASS: Check 43 (BUG-037): an OPTIONAL authored human record is still accepted at terminal'. BUG-037's OWN GATE BEHAVIOR IS THEREFORE PROVEN GREEN INSIDE framework-validate. THE REMAINING OBSTACLE IS A REPOSITORY-WIDE RED VERDICT, NOT A BUG-037 DEFECT. A framework-validate run has now COMPLETED rather than timing out, so a real verdict finally exists, and it is red: /tmp/fv-full.log, 18568 lines, /tmp/fv-full.exit = 1, tallying 5107 PASS and 31 FAIL. PROVENANCE: that run was executed by a CONCURRENT SESSION, so its figures are DIAGNOSTIC INPUT, not this session's execution evidence. NONE of the 31 failures is a BUG-037 defect and NONE lies in this packet's workBoundary.allowedPaths. They fall into four unrelated families: 16 downstream install-mode failures (fifteen 'T3: <check> was not SKIPPED under install-mode=downstream' lines plus the v5.3 downstream-install selftest (G1) parent), 12 client credential and durable-storage failures reported under 'BUG-013 sensitive client storage regression', the Mode-family inventory selftest (v6.1 / R5), and 'managed selftest runs with the system-only PATH' plus 'guard-lib timeout fallback selftest (OW-009)'. Attribution was established by command in this session: bubbles/scripts/v5.3-selftest.sh, bubbles/scripts/mode-family-inventory-selftest.sh and bubbles/scripts/guard-lib-timeout-selftest.sh are all CLEAN AT HEAD, so those failures are PRE-EXISTING, and none of the three is in allowedPaths; the only DIRTY failing surface is bubbles/scripts/guard-lib.sh, which carries this session's BUG-038 fix and is likewise out of boundary. BUG-037's OWN behavior is demonstrated GREEN inside that same run: 9 lines match 'PASS: Check 43' and ZERO lines match the acceptance-related failure pattern. The accurate finding is recorded as BLOCKED-ON-REPO-WIDE-RED in reworkQueue, severity blocking, disposition out-of-boundary, owner bubbles.validate. HISTORICAL DETAIL, NOW SUPERSEDED: earlier, four consecutive bounded attempts all returned exit 142 (SIGALRM) - 1500s (9021 lines, sha256 8f506c771ee408be9260bac37ba6ef477d6dd63fbdf2b5e0c4ed1ba42e8621ae), 3600s (2942 lines, sha256 e6b763dd9aadcff3abd38351e48031c33034419eed059e5d0d352cd81e51c1b7) and 5400s (8984 lines, sha256 0e93db45398fdad509ff2c61ada5f9ef928771f1cdf94ebed2d454c7ac4355f7). Total runtime now exceeds 90 minutes, materially because BUG-033 added about 518 lines to bubbles/scripts/state-transition-guard-selftest.sh, which alone takes roughly 25 minutes. Compounding this, the shared working tree is being CONCURRENTLY MUTATED by another session, so each run validates a moving target: the 5400s run reported 'FAIL: Committed release manifest is current', 'FAIL: Release manifest selftest', 'FAIL: Interop apply/import selftest', 'FAIL: Install provenance selftest', 'FAIL: Trust doctor selftest' and 'Framework-managed file drift detected: agents/bubbles.workflow.agent.md' - yet git diff --stat -- agents/bubbles.workflow.agent.md is EMPTY, proving that file is unmodified. The drift is measured against bubbles/release-manifest.json, which went stale mid-run because another session concurrently modified agents/bubbles.plan.agent.md, agents/bubbles_shared/critical-requirements.md, bubbles/agent-bundle-budgets.json, bubbles/workflows.yaml and skills/bubbles-claim-grounding/SKILL.md. None of those paths are BUG-037's. That environmental characterization is retained for the trail but is recorded as SUPERSEDED in reworkQueue, because a completed run now exists and 'cannot produce a verdict / exceeds 90 minutes' is no longer the accurate description. NEXT ACTION, owned by bubbles.validate: drive the repository to a GREEN framework-validate as a SEPARATE concern - route each of the four failure families to its own owner or packet, none of which is BUG-037 - then re-run bubbles/scripts/cli.sh framework-validate and bubbles/scripts/cli.sh release-check and record their REAL exit codes as the evidence for S4-T5 and S4-T6. Neither DoD item may be checked until a run PASSES: a completed run that exits 1 is a real verdict but not a passing one, and a timed-out run is not a pass either. Do NOT repair any of the 31 failures inside this packet - every one of them is outside workBoundary.allowedPaths.",
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Independently verify bugs/BUG-045-traceability-empty-evidence-refs before the parent closes F-B037-GAPS-TRACEABILITY-EMPTY-REF-018. Preserve both low test-boundary observations and leave BUG-037 terminal certification to bubbles.validate.",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
@@ -93,7 +101,7 @@
       {
         "scope": 4,
         "name": "Governance documentation and generated artifacts",
-        "status": "blocked",
+        "status": "done",
         "certified": false
       }
     ],
@@ -194,7 +202,12 @@
       "raisedAt": "2026-08-24T00:00:00Z",
       "severity": "blocking",
       "owner": "bubbles.validate",
-      "status": "open",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T09:40:09Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "SUPERSEDED AS OPERATIVE ROUTING by current-session green broad receipts. The historical repository-wide red run remains recorded and was not rewritten. The canonical framework validation and release check now both have durable exit-zero rows for BUG-037 Scope 4.",
+      "resolutionEvidence": "Framework validation row 2026-09-01T07:40:23Z: exit 0, durationMs 7754651, stdoutHash 4d165462bbc85b63fc1efa82c17f61c0dde20d067deefbca6685021a8cd65185. Release-check row 2026-09-01T09:40:09Z: exit 0, durationMs 7142337, stdoutHash e3afcd00cacd8ef7d1738c65136b48341c410dc0abf0d4cdeac75b4068bfed71. Both rows use session vscode-890b012efcd4029f1bbec9142330177b, BUG-037, SCOPE-04, canonical-source-root, and single-run tags.",
+      "resolutionNotes": "Resolution means the current green runs supersede the old red result for routing. It does not claim the old run never happened. It does not certify Scope 4, complete the bug, or complete the scenario node.",
       "disposition": "out-of-boundary",
       "supersedes": "BLOCKED-ON-VALIDATION-ENVIRONMENT",
       "surface": "the shared bubbles working tree repository-wide, across four unrelated failure families; NOT any acceptance, uservalidation or G136 surface",
@@ -212,6 +225,805 @@
       "impact": "Blocks BUG-037 Scope 4 DoD items S4-T5 (framework-validate passes end to end with a real exit code) and S4-T6 (release-check passes with a real exit code). BOTH REMAIN UNCHECKED. The DoD wording requires a PASSING run; a completed run that exits 1 is a real verdict but not a passing one, so neither item may be ticked. BUG-037's own behavior is NOT implicated - see bug037OwnBehavior above.",
       "action": "Deliberately NOT worked around and NOT repaired inside BUG-037. All four failure families are outside this packet's workBoundary.allowedPaths, so repairing any of them would be an out-of-boundary edit. bubbles.validate owns the routing: drive the repository to a green framework-validate as a SEPARATE concern (each family to its own owner or packet), then re-run bubbles/scripts/cli.sh framework-validate and bubbles/scripts/cli.sh release-check and record their REAL exit codes as the evidence for S4-T5 and S4-T6.",
       "notes": "THIS IS NOT A BUG-037 DEFECT. PROVENANCE: the 5107/31/exit-1 figures, the 31 FAIL lines and the four families are read from /tmp/fv-full.log, a run executed by a CONCURRENT SESSION - they are DIAGNOSTIC INPUT, not the recording session's execution evidence. What the recording session DID execute is the grep tally over that log, the git status attribution, the allowedPaths membership test, and the OW-009 selftest re-run; those are executed evidence. framework-validate and release-check were NOT run by the recording session."
+    },
+    {
+      "findingId": "F-B037-GAPS-LINK-003",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.plan",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T17:14:45Z",
+      "resolvedBy": "bubbles.plan",
+      "resolution": "SCN-B037-003 now links to the exact existing S1-T3 shared-reader assertion and the exact existing S3-T3 Check 43 assertion. Both identities require one checked item, five unchecked items, non-zero refusal, and all five names.",
+      "resolutionEvidence": "scenario-manifest.json SCN-B037-003; test-plan.json S1-T3 and S3-T3; report.md#bug037-planning-remediation",
+      "disposition": "in-boundary",
+      "surface": "scenario-manifest.json SCN-B037-003 linkedTests",
+      "summary": "The linked regression covers two unchecked items, while the scenario requires one checked plus five unchecked and requires every unchecked item to be named.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 286"
+    },
+    {
+      "findingId": "F-B037-GAPS-LINK-015",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "UNTESTED",
+      "owner": "bubbles.plan",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T17:14:45Z",
+      "resolvedBy": "bubbles.plan",
+      "resolution": "SCN-B037-015 now links to the existing release-manifest selftest scenario identity in addition to the gate-map and validation-check generator identities.",
+      "resolutionEvidence": "scenario-manifest.json SCN-B037-015; test-plan.json S4-T3a through S4-T3c; report.md#bug037-planning-remediation",
+      "disposition": "in-boundary",
+      "surface": "scenario-manifest.json SCN-B037-015 linkedTests",
+      "summary": "The generated-artifact scenario includes the release manifest but carries no linked release-manifest test.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 286"
+    },
+    {
+      "findingId": "F-B037-GAPS-S2T8",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:45:23Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "S2-T8 now compares explicit base and candidate trees by changed path. It permits only BUG-037 uservalidation changes and rejects a prose-only foreign *uservalidation.md modification.",
+      "resolutionEvidence": "report.md#bug037-test-assertion-fidelity-remediation; tool-log rows 311, 316, 318",
+      "resolutionNotes": "The negative control changes foreign prose without changing checkbox state. This proves the detector is content-independent.",
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-selftest.sh S2-T8",
+      "summary": "The test detects only unchecked-to-checked item transitions, not every foreign uservalidation.md modification promised by the Test Plan.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 286"
+    },
+    {
+      "findingId": "F-B037-GAPS-S4T4",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:45:23Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "S4-T4 now parses exact named changelog sections. It requires BUG-037, PD-12, corrected BUG-029, and all four D-1 classes with distinct handling.",
+      "resolutionEvidence": "report.md#bug037-test-assertion-fidelity-remediation; tool-log rows 311, 316, 318",
+      "resolutionNotes": "Deleting the corrected BUG-029 entry and deleting each migration class are separate failing controls.",
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-selftest.sh S4-T4",
+      "summary": "Deleting the corrected BUG-029 changelog entry still satisfies the current changelog check.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 286"
+    },
+    {
+      "findingId": "F-B037-GAPS-S4T8",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:45:23Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "S4-T8 now parses only G057.description. It requires all three D-3 rules, the initial-authoring mechanical label, the later-mutation advisory label, and an enforcer with no uservalidation read.",
+      "resolutionEvidence": "report.md#bug037-test-assertion-fidelity-remediation; tool-log rows 311, 316, 318",
+      "resolutionNotes": "Five description-clause controls and one mutated-enforcer control prove the assertion path can fail.",
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-selftest.sh S4-T8",
+      "summary": "The test does not require all three D-3 rules and their mechanical versus advisory classification.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 286"
+    },
+    {
+      "findingId": "F-B037-GAPS-S4T2",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:45:23Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "S4-T2 now parses only G136.description. It requires Automation Readiness, Checklist, Human Acceptance Record, done-only scope, opt-out semantics, and exact declared-code equality.",
+      "resolutionEvidence": "report.md#bug037-test-assertion-fidelity-remediation; tool-log rows 311, 316, 318",
+      "resolutionNotes": "Each clause has a description-local deletion control with a sibling-key decoy. An extra undeclared code has a separate exact-set control.",
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-selftest.sh S4-T2",
+      "summary": "The test does not assert that G136 describes all three sections and its done-only terminal condition.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 286"
+    },
+    {
+      "findingId": "F-B037-TEST-RELEASE-MANIFEST-FRESHNESS",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T20:48:00Z",
+      "severity": "blocking",
+      "classification": "STALE_GENERATED_ARTIFACT",
+      "owner": "bubbles.implement",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:56:51Z",
+      "resolvedBy": "bubbles.implement",
+      "resolution": "The canonical owning generator updated the release manifest. Its isolated candidate and the generated repository file were byte-identical. The only non-volatile manifest change was the checksum for bubbles/scripts/acceptance-authority-selftest.sh.",
+      "resolutionEvidence": "report.md#bug-037-release-manifest-freshness-remediation; tool-log rows 321 through 334",
+      "resolutionNotes": "Rows 321 and 322 preserve the current-byte RED exits. Row 323 records the owning generator at exit 0. Rows 324 and 325 record the first GREEN verification. Rows 330 through 332 record execution-state, prose, and artifact checks at exit 0. Rows 333 and 334 record the final freshness check and release-manifest selftest at exit 0. Independent bubbles.test verification remains required.",
+      "disposition": "in-boundary",
+      "surface": "bubbles/release-manifest.json",
+      "summary": "The test-owned acceptance-authority-selftest change invalidates its checksum in the generated release manifest. The freshness check and linked release-manifest selftest return 1.",
+      "evidence": "report.md#bug037-test-assertion-fidelity-remediation; tool-log rows 317 and 319",
+      "requiredSourceWork": "Run bubbles/scripts/generate-release-manifest.sh through its owning implementation surface. Do not hand-edit the generated JSON.",
+      "requiredTestWork": "Rerun generate-release-manifest.sh --check and release-manifest-selftest.sh after regeneration."
+    },
+    {
+      "findingId": "F-B037-GAPS-D5",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "DIVERGENT",
+      "owner": "bubbles.design",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T17:01:44Z",
+      "resolvedBy": "bubbles.design",
+      "resolution": "D-5 now classifies PD12-NO-RECORD as conditional-active. The shipped requiredAtTerminal false value emits no record refusal, while an explicit downstream true override activates the declared code. The closed failure-code set covers every supported source emission, and authority-read failures use a planned bootstrap-active code.",
+      "resolutionEvidence": "design.md D-5; report.md#bug037-design-remediation",
+      "resolutionNotes": "This resolves the design contradiction only. Planning now records the required registry, source, documentation, generated, and persistent-test changes. F-B037-PLAN-D1-D5-SYNC keeps their implementation open for bubbles.implement.",
+      "disposition": "in-boundary",
+      "surface": "design.md D-5, acceptance-authority.yaml failureCodes, acceptance-authority-lib.sh",
+      "summary": "D-5 declares PD12-NO-RECORD unemittable and retired, while the downstream requiredAtTerminal override intentionally emits that undeclared code.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 287"
+    },
+    {
+      "findingId": "F-B037-GAPS-FAILCLOSED",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.implement",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:17:44Z",
+      "resolvedBy": "bubbles.implement",
+      "resolution": "The current shared reader performs one fail-closed authority preflight before either public verdict evaluates an artifact. S1-T11 through S1-T15 exercise both verdicts for missing, unreadable, malformed, required-field-missing, and invalid-boolean authorities and require exit 1 with exactly one bootstrap code line.",
+      "resolutionEvidence": "report.md#bug037-implementation-remediation; tool-log rows 306 and 308",
+      "resolutionNotes": "The reader and registry implementation bytes were already present when this invocation began. This resolution claims current-session verification, not authorship of inherited dirty-tree bytes. Independent bubbles.test execution remains required.",
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-lib.sh registry readers",
+      "summary": "Implement SCN-B037-016. Both public verdicts must return 1 and emit exactly one declared PD12-AUTHORITY-UNAVAILABLE line for missing, unreadable, malformed, required-field-missing, and invalid-boolean authority states.",
+      "requiredSourceWork": "Add one fail-closed authority preflight in bubbles/scripts/acceptance-authority-lib.sh and declare the bootstrap-active code in bubbles/registry/acceptance-authority.yaml. Do not continue artifact evaluation after preflight failure.",
+      "requiredTestWork": "Add S1-T11 through S1-T15 to bubbles/scripts/acceptance-authority-selftest.sh, including one case per failure class and both public verdicts. After implementation, bubbles.test owns independent execution.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 287"
+    },
+    {
+      "findingId": "F-B037-GAPS-RECORD-AUTHORSHIP",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.implement",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:17:44Z",
+      "resolvedBy": "bubbles.implement",
+      "resolution": "Record authorship now reads the union of base required fields and method-conditional fields. S1-T16 through S1-T18 prove that a real record pointer authors the record, empty and complete-bracket defaults remain inert, and the two supported methods retain distinct complete schemas.",
+      "resolutionEvidence": "report.md#bug037-implementation-remediation; tool-log rows 306 and 308",
+      "resolutionNotes": "The production predicate was already present when this invocation began. This resolution claims current-session verification and focused-test completion. Independent bubbles.test execution remains required.",
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-lib.sh bubbles_acceptance_record_authored",
+      "summary": "Implement SCN-B037-017. Any real base or method-conditional field must author the record, while empty values and complete bracket template tokens remain inert.",
+      "requiredSourceWork": "Build the authorship field set from registry base fields plus every method requiresField. Validate all base fields after any real recognized field appears. Enforce each selected method's extra field.",
+      "requiredTestWork": "Add S1-T16 through S1-T18 to bubbles/scripts/acceptance-authority-selftest.sh. Include record-only authorship, untouched defaults, and both method-specific schemas. After implementation, bubbles.test owns independent execution.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 287"
+    },
+    {
+      "findingId": "F-B037-GAPS-MIGRATION",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-01T16:43:15Z",
+      "severity": "blocking",
+      "classification": "DIVERGENT",
+      "owner": "bubbles.design",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T17:01:44Z",
+      "resolvedBy": "bubbles.design",
+      "resolution": "D-1 now classifies current opt-out, legacy pre-PD-12 checked, legacy PD-12 unchecked, and unknown-provenance checklists. The scaffold contract and review history govern migration. A cutover date or current checkbox bytes alone cannot establish user intent.",
+      "resolutionEvidence": "design.md D-1; report.md#bug037-design-remediation",
+      "resolutionNotes": "This resolves the design contradiction only. Planning now defines SCN-B037-019 and S4-T10. F-B037-PLAN-D1-D5-SYNC keeps the changelog and focused-test implementation open. No legacy acceptance file was changed.",
+      "disposition": "in-boundary",
+      "surface": "design.md D-1 inventory and CHANGELOG.md upgrade note",
+      "summary": "The upgrade note classifies every pre-cutover file as unchecked, while D-1 records a pre-PD-12 checked file.",
+      "evidence": "report.md#bug037-gaps-phase; tool-log row 288"
+    },
+    {
+      "findingId": "F-B037-PLAN-D1-D5-SYNC",
+      "raisedBy": "bubbles.plan",
+      "raisedAt": "2026-09-01T17:14:45Z",
+      "severity": "blocking",
+      "classification": "PLANNED",
+      "owner": "bubbles.implement",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T20:17:44Z",
+      "resolvedBy": "bubbles.implement",
+      "resolution": "D-1 and D-5 now agree across the current authority registry, shared reader, gate descriptions, governance prose, BUG-037 changelog entry, implementation-owned focused tests, and generated projections. S1-T10 has no lifecycle exception. S4-T10 structurally checks all four migration classes and its negative controls. All three owning generators ran and all three freshness checks passed.",
+      "resolutionEvidence": "report.md#bug037-implementation-remediation; tool-log rows 307 through 310",
+      "resolutionNotes": "This finding closes only the implementation synchronization. F-B037-GAPS-S2T8, F-B037-GAPS-S4T2, F-B037-GAPS-S4T4, and F-B037-GAPS-S4T8 remain explicitly open for bubbles.test and were not weakened or relabeled.",
+      "disposition": "in-boundary",
+      "surface": "acceptance authority registry, shared reader, changelog, gate descriptions, generated projections, and focused selftests",
+      "summary": "Synchronize D-1 and D-5 across source and shipped contract surfaces. Declare conditional and bootstrap codes, publish all four migration classes, remove retirement claims, regenerate derived targets, and leave every acceptance artifact unchanged.",
+      "requiredSourceWork": "Update the authority registry, shared reader, G136 and G057 descriptions, BUG-037 changelog entry, and other packet-declared prose. Regenerate gate coverage, validation checks, and the release manifest through their generators.",
+      "requiredTestWork": "Amend S1-T10, S2-T8, S4-T2, S4-T4, and S4-T8. Add S1-T11 through S1-T18 and S4-T10. Run focused and broad validation only after these bytes land.",
+      "evidence": "scopes.md Execution Outline and Test Plans; test-plan.json; scenario-manifest.json; report.md#bug037-planning-remediation"
+    },
+    {
+      "findingId": "F-B037-TEST-DIFF-CHECK-EOF-001",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T21:16:04Z",
+      "severity": "blocking",
+      "classification": "WHITESPACE_INTEGRITY",
+      "owner": "bubbles.implement",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:19:36Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "Both current BUGS.md diff checks now return zero. The independent heading and EOF integrity assertion also returns zero.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-test-reconciliation; tool-log row 361; evidence-capture sha256 43c4d03b2a444eb47c4bd4c83b6ba044930d546e409f872b37be2d838754c995",
+      "resolutionNotes": "The parent recovered BUGS.md from verified VS Code history before this test run. That recovery is fix provenance only. Current-session tool-log row 361 is the closure evidence.",
+      "disposition": "in-boundary",
+      "surface": "BUGS.md",
+      "summary": "The prior focused diff check found one extra blank line at EOF."
+    },
+    {
+      "findingId": "F-B037-TEST-MATRIX-HARNESS-003",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T23:12:41Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:19:36Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "Replaced the inline shell payload with an IDE-created temporary zsh harness. The complete matrix then executed.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-test-reconciliation; tool-log rows 359 and 361",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-canonical-test-matrix-d6173f50.zsh",
+      "summary": "The first matrix transport lost a literal newline expression and exited 2 before any test ran."
+    },
+    {
+      "findingId": "F-B037-TEST-MATRIX-HARNESS-004",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T23:16:28Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:19:36Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "Renamed the temporary marker-scan success label so the no-skip detector could not count its own output. The full unchanged-byte matrix then exited zero.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-test-reconciliation; tool-log rows 360 and 361",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-canonical-test-matrix-d6173f50.zsh",
+      "summary": "The second harness counted its own SKIP_MARKER_SCAN success label as a skip and exited 1."
+    },
+    {
+      "findingId": "F-B037-TEST-BOOKKEEPING-HARNESS-005",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T23:21:20Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:29:21Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "Terminated the agent-owned quote-corrupted process group. Replaced the inline profile with an IDE-created temporary zsh script.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-test-reconciliation; direct PID check reported zero active processes",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-post-bookkeeping-profile-d6173f50.zsh",
+      "summary": "The first post-bookkeeping profile was quote-corrupted at its jq filter and did not terminate normally."
+    },
+    {
+      "findingId": "F-B037-TEST-BOOKKEEPING-HARNESS-006",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T23:29:21Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:29:21Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "Replaced the self-matching process-name scan with direct checks of the four observed process identifiers. All four were absent.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-test-reconciliation; BUG037_TERMINATED_PID_ACTIVE_COUNT=0",
+      "disposition": "fixed-in-session",
+      "surface": "test-phase process termination diagnostic",
+      "summary": "The first process-termination diagnostic matched its own pgrep command and exited nonzero."
+    },
+    {
+      "findingId": "F-B037-TEST-BOOKKEEPING-HARNESS-007",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T23:30:26Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:30:52Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "Aligned aggregate and certification hashing with the matrix baseline by using the same newline-inclusive digest convention.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-test-reconciliation; tool-log row 362 preserves the mismatch",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-post-bookkeeping-profile-d6173f50.zsh",
+      "summary": "The first completed post-bookkeeping profile compared newline-inclusive baseline hashes with newline-free current hashes."
+    },
+    {
+      "findingId": "F-B037-TEST-BOOKKEEPING-EDIT-008",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T23:21:20Z",
+      "severity": "blocking",
+      "classification": "EDIT_HARNESS",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:21:20Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "Split the rejected multi-file edit into one state edit and one report edit. The rejected edit changed no repository file.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-test-reconciliation; editor reported Duplicate Path before applying changes",
+      "disposition": "fixed-in-session",
+      "surface": "BUG-037 bookkeeping edit",
+      "summary": "The first combined bookkeeping patch was rejected because it repeated the state file path."
+    },
+    {
+      "findingId": "F-B037-TEST-BOUNDARY-009",
+      "raisedBy": "bubbles.test",
+      "raisedAt": "2026-09-01T23:33:53Z",
+      "severity": "low",
+      "classification": "ROUTED_DIAGNOSTIC",
+      "owner": "bubbles.workflow",
+      "status": "routed",
+      "disposition": "out-of-boundary",
+      "surface": "workspace-wide search results",
+      "summary": "Two workspace-wide searches returned downstream project-config and state-file matches. No downstream write occurred.",
+      "evidence": "report.md#bug037-current-final-byte-test-reconciliation",
+      "routingAction": "Retain as a process diagnostic. No downstream remediation is authorized or required for BUG-037."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-PREFLIGHT-002",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T02:32:00Z",
+      "severity": "low",
+      "classification": "CODE_REUSE",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:34:44Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Extracted the preflight-free shape verdict body. The public shape verdict still preflights once, while the terminal verdict now reuses the same body after its own preflight.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; tool-log rows 392, 393, 403, 405, and 413",
+      "disposition": "fixed-in-session",
+      "surface": "bubbles/scripts/acceptance-authority-lib.sh",
+      "summary": "The terminal verdict performed the authority preflight twice because it called the public shape verdict after its own preflight."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-CHECKLIST-SCAN-003",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T02:34:20Z",
+      "severity": "low",
+      "classification": "REDUNDANT_WORK",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:35:16Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Removed the checklist-items pre-scan. The terminal verdict now iterates unchecked items directly and emits the same finding for each non-empty item.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; tool-log rows 403 through 408 and 413",
+      "disposition": "fixed-in-session",
+      "surface": "bubbles/scripts/acceptance-authority-lib.sh",
+      "summary": "The terminal verdict parsed the checklist once to test for any item and parsed it again to report unchecked items."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-POSIX-004",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T02:35:20Z",
+      "severity": "blocking",
+      "classification": "TEST_PORTABILITY",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:36:08Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Replaced non-POSIX whitespace escapes with POSIX character classes and collapsed the existence test into one grep call. The forbidden-write alternatives remain unchanged.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; tool-log rows 409 through 412",
+      "disposition": "fixed-in-session",
+      "surface": "tests/regression/test_35_human_acceptance_terminal.sh",
+      "summary": "The persistent guard-write assertion used non-POSIX whitespace escapes and a redundant two-process grep pipeline."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-MANIFEST-FRESHNESS-005",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T02:32:27Z",
+      "severity": "blocking",
+      "classification": "STALE_GENERATED_ARTIFACT",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:36:08Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Ran the owning generator after each source or persistent-test edit. The final freshness check matches the current reader and persistent-test checksums.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; tool-log row 396 preserves the red check, and rows 397, 402, 407, 408, 411, and 412 preserve each regeneration and green replacement",
+      "disposition": "fixed-in-session",
+      "surface": "bubbles/release-manifest.json",
+      "summary": "The first source simplification made the generated release manifest stale."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-AUDIT-HARNESS-006",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T03:22:30Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:22:45Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Removed shell escaping from string literals inside the single-quoted jq program. The replacement completed all assertions.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; tool-log rows 414 and 415",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-simplify-finalize-audit.zsh",
+      "summary": "The first finalization audit over-escaped jq string literals and exited 2 before current-byte assertions ran."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-AUDIT-HARNESS-007",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T03:22:45Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:23:06Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Made the historical freshness listing treat a legacy null input closure as an empty list. The final audit emitted no jq diagnostic and exited zero.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; tool-log rows 415 and 416",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-simplify-finalize-audit.zsh",
+      "summary": "The replacement audit passed assertions but emitted a jq diagnostic when one historical row had a null input closure."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-BOOKKEEPING-EDIT-008",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T03:23:06Z",
+      "severity": "blocking",
+      "classification": "EDIT_HARNESS",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:23:06Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Combined all state changes under one update header. The rejected editor call changed no repository file.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; editor reported Duplicate Path before applying changes",
+      "disposition": "fixed-in-session",
+      "surface": "BUG-037 simplify bookkeeping edit",
+      "summary": "The first bookkeeping patch repeated the state file path and the editor rejected it before applying any change."
+    },
+    {
+      "findingId": "F-B037-SIMPLIFY-STATE-CHECK-HARNESS-009",
+      "raisedBy": "bubbles.simplify",
+      "raisedAt": "2026-09-02T03:23:06Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.simplify",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:23:06Z",
+      "resolvedBy": "bubbles.simplify",
+      "resolution": "Scoped the startswith predicate before testing status and enabled fail-fast shell mode. The replacement returned true and preserved the certification hash.",
+      "resolutionEvidence": "report.md#bug037-simplify-current-final-bytes; current-session direct state-check replacement",
+      "disposition": "fixed-in-session",
+      "surface": "simplify state bookkeeping validation",
+      "summary": "The first state predicate changed jq context to a string and continued after the jq error because its shell lacked fail-fast mode."
+    },
+    {
+      "findingId": "F-B037-REG-BASELINE-HARNESS-001",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-01T23:39:03Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-01T23:39:31Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Replaced the malformed inline newline token with a semicolon-delimited manifest and normalized the tool-log line count without a filtered pipeline.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; tool-log rows 367 and 368",
+      "disposition": "fixed-in-session",
+      "surface": "regression current-byte baseline harness",
+      "summary": "Row 367 turned the intended newline token into an undefined $n parameter and exited 1 before completing the baseline."
+    },
+    {
+      "findingId": "F-B037-REG-CLOSURE-HARNESS-002",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-02T01:21:15Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T01:21:30Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Replaced the undefined $t tab delimiter with an explicit pipe-delimited closure record.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; tool-log rows 370 and 371",
+      "disposition": "fixed-in-session",
+      "surface": "regression receipt-closure harness",
+      "summary": "Row 370 referenced an undefined $t parameter while parsing closure rows and exited 1."
+    },
+    {
+      "findingId": "F-B037-REG-COVERAGE-HARNESS-003",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-02T01:32:04Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T01:32:19Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Replaced the all-scenarios regression assumption with the observed 18 required scenarios and one non-regression changelog scenario.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; tool-log rows 379 and 380",
+      "disposition": "fixed-in-session",
+      "surface": "regression coverage and deployment applicability harness",
+      "summary": "Row 379 incorrectly required all 19 scenarios to set regressionRequired true and exited 1."
+    },
+    {
+      "findingId": "F-B037-REG-RECEIPT-HARNESS-004",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-02T02:10:55Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:11:22Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Replaced the unsupported two-argument jq split with a capture expression and reran the complete receipt audit.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; tool-log rows 385 and 386",
+      "disposition": "fixed-in-session",
+      "surface": "regression receipt-accounting harness",
+      "summary": "Row 385 used an unsupported two-argument jq split and exited 2 before inspecting any receipt."
+    },
+    {
+      "findingId": "F-B037-REG-BOOKKEEPING-EDIT-005",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-02T02:14:58Z",
+      "severity": "blocking",
+      "classification": "EDIT_HARNESS",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:14:58Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Combined all state changes under one update header and retained the report as the second unique path.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; editor rejected the first patch before changing a file",
+      "disposition": "fixed-in-session",
+      "surface": "BUG-037 regression bookkeeping edit",
+      "summary": "The first bookkeeping patch repeated the state path and the editor rejected it before applying any change."
+    },
+    {
+      "findingId": "F-B037-REG-BOOKKEEPING-EDIT-006",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-02T02:16:00Z",
+      "severity": "blocking",
+      "classification": "EDIT_HARNESS",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:16:00Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Split state and report bookkeeping into separate editor calls with current local anchors.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; editor rejected the second atomic patch before changing a file",
+      "disposition": "fixed-in-session",
+      "surface": "BUG-037 regression bookkeeping edit",
+      "summary": "The second atomic patch reported invalid report context and applied no state or report change."
+    },
+    {
+      "findingId": "F-B037-REG-POSTCHECK-HARNESS-007",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-02T02:17:35Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:18:48Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Called the in-memory binding validation directly under its existing outer timeout instead of asking gtimeout to resolve a shell function name.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; tool-log rows 388 and 389",
+      "disposition": "fixed-in-session",
+      "surface": "regression post-bookkeeping verification harness",
+      "summary": "Row 388 asked gtimeout to execute the shell function binding_check as an external command and received exit 127."
+    },
+    {
+      "findingId": "F-B037-REG-TERMINAL-DISCIPLINE-008",
+      "raisedBy": "bubbles.regression",
+      "raisedAt": "2026-09-02T02:18:14Z",
+      "severity": "blocking",
+      "classification": "TERMINAL_DISCIPLINE",
+      "owner": "bubbles.regression",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T02:18:26Z",
+      "resolvedBy": "bubbles.regression",
+      "resolution": "Re-executed the row count without a pipeline and normalized whitespace with shell parameter expansion.",
+      "resolutionEvidence": "report.md#bug037-current-final-byte-regression; current-session terminal output reported TOOL_LOG_ROWS_BEFORE_REPLACEMENT=388",
+      "disposition": "fixed-in-session",
+      "surface": "tool-log row-count probe",
+      "summary": "The first row-count probe piped wc output through tr and violated the no-filtered-output policy."
+    },
+    {
+      "findingId": "F-B037-GAPS-BINDING-ROOTSET-011",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:38:53Z",
+      "severity": "blocking",
+      "classification": "REPOSITORY_BINDING_INPUT",
+      "owner": "bubbles.gaps",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:38:53Z",
+      "resolvedBy": "bubbles.gaps",
+      "resolution": "Removed the host-rejected non-Git workspace root and reran the adapter with its exact canonical Git root set.",
+      "resolutionEvidence": "Current-session host-context attempts exited 2 and then 0 before any BUG-037 audit read.",
+      "disposition": "fixed-in-session",
+      "surface": "repository-binding host-context root set",
+      "summary": "The first host-context request included a workspace folder that is not a Git worktree."
+    },
+    {
+      "findingId": "F-B037-GAPS-BINDING-REHYDRATION-012",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:38:53Z",
+      "severity": "blocking",
+      "classification": "REPOSITORY_BINDING_INPUT",
+      "owner": "bubbles.gaps",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:38:53Z",
+      "resolvedBy": "bubbles.gaps",
+      "resolution": "Re-derived the named node's repositoryResolution in memory with the supplied session, decision, revision, and digest.",
+      "resolutionEvidence": "The unchanged scenario copy exited 1 with GOAL_NODE_REPOSITORY_MISMATCH. The re-derived packet and scenario validation exited 0.",
+      "disposition": "fixed-in-session",
+      "surface": "scenario-node packet validation",
+      "summary": "The first packet validation used the scenario plan's prior-session resolution instead of the supplied revision-4 resolution."
+    },
+    {
+      "findingId": "F-B037-GAPS-HARNESS-XCODE-013",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:38:53Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.gaps",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:48:05Z",
+      "resolvedBy": "bubbles.gaps",
+      "resolution": "Selected the installed Command Line Tools through DEVELOPER_DIR and reran the complete baseline.",
+      "resolutionEvidence": "Tool-log rows 421 and 422 preserve the failed and corrected runs. The replacement Git queries exit 0.",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-gaps-baseline-d6173f50.zsh",
+      "summary": "The first changed-path query invoked Apple Git through an unaccepted full-Xcode license and exited 69."
+    },
+    {
+      "findingId": "F-B037-GAPS-MECHANISM-VOCAB-014",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:41:00Z",
+      "severity": "blocking",
+      "classification": "DIVERGENT",
+      "owner": "bubbles.plan",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T04:17:57Z",
+      "resolvedBy": "bubbles.plan",
+      "resolution": "Replaced five production-artifact input origins with recorded-fixture and five process-exit assertion surfaces with returned-value. The replacements describe the existing committed-artifact and production-CLI test paths without changing behavior or mechanism strength.",
+      "resolutionEvidence": "report.md#bug037-plan-current-final-byte-reconciliation; tool-log rows 437 and 444",
+      "disposition": "fixed-in-session",
+      "surface": "scenario-manifest.json testMechanism vocabulary",
+      "summary": "Ten scenarios declare values outside the canonical test-mechanism vocabulary.",
+      "evidence": "report.md#bug037-gaps-current-final-bytes; tool-log row 423",
+      "scenarioIds": [
+        "SCN-B037-006",
+        "SCN-B037-007",
+        "SCN-B037-008",
+        "SCN-B037-009",
+        "SCN-B037-010",
+        "SCN-B037-012",
+        "SCN-B037-013",
+        "SCN-B037-014",
+        "SCN-B037-015",
+        "SCN-B037-019"
+      ],
+      "requiredWork": "Use truthful values from the current closed vocabulary. If no value represents the mechanism, route a separate vocabulary-contract defect instead of inventing a token."
+    },
+    {
+      "findingId": "F-B037-GAPS-SCENARIO-LIFECYCLE-015",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:42:00Z",
+      "severity": "blocking",
+      "classification": "PARTIAL",
+      "owner": "bubbles.plan",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T04:17:57Z",
+      "resolvedBy": "bubbles.plan",
+      "resolution": "Replaced three future-test sentinels with eleven exact current test identities, added non-empty report evidence refs, and reconciled fourteen verified Test Plan rows to existing. S4-T5, S4-T6, and S4-T7 remain requires-revalidation because their broad commands did not run after simplify.",
+      "resolutionEvidence": "report.md#bug037-plan-current-final-byte-reconciliation; tool-log rows 438, 439, 441, and 443",
+      "disposition": "fixed-in-session",
+      "surface": "scenario-manifest.json and test-plan.json execution linkage",
+      "summary": "Three implemented scenarios retain future-test sentinels and empty evidence refs while seventeen Test Plan rows retain non-current states.",
+      "evidence": "report.md#bug037-gaps-current-final-bytes; tool-log rows 426 and 427",
+      "scenarioIds": [
+        "SCN-B037-016",
+        "SCN-B037-017",
+        "SCN-B037-019"
+      ],
+      "requiredWork": "Replace each sentinel with current exact test identities and evidence refs. Reconcile Test Plan states with executed reality."
+    },
+    {
+      "findingId": "F-B037-GAPS-AUTHORITY-YAML-016",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:43:00Z",
+      "severity": "blocking",
+      "classification": "DIVERGENT",
+      "owner": "bubbles.implement",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T04:32:50Z",
+      "resolvedBy": "bubbles.implement",
+      "resolution": "Authority preflight now resolves the repository-managed Python environment and parses the complete registry with PyYAML before any text-based contract read. Parser absence or YAML syntax failure emits one sanitized PD12-AUTHORITY-UNAVAILABLE line and returns 1. S1-T13b preserves every canonical contract token while adding an unterminated YAML sequence, and both public verdicts fail closed with no additional finding or path disclosure.",
+      "resolutionEvidence": "report.md#bug037-implement-authority-yaml-016; tool-log rows 452-467",
+      "independentVerification": {
+        "status": "verified",
+        "verifiedBy": "bubbles.test",
+        "verifiedAt": "2026-09-02T06:45:27Z",
+        "evidence": "report.md#bug037-test-revision-5-current-byte-replacement; tool-log row 495"
+      },
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-lib.sh authority preflight and S1-T13",
+      "summary": "Both public verdicts accept a contract-complete authority file that is invalid YAML.",
+      "evidence": "report.md#bug037-gaps-current-final-bytes; tool-log rows 424 and 425",
+      "requiredSourceWork": "Make authority preflight reject malformed YAML before artifact evaluation while preserving one-line bootstrap failure output.",
+      "requiredTestWork": "Strengthen S1-T13 with invalid YAML that retains every required line token. Verify both public verdicts return 1 with one bootstrap line."
+    },
+    {
+      "findingId": "F-B037-GAPS-LIFECYCLE-LABEL-017",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:43:00Z",
+      "severity": "blocking",
+      "classification": "UNTESTED",
+      "owner": "bubbles.test",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T06:45:27Z",
+      "resolvedBy": "bubbles.test",
+      "resolution": "The current authority selftest reads every failure-code lifecycle label and requires the exact default-active, conditional-active, and bootstrap-active map. Its adversarial fixture misclassifies PD12-NO-RECORD while preserving successful authority preflight and exact conditional-code reachability, so the lifecycle assertion is proven non-vacuous.",
+      "resolutionEvidence": "report.md#bug037-test-revision-5-current-byte-replacement; tool-log row 495",
+      "resolutionNotes": "Row 495 executes the current selftest under stock and Homebrew Bash and binds the receipt to the exact selftest hash ce91dffcdf52531ef15b664f1224b8badf0bfb9b2aa6c0ac20ddef0155d749f3.",
+      "disposition": "in-boundary",
+      "surface": "acceptance-authority-selftest.sh S1-T10 lifecycle closure",
+      "summary": "The lifecycle closure test does not read or mutate any failure-code lifecycle label.",
+      "evidence": "report.md#bug037-gaps-current-final-bytes; tool-log row 424",
+      "requiredWork": "Add label-specific assertions and a negative control that misclassifies conditional or bootstrap codes while preserving code reachability."
+    },
+    {
+      "findingId": "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:45:37Z",
+      "severity": "blocking",
+      "classification": "PATH_MISMATCH",
+      "owner": "bubbles.bug",
+      "status": "open",
+      "packet": "bugs/BUG-045-traceability-empty-evidence-refs",
+      "packetState": "implemented-awaiting-independent-verification",
+      "verificationOwner": "bubbles.test",
+      "disposition": "out-of-boundary",
+      "surface": "bubbles/scripts/traceability-guard.sh evidenceRefs cardinality check",
+      "summary": "The guard reports evidence refs for all scenarios when three evidenceRefs arrays are empty.",
+      "evidence": "report.md#bug037-gaps-current-final-bytes; tool-log rows 426 and 427",
+      "requiredWork": "Create a complete bug packet for the empty-array false pass. Require at least one non-empty resolvable evidence ref per active scenario."
+    },
+    {
+      "findingId": "F-B037-GAPS-HARNESS-DIAGNOSTIC-019",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:58:02Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.gaps",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T03:59:37Z",
+      "resolvedBy": "bubbles.gaps",
+      "resolution": "Added a failure-only detail block to the terminal profile and reran the complete profile.",
+      "resolutionEvidence": "Tool-log rows 430 and 431 preserve the hidden and then named mismatch.",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-gaps-final-d6173f50.zsh",
+      "summary": "The first terminal profile counted one failed invariant but did not name it in the retained output window."
+    },
+    {
+      "findingId": "F-B037-GAPS-HARNESS-CERT-HASH-020",
+      "raisedBy": "bubbles.gaps",
+      "raisedAt": "2026-09-02T03:59:37Z",
+      "severity": "blocking",
+      "classification": "TEST_HARNESS",
+      "owner": "bubbles.gaps",
+      "status": "resolved",
+      "resolvedAt": "2026-09-02T04:00:52Z",
+      "resolvedBy": "bubbles.gaps",
+      "resolution": "Used the sorted compact JSON projection that produced the simplify certification baseline.",
+      "resolutionEvidence": "Row 431 names the projection mismatch. The projection diagnostic matches fb84636b3c65fa9fcb9e4389a04ecf89fd84e8dbb6422284b23d014220085fd8, and row 432 exits zero.",
+      "disposition": "fixed-in-session",
+      "surface": "/private/tmp/bug037-gaps-final-d6173f50.zsh",
+      "summary": "The terminal profile initially hashed compact certification JSON instead of the prior sorted compact projection."
     }
   ],
   "executionHistory": [
@@ -280,6 +1092,629 @@
       "statusBefore": "in_progress",
       "statusAfter": "in_progress",
       "summary": "Blocker-accuracy state correction only; no code, gate, test or DoD change, and NEITHER gate DoD item was checked. The recorded blocker BLOCKED-ON-VALIDATION-ENVIRONMENT characterized framework-validate as unable to reach a verdict at all - more than 90 minutes of runtime, four consecutive exit-142 timeouts, and a concurrently mutated tree. That characterization is no longer accurate, because a framework-validate run has since COMPLETED. PROVENANCE, STATED PLAINLY: the completed run was executed by a CONCURRENT SESSION, not by this one. Its figures are DIAGNOSTIC INPUT and are labelled as such wherever they are recorded; this session did NOT run framework-validate or release-check. DIAGNOSTIC INPUT (concurrent session's run, read from /tmp/fv-full.log with /tmp/fv-full.exit = 1): 18568 lines, 5107 PASS, 31 FAIL, exit 1. EXECUTED BY THIS SESSION: the grep tally over that log (grep -cE '^PASS: ' -> 5107, grep -cE '^FAIL: ' -> 31, grep -c 'PASS: Check 43' -> 9, grep -nE 'FAIL.*[Cc]heck 43|FAIL.*acceptance|FAIL.*uservalidation|FAIL.*G136' -> ZERO matches); the enumeration of all 31 FAIL lines into four families (16 downstream install-mode, 12 client credential and durable storage under BUG-013, the Mode-family inventory selftest, and the system-only-PATH managed selftest plus OW-009); the git status --porcelain attribution showing bubbles/scripts/v5.3-selftest.sh, bubbles/scripts/mode-family-inventory-selftest.sh and bubbles/scripts/guard-lib-timeout-selftest.sh ALL CLEAN AT HEAD while only bubbles/scripts/guard-lib.sh is dirty (this session's BUG-038 fix); and the allowedPaths membership test showing NONE of those four paths is in this packet's workBoundary.allowedPaths. CONCLUSION: none of the 31 failures is a BUG-037 defect and none is repairable inside this boundary, while BUG-037's own acceptance behavior is demonstrated GREEN nine times over with zero acceptance-related failures anywhere in the run. ALSO EXECUTED HERE: the OW-009 selftest was re-run on an idle machine - bash bubbles/scripts/guard-lib-timeout-selftest.sh -> exit 0, 11 lines, sha256 06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102, 'guard-lib timeout selftest: OK (10 cases)' - proving that run's OW-009 entry is stale relative to the current working tree. A LOAD-SENSITIVITY EXPLANATION FOR THAT STALENESS WAS CONSIDERED AND IS RECORDED AS NOT SUPPORTED rather than repeated: the selftest does assert wall-clock bounds, but all four observed failures report rc=2 reason=none, which is the runner failing rather than a bound being exceeded, and git show HEAD:bubbles/scripts/guard-lib.sh has no current_size normalization at all - the BUG-038 fix exists ONLY in the dirty working tree. That points at an unfixed guard-lib being exercised, but it is recorded as an OBSERVATION and explicitly NOT as a proven root cause, because this session neither executed nor instrumented the failing run. EDITS: the BLOCKED-ON-VALIDATION-ENVIRONMENT reworkQueue entry moved from status open to status superseded with supersededAt, supersededBy and supersessionNote recorded (RETAINED, not deleted, so the finding trail survives); a new reworkQueue finding BLOCKED-ON-REPO-WIDE-RED appended, severity blocking, disposition out-of-boundary, owner bubbles.validate, carrying the tally, the four families, the clean-at-HEAD attribution, the 9-PASS/zero-FAIL acceptance result, the OW-009 observation, and an explicit statement that NONE of the 31 is a BUG-037 defect and none lies in allowedPaths; execution.nextRequiredAction rewritten so the operative blocker is the repository-wide red verdict rather than an unobtainable one, with the superseded environmental detail retained inline; and this executionHistory entry added. DELIBERATELY UNCHANGED: S4-T5 (framework-validate) and S4-T6 (release-check) remain UNCHECKED and unweakened - the DoD requires a PASSING run and the completed run exited 1, which is a real verdict but not a pass; certification.scopeProgress[3].status remains blocked; execution.nextRequiredOwner remains bubbles.validate; packet status remains in_progress; certification.status remains in_progress. No attempt was made to fix any of the 31 failures - all are outside this packet's boundary. framework-validate and release-check were NOT run here. No path under bugs/BUG-033-, bugs/BUG-032- or any other session's files was touched, and no git command that discards changes was run."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T05:30:17Z",
+      "completedAt": "2026-09-01T09:40:09Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-scope4-test-closeout",
+      "addressedFindings": [
+        "F-B037-TEST-LINK-001",
+        "F-B037-TEST-LINK-002",
+        "F-B037-TEST-SKIP-003",
+        "BLOCKED-ON-REPO-WIDE-RED"
+      ],
+      "unresolvedFindings": [],
+      "nextRequiredOwner": "bubbles.regression",
+      "summary": "Completed Scope 4 TEST bookkeeping from three durable current-session receipts. The focused matrix exits zero with nine checks and 16 linked references. Canonical framework validation and release-check rows both exit zero. Earlier failures remain preserved as history. The packet and certification stay in progress. No node or bug completion is claimed."
+    },
+    {
+      "agent": "bubbles.regression",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "regression"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T16:03:14Z",
+      "completedAt": "2026-09-01T16:14:14Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-regression-phase",
+      "toolLogRowInterval": {
+        "first": 257,
+        "last": 270
+      },
+      "addressedFindings": [],
+      "unresolvedFindings": [],
+      "nextRequiredOwner": "bubbles.simplify",
+      "summary": "Recorded 14 current-session regression receipts with exit zero and exhaustive zero-finding accounting. Non-bookkeeping input hashes stayed unchanged. All scopes remain execution-done and uncertified. The packet, goal node, and certification remain in progress."
+    },
+    {
+      "agent": "bubbles.simplify",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "simplify"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T16:24:18Z",
+      "completedAt": "2026-09-01T16:27:06Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-simplify-phase",
+      "toolLogRowInterval": {
+        "first": 271,
+        "last": 272
+      },
+      "addressedFindings": [
+        "F-B037-SIMPLIFY-HARNESS-001"
+      ],
+      "unresolvedFindings": [],
+      "nextRequiredOwner": "bubbles.gaps",
+      "summary": "Completed a three-pass simplify review with no implementation change. The first evidence command had a malformed in-memory separator and was corrected in row 272. No source, test, generated, human-acceptance, BUG-029, or BUG-032 file changed. All scopes remain execution-done and uncertified. The packet, goal node, and certification remain in progress."
+    },
+    {
+      "agent": "bubbles.gaps",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "gaps"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T16:38:12Z",
+      "completedAt": "2026-09-01T16:45:57Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-gaps-phase",
+      "toolLogRowInterval": {
+        "first": 283,
+        "last": 289
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-HARNESS-001",
+        "F-B037-GAPS-HARNESS-002",
+        "F-B037-GAPS-HARNESS-003"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-LINK-003",
+        "F-B037-GAPS-LINK-015",
+        "F-B037-GAPS-S2T8",
+        "F-B037-GAPS-S4T4",
+        "F-B037-GAPS-S4T8",
+        "F-B037-GAPS-S4T2",
+        "F-B037-GAPS-D5",
+        "F-B037-GAPS-FAILCLOSED",
+        "F-B037-GAPS-RECORD-AUTHORSHIP",
+        "F-B037-GAPS-MIGRATION"
+      ],
+      "nextRequiredOwner": "bubbles.design",
+      "summary": "Completed the canonical gaps phase and found ten in-boundary fidelity gaps. No source, test, generated, human-acceptance, BUG-029, BUG-032, or certification file changed. All four scopes remain execution-done and uncertified. D-5 and D-1 contain the first contradictory design claims, so bubbles.design owns the first remediation route."
+    },
+    {
+      "agent": "bubbles.design",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T16:58:19Z",
+      "completedAt": "2026-09-01T17:04:32Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-design-remediation",
+      "addressedFindings": [
+        "F-B037-GAPS-D5",
+        "F-B037-GAPS-MIGRATION"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-LINK-003",
+        "F-B037-GAPS-LINK-015",
+        "F-B037-GAPS-S2T8",
+        "F-B037-GAPS-S4T4",
+        "F-B037-GAPS-S4T8",
+        "F-B037-GAPS-S4T2",
+        "F-B037-GAPS-FAILCLOSED",
+        "F-B037-GAPS-RECORD-AUTHORSHIP"
+      ],
+      "nextRequiredOwner": "bubbles.plan",
+      "summary": "Reconciled D-5 around conditional failure-code lifecycle and fail-closed authority reads. Reconciled D-1 around four legacy migration classes. No source, registry, test, generated, changelog, acceptance, DoD, or certification behavior was changed. Eight gaps remain routed through planning and later owners."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T17:14:45Z",
+      "completedAt": "2026-09-01T17:20:45Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-planning-remediation",
+      "toolLogRowInterval": {
+        "first": 295,
+        "last": 296
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-LINK-003",
+        "F-B037-GAPS-LINK-015"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-FAILCLOSED",
+        "F-B037-GAPS-RECORD-AUTHORSHIP",
+        "F-B037-PLAN-D1-D5-SYNC",
+        "F-B037-GAPS-S2T8",
+        "F-B037-GAPS-S4T2",
+        "F-B037-GAPS-S4T4",
+        "F-B037-GAPS-S4T8"
+      ],
+      "nextRequiredOwner": "bubbles.implement",
+      "summary": "Reconciled spec, scopes, scenario obligations, and structured test planning with D-1 and D-5. Closed only the two exact-link findings. Preserved seven implementation and test findings. Source, tests, generated files, acceptance artifacts, neighboring bug packets, status, and certification remain unchanged."
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-01,SCOPE-04",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T20:09:32Z",
+      "completedAt": "2026-09-01T20:17:44Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-implementation-remediation",
+      "toolLogRowInterval": {
+        "first": 303,
+        "last": 310
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-FAILCLOSED",
+        "F-B037-GAPS-RECORD-AUTHORSHIP",
+        "F-B037-PLAN-D1-D5-SYNC"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-S2T8",
+        "F-B037-GAPS-S4T2",
+        "F-B037-GAPS-S4T4",
+        "F-B037-GAPS-S4T8"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "summary": "Verified the inherited fail-closed and union-authorship implementation on current bytes, added exact lifecycle and four-class migration tests, aligned the no-migration release wording, regenerated all three projections, and completed the bounded stock/Homebrew Bash matrix. Preserved four test-owner findings, all acceptance artifacts, neighboring bug packets, unrelated bytes, terminal status, and certification."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-02,SCOPE-04",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T20:28:09Z",
+      "completedAt": "2026-09-01T20:51:16Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-test-assertion-fidelity-remediation",
+      "toolLogRowInterval": {
+        "first": 311,
+        "last": 320
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-S2T8",
+        "F-B037-GAPS-S4T2",
+        "F-B037-GAPS-S4T4",
+        "F-B037-GAPS-S4T8"
+      ],
+      "unresolvedFindings": [
+        "F-B037-TEST-RELEASE-MANIFEST-FRESHNESS"
+      ],
+      "nextRequiredOwner": "bubbles.implement",
+      "summary": "Closed all four test-owned assertion-fidelity findings with a current-byte dual-Bash matrix, exact negative controls, linked-test resolution, and zero regression-quality violations. Packet lint, gate-map freshness, and validation-check freshness pass. Release-manifest freshness remains red because the generated manifest does not carry the edited selftest checksum. Status and certification remain in progress."
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T20:54:51Z",
+      "completedAt": "2026-09-01T21:00:13Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug-037-release-manifest-freshness-remediation",
+      "toolLogRowInterval": {
+        "first": 321,
+        "last": 334
+      },
+      "addressedFindings": [
+        "F-B037-TEST-RELEASE-MANIFEST-FRESHNESS"
+      ],
+      "unresolvedFindings": [],
+      "nextRequiredOwner": "bubbles.test",
+      "summary": "Regenerated the release manifest through its canonical owning generator after proving an isolated candidate changed only the acceptance-authority selftest checksum. The current-byte freshness check and release-manifest selftest now exit zero. Preserved test assertions, neighboring bug packets, session state, terminal status, and certification."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T21:05:49Z",
+      "completedAt": "2026-09-01T21:18:03Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-independent-final-byte-test",
+      "toolLogRowInterval": {
+        "first": 339,
+        "last": 350
+      },
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B037-TEST-DIFF-CHECK-EOF-001",
+        "F-B037-TEST-BOUNDARY-002"
+      ],
+      "nextRequiredOwner": "bubbles.implement",
+      "summary": "The final-byte dual-Bash acceptance matrix, 22 linked references, regression-quality guard, artifact lint, syntax checks, agnosticity, and all six no-skip freshness cases passed. The focused diff check found one extra EOF blank line in BUGS.md. One baseline evidence call also appended to a downstream runtime tool log before the wrapper mismatch was visible. Status and certification remain in progress."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T23:12:41Z",
+      "completedAt": "2026-09-01T23:33:53Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation",
+      "toolLogRowInterval": {
+        "first": 359,
+        "last": 361
+      },
+      "addressedFindings": [
+        "F-B037-TEST-DIFF-CHECK-EOF-001",
+        "F-B037-TEST-MATRIX-HARNESS-003",
+        "F-B037-TEST-MATRIX-HARNESS-004",
+        "F-B037-TEST-BOOKKEEPING-HARNESS-005",
+        "F-B037-TEST-BOOKKEEPING-HARNESS-006",
+        "F-B037-TEST-BOOKKEEPING-HARNESS-007",
+        "F-B037-TEST-BOOKKEEPING-EDIT-008"
+      ],
+      "unresolvedFindings": [
+        "F-B037-TEST-BOUNDARY-009"
+      ],
+      "observations": [
+        {
+          "id": "F-B037-TEST-BOUNDARY-002",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "observed",
+          "disposition": "out-of-boundary",
+          "summary": "A prior test invocation appended one receipt to a downstream runtime tool log. It did not mutate downstream source.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        }
+      ],
+      "nextRequiredOwner": "bubbles.regression",
+      "summary": "The canonical current-byte matrix passed 23 checks with zero skips. All tracked invariants stayed stable. BUGS.md diff and integrity checks closed the EOF finding. All harness failures were corrected and retained. Two workspace-wide reads remain routed diagnostics. The packet and certification remain in progress."
+    },
+    {
+      "agent": "bubbles.regression",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-04",
+      "phasesExecuted": [
+        "regression"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-01T23:39:03Z",
+      "completedAt": "2026-09-02T02:19:39Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-current-final-byte-regression",
+      "toolLogRowInterval": {
+        "first": 367,
+        "last": 389
+      },
+      "addressedFindings": [
+        "F-B037-REG-BASELINE-HARNESS-001",
+        "F-B037-REG-CLOSURE-HARNESS-002",
+        "F-B037-REG-COVERAGE-HARNESS-003",
+        "F-B037-REG-RECEIPT-HARNESS-004",
+        "F-B037-REG-BOOKKEEPING-EDIT-005",
+        "F-B037-REG-BOOKKEEPING-EDIT-006",
+        "F-B037-REG-POSTCHECK-HARNESS-007",
+        "F-B037-REG-TERMINAL-DISCIPLINE-008"
+      ],
+      "unresolvedFindings": [],
+      "observations": [
+        {
+          "id": "F-B037-TEST-BOUNDARY-002",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "observed",
+          "disposition": "out-of-boundary",
+          "summary": "A prior test invocation appended one receipt to a downstream runtime tool log. It did not mutate downstream source.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        },
+        {
+          "id": "F-B037-TEST-BOUNDARY-009",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "routed",
+          "disposition": "out-of-boundary",
+          "summary": "Two workspace-wide searches returned downstream project-config and state-file matches. They caused no downstream write.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        }
+      ],
+      "nextRequiredOwner": "bubbles.simplify",
+      "summary": "The BUG-037 regression surface is clean on current bytes. Rows 367 through 389 preserve five corrected command harnesses, two rejected editor calls, and one corrected terminal-discipline probe. Row 384 proves the real linked Check 43 suite on its exact seven-file closure. The packet and certification remain in progress."
+    },
+    {
+      "agent": "bubbles.simplify",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-01,SCOPE-03,SCOPE-04",
+      "phasesExecuted": [
+        "simplify"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-02T02:32:00Z",
+      "completedAt": "2026-09-02T03:28:20Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-simplify-current-final-bytes",
+      "toolLogRowInterval": {
+        "first": 392,
+        "last": 417
+      },
+      "addressedFindings": [
+        "F-B037-SIMPLIFY-PREFLIGHT-002",
+        "F-B037-SIMPLIFY-CHECKLIST-SCAN-003",
+        "F-B037-SIMPLIFY-POSIX-004",
+        "F-B037-SIMPLIFY-MANIFEST-FRESHNESS-005",
+        "F-B037-SIMPLIFY-AUDIT-HARNESS-006",
+        "F-B037-SIMPLIFY-AUDIT-HARNESS-007",
+        "F-B037-SIMPLIFY-BOOKKEEPING-EDIT-008",
+        "F-B037-SIMPLIFY-STATE-CHECK-HARNESS-009"
+      ],
+      "unresolvedFindings": [],
+      "observations": [
+        {
+          "id": "F-B037-TEST-BOUNDARY-002",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "observed",
+          "disposition": "out-of-boundary",
+          "summary": "A prior test invocation appended one receipt to a downstream runtime tool log. It did not mutate downstream source.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        },
+        {
+          "id": "F-B037-TEST-BOUNDARY-009",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "routed",
+          "disposition": "out-of-boundary",
+          "summary": "Two workspace-wide searches returned downstream project-config and state-file matches. They caused no downstream write.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        }
+      ],
+      "nextRequiredOwner": "bubbles.gaps",
+      "summary": "Simplified the shared reader and persistent G136 check without changing acceptance behavior. Current dual-Bash, persistent, generated, and linked Check 43 receipts are green. All eight simplify findings are resolved. The packet and certification remain in progress."
+    },
+    {
+      "agent": "bubbles.gaps",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-01,SCOPE-02,SCOPE-03,SCOPE-04",
+      "phasesExecuted": [
+        "gaps"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-02T03:38:53Z",
+      "completedAt": "2026-09-02T04:00:52Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-gaps-current-final-bytes",
+      "toolLogRowInterval": {
+        "first": 421,
+        "last": 432
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-BINDING-ROOTSET-011",
+        "F-B037-GAPS-BINDING-REHYDRATION-012",
+        "F-B037-GAPS-HARNESS-XCODE-013",
+        "F-B037-GAPS-HARNESS-DIAGNOSTIC-019",
+        "F-B037-GAPS-HARNESS-CERT-HASH-020"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-MECHANISM-VOCAB-014",
+        "F-B037-GAPS-SCENARIO-LIFECYCLE-015",
+        "F-B037-GAPS-AUTHORITY-YAML-016",
+        "F-B037-GAPS-LIFECYCLE-LABEL-017",
+        "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018"
+      ],
+      "observations": [
+        {
+          "id": "F-B037-TEST-BOUNDARY-002",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "observed",
+          "disposition": "out-of-boundary",
+          "summary": "A prior test invocation appended one receipt to a downstream runtime tool log. It did not mutate downstream source.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        },
+        {
+          "id": "F-B037-TEST-BOUNDARY-009",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "routed",
+          "disposition": "out-of-boundary",
+          "summary": "Two workspace-wide searches returned downstream project-config and state-file matches. They caused no downstream write.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        }
+      ],
+      "nextRequiredOwner": "bubbles.plan",
+      "summary": "The current-final-byte audit found five open gaps. Five execution incidents are resolved. Current focused and generated checks are green, while broad certification evidence remains phase work after repair."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-01,SCOPE-02,SCOPE-03,SCOPE-04",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-02T04:13:09Z",
+      "completedAt": "2026-09-02T04:17:57Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-plan-current-final-byte-reconciliation",
+      "toolLogRowInterval": {
+        "first": 437,
+        "last": 446
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-MECHANISM-VOCAB-014",
+        "F-B037-GAPS-SCENARIO-LIFECYCLE-015"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-AUTHORITY-YAML-016",
+        "F-B037-GAPS-LIFECYCLE-LABEL-017",
+        "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018"
+      ],
+      "observations": [
+        {
+          "id": "F-B037-TEST-BOUNDARY-002",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "observed",
+          "disposition": "out-of-boundary",
+          "summary": "A prior test invocation appended one receipt to a downstream runtime tool log. It did not mutate downstream source.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        },
+        {
+          "id": "F-B037-TEST-BOUNDARY-009",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "routed",
+          "disposition": "out-of-boundary",
+          "summary": "Two workspace-wide searches returned downstream project-config and state-file matches. They caused no downstream write.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        }
+      ],
+      "nextRequiredOwner": "bubbles.implement",
+      "summary": "The two plan-owned current-final-byte findings are resolved. Three blockers remain unchanged: implementation owns authority YAML rejection, test owns lifecycle-label coverage, and bubbles.bug owns the independent traceability empty-reference packet route."
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-01",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-02T04:26:49Z",
+      "completedAt": "2026-09-02T04:32:50Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-implement-authority-yaml-016",
+      "toolLogRowInterval": {
+        "first": 452,
+        "last": 467
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-AUTHORITY-YAML-016"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-LIFECYCLE-LABEL-017",
+        "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018"
+      ],
+      "observations": [
+        {
+          "id": "F-B037-TEST-BOUNDARY-002",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "observed",
+          "disposition": "out-of-boundary",
+          "summary": "A prior test invocation appended one receipt to a downstream runtime tool log. It did not mutate downstream source.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        },
+        {
+          "id": "F-B037-TEST-BOUNDARY-009",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "routed",
+          "disposition": "out-of-boundary",
+          "summary": "Two workspace-wide searches returned downstream project-config and state-file matches. They caused no downstream write.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        }
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "summary": "F-B037-GAPS-AUTHORITY-YAML-016 is repaired on current bytes with RED and dual-Bash GREEN evidence. F-B037-GAPS-LIFECYCLE-LABEL-017 remains open for bubbles.test. F-B037-GAPS-TRACEABILITY-EMPTY-REF-018 remains open under its independent bubbles.bug route."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "SCOPE-01",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "startedAt": "2026-09-02T06:45:27Z",
+      "completedAt": "2026-09-02T06:46:08Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "report.md#bug037-test-revision-5-current-byte-replacement",
+      "toolLogRowInterval": {
+        "first": 495,
+        "last": 495
+      },
+      "addressedFindings": [
+        "F-B037-GAPS-LIFECYCLE-LABEL-017"
+      ],
+      "independentlyVerifiedFindings": [
+        "F-B037-GAPS-AUTHORITY-YAML-016"
+      ],
+      "unresolvedFindings": [
+        "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018"
+      ],
+      "observations": [
+        {
+          "id": "F-B037-TEST-BOUNDARY-002",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "observed",
+          "disposition": "out-of-boundary",
+          "summary": "A prior test invocation appended one receipt to a downstream runtime tool log. It did not mutate downstream source.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        },
+        {
+          "id": "F-B037-TEST-BOUNDARY-009",
+          "severity": "low",
+          "classification": "ROUTED_DIAGNOSTIC",
+          "status": "routed",
+          "disposition": "out-of-boundary",
+          "summary": "Two workspace-wide searches returned downstream project-config and state-file matches. They caused no downstream write.",
+          "evidenceRef": "report.md#bug037-current-final-byte-test-reconciliation"
+        }
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "externalDependency": "bugs/BUG-045-traceability-empty-evidence-refs",
+      "summary": "Row 495 matches all 23 current input bytes. TEST independently verifies the malformed-YAML repair, resolves the lifecycle-label finding, preserves both low observations, and leaves only BUG-045 independent verification before the parent may close F-B037-GAPS-TRACEABILITY-EMPTY-REF-018."
     }
   ]
 }

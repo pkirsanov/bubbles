@@ -88,6 +88,67 @@ by automation, recording that the behavior was verified far enough to be worth
 the user's time. A fully checked readiness block satisfies **no** acceptance
 obligation. It MUST NOT be deleted.
 
+### AC-10 — The acceptance-record requirement is conditional
+
+The canonical registry declares `PD12-NO-RECORD` as conditional-active. The
+shipped `requiredAtTerminal: false` value keeps the code dormant. An explicit
+supported `true` value activates the code and preserves the compliance override.
+
+Changing the shipped value does not retire the code. Retirement requires the
+source emitter and every supported activation path to disappear together.
+
+### AC-11 — Authority failures fail closed
+
+Both public acceptance verdicts must validate the authority before returning
+success. These authority states fail closed:
+
+- the registry path is missing.
+- the registry exists but cannot be read.
+- the registry is malformed.
+- a required contract field is absent or empty.
+- `requiredAtTerminal` is not the exact lowercase scalar `true` or `false`.
+
+Each state returns `1` and prints exactly one line. The line begins
+`PD12-AUTHORITY-UNAVAILABLE:` and includes a non-secret reason. No other
+acceptance finding is emitted after this bootstrap failure.
+
+The registry declares `PD12-AUTHORITY-UNAVAILABLE` as bootstrap-active. The
+reader can emit it without parsing the unavailable registry.
+
+The required contract includes these values:
+
+- `schemaVersion`.
+- All three section IDs and headings.
+- Checklist `shippedState`.
+- Record `requiredAtTerminal`.
+- Base record fields and method declarations.
+- Every method-specific requirement.
+- The forbidden acceptor pattern.
+- The closed failure-code set.
+
+### AC-12 — Any real recognized field authors the record
+
+The record-authorship predicate examines the union of base required fields and
+every method-conditional field declared in the registry. A real value in any
+recognized field makes the record present and triggers complete validation.
+
+A real `record` pointer alone therefore authors the record. Placeholder base
+fields then produce `PD12-RECORD-INCOMPLETE`. The pointer cannot be ignored as
+an untouched template.
+
+### AC-13 — Defaults stay inert and methods keep their fields
+
+A trimmed empty value is a template default. One complete bracket-delimited
+template token is also a default. Neither value authors the record.
+
+Any other non-empty value counts as authored input. This includes `TBD`,
+`none`, partial brackets, and a non-empty external acceptance pointer.
+
+The `human-interactive` method requires every base field. The `external-record`
+method requires every base field plus a real `record` pointer. Missing base
+fields emit `PD12-RECORD-INCOMPLETE`. A missing method field emits
+`PD12-METHOD-FIELD-MISSING`.
+
 ---
 
 ## 3. Governance-consistency requirements — normative
@@ -125,6 +186,20 @@ current.
 `bubbles/release-manifest.json` are generated. They are refreshed by running
 their generators.
 
+### GC-6 — Upgrade guidance distinguishes four provenance classes
+
+The upgrade note names four classes and their distinct handling:
+
+| Class | Required handling |
+| --- | --- |
+| Current opt-out | Apply AC-1 through AC-13. A later uncheck is user rejection. |
+| Legacy pre-PD-12 checked | Re-author before review. Inherited checks do not prove a human act. |
+| Legacy PD-12 unchecked | Re-author before review only when history proves no user interaction. Inherited unchecks are not automatically rejection. |
+| Legacy provenance unknown | Fail closed. Keep the packet `in_progress` and preserve checkbox bytes until the owner resolves provenance with the user. |
+
+Current checkbox bytes and file dates never override provenance. No bulk
+migration script scans or rewrites acceptance artifacts.
+
 ---
 
 ## 4. Explicit non-goals
@@ -136,7 +211,7 @@ their generators.
 | Deleting `## Human Acceptance Record` | AC-7 keeps it, optional. |
 | Weakening the `^bubbles\.` acceptor prohibition | AC-8 keeps it in force when a record is present. |
 | Letting the guard edit `uservalidation.md` | AC-5 forbids it. |
-| Retrofitting existing `bugs/` and `specs/` artifacts | Out of scope; migration posture is a design decision, recorded in `design.md`. |
+| Retrofitting existing `bugs/` and `specs/` artifacts | GC-6 forbids bulk mutation. Each artifact owner applies the provenance-specific handling. |
 
 ---
 
@@ -205,6 +280,48 @@ Feature: Opt-out user acceptance of delivered behavior
     Given the repository at the delivering commit
     When every surface describing Gate G136 is compared to artifact-lint.sh
     Then no surface asserts a lint requirement absent from artifact-lint.sh
+
+  Scenario Outline: Authority resolution failures refuse acceptance
+    Given the acceptance authority is <authority-state>
+    When either public acceptance verdict evaluates a valid checked checklist
+    Then the verdict returns 1
+      And it emits exactly one PD12-AUTHORITY-UNAVAILABLE finding
+      And it emits no other acceptance finding
+
+    Examples:
+      | authority-state |
+      | missing registry |
+      | unreadable registry |
+      | malformed registry |
+      | registry missing a required contract field |
+      | registry with an invalid requiredAtTerminal boolean |
+
+  Scenario: A method-conditional field alone authors the record
+    Given the Human Acceptance Record retains placeholder base fields
+      And its record field contains a real external acceptance pointer
+    When the acceptance shape verdict is evaluated
+    Then present-record validation runs
+      And each missing base field is reported
+
+  Scenario: An explicit compliance override requires a record
+    Given a valid authority whose requiredAtTerminal is the exact boolean true
+      And a fully checked checklist carries no authored acceptance record
+    When the terminal acceptance verdict is evaluated
+    Then it returns non-zero
+      And it emits declared conditional code PD12-NO-RECORD exactly once
+
+  Scenario Outline: Legacy acceptance artifacts receive provenance-safe guidance
+    Given a uservalidation.md has <provenance-class>
+    When the BUG-037 upgrade contract is applied
+    Then the documented handling is <required-handling>
+      And no bulk migration script changes checkbox state
+
+    Examples:
+      | provenance-class | required-handling |
+      | current opt-out provenance | apply the current contract without migration |
+      | legacy pre-PD-12 checked provenance | re-author before review and do not infer a human act |
+      | legacy PD-12 unchecked provenance with proven no interaction | re-author before review and do not infer rejection |
+      | unknown provenance | keep in progress, preserve bytes, and obtain owner plus user resolution |
 ```
 
 ---

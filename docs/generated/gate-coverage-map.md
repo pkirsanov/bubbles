@@ -61,7 +61,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G024 | all_scopes_done_before_spec_done_gate | `script:bubbles/scripts/release-delivery-reconciliation-guard.sh` | 25 | ref | 5 | guard |
 | G025 | per_dod_item_raw_evidence_gate | `script:bubbles/scripts/release-delivery-reconciliation-guard.sh` | 25 | — | 4 | — |
 | G026 | sla_stress_coverage_gate | `guard-check:5A` | 22 | ref | 2 | guard |
-| G027 | phase_scope_coherence_gate | `guard-check:15` | 25 | Check 15 | 3 | guard |
+| G027 | phase_scope_coherence_gate | `guard-check:15` | 25 | Check 15 | 4 | guard |
 | G028 | implementation_reality_scan_gate | `guard-check:16` | 23 | Check 16 | 6 | guard |
 | G029 | integration_completeness_gate | `script:bubbles/scripts/capability-consumer-freshness.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard.sh` | 23 | — | 3 | — |
 | G031 | findings_artifact_update_gate | `mode-required` | 9 | — | 1 | — |
@@ -73,7 +73,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G037 | scope_size_discipline_gate | `script:bubbles/scripts/scope-context-fit-lint.sh` | 0 | — | 1 | — |
 | G038 | failure_recovery_containment_gate | `mode-required` | 0 | — | 1 | — |
 | G040 | incomplete_work_language_gate | `guard-check:18` | 25 | Check 18 | 5 | guard |
-| G041 | dod_format_integrity_gate | `guard-check:4A`, `guard-check:4B` | 0 | Check 4A, Check 4B | 2 | guard |
+| G041 | dod_format_integrity_gate | `guard-check:4A`, `guard-check:4B` | 0 | Check 4A, Check 4B | 3 | guard |
 | G042 | artifact_ownership_enforcement_gate | `guard-check:3G` | 0 | Check 3G | 3 | guard |
 | G043 | consumer_trace_gate | `script:bubbles/scripts/expand-migrate-contract-guard.sh`, `script:bubbles/scripts/guards/planning-checks.sh` | 0 | ref | 2 | guard |
 | G044 | comprehensive_regression_gate | `script:bubbles/scripts/domain-model-consistency.sh`, `script:bubbles/scripts/expand-migrate-contract-guard.sh`, `script:bubbles/scripts/regression-baseline-guard.sh` | 25 | — | 8 | — |
@@ -84,7 +84,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G053 | implementation_delta_evidence_gate | `guard-check:13B` | 0 | Check 13B | 4 | guard |
 | G055 | policy_provenance_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3A | 4 | guard |
 | G056 | validate_certification_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3H | 1 | guard |
-| G057 | scenario_manifest_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3C | 4 | guard |
+| G057 | scenario_manifest_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3C | 5 | guard |
 | G058 | lockdown_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 1 | Check 3D | — | guard |
 | G059 | regression_contract_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3D | 1 | guard |
 | G060 | scenario_tdd_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 3 | Check 3E | 5 | guard |
@@ -166,7 +166,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | --- | --- | --- | --- | --- | --- |
 | G037 | scope_size_discipline_gate | — | 1 | — | scope-context-fit-lint.sh |
 | G038 | failure_recovery_containment_gate | — | 1 | — | gate-id-grep.sh |
-| G041 | dod_format_integrity_gate | Check 4A, Check 4B | 2 | guard | evidence-admission-hardening-selftest.sh, v4.1.0-selftest.sh |
+| G041 | dod_format_integrity_gate | Check 4A, Check 4B | 3 | guard | compact-obligation-basis-selftest.sh, evidence-admission-hardening-selftest.sh, v4.1.0-selftest.sh |
 | G042 | artifact_ownership_enforcement_gate | Check 3G | 3 | guard | agent-ownership-lint.sh, gate-bands-selftest.sh, gate-hit-log-selftest.sh |
 | G043 | consumer_trace_gate | ref | 2 | guard | expand-migrate-contract-guard.sh, imp021-interaction-contracts-selftest.sh |
 | G052 | artifact_freshness_guard_gate | Check 13A | — | guard | — |

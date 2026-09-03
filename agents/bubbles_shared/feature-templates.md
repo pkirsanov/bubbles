@@ -291,14 +291,16 @@ Written by automation. Records that the delivered behavior was verified far enou
 
 ## Checklist
 
-Human acceptance. Ships UNCHECKED. A human checks an item after exercising that behavior.
+Human acceptance, opt-out. Ships CHECKED. The user's only required act is to UNCHECK an item whose behavior does not meet their expectation.
 
-- [ ] [Scenario or flow the human accepts]
-- [ ] [Another flow the human accepts]
+- [x] [Scenario or flow the user accepts]
+- [x] [Another flow the user accepts]
 
-An item still unchecked at a terminal transition is either unaccepted work or a user-reported regression.
+An item the user has unchecked blocks a terminal transition until the behavior is fixed and the USER re-checks it. Unchecking nothing is acceptance.
 
 ## Human Acceptance Record
+
+Optional. Not required at a terminal transition. Author it only where an external UAT, an explicit sign-off, or a compliance context wants a named acceptor.
 
 - acceptedBy: [human name or handle — never an agent id]
 - acceptedAt: [YYYY-MM-DDTHH:MM:SSZ]
@@ -326,13 +328,16 @@ Structured by `bubbles.journey` during a guided live-product walkthrough (observ
 Rules:
 
 - Checklist items MUST use markdown checkbox syntax. So must Automation Readiness items.
-- **Acceptance entries ship UNCHECKED (IMP-047 PD-12).** Automation MUST NOT check one. The previous rule required a checked-by-default entry, which meant the template alone satisfied Gate G136's terminal human acceptance with no human act — a planning artifact became a sign-off.
-- **Automation readiness and human acceptance are different facts with different writers.** Automation writes and checks `## Automation Readiness`; a fully checked readiness block discharges no acceptance obligation. Only `## Checklist` plus `## Human Acceptance Record` establish acceptance.
-- A terminal (`done`) transition requires every `## Checklist` item checked AND a `## Human Acceptance Record` carrying `acceptedBy`, `acceptedAt`, and a `method` from the closed vocabulary. `acceptedBy` MUST NOT be an agent id.
+- **Acceptance is OPT-OUT (BUG-037).** The `## Checklist` ships CHECKED, and automation authors that initial state when it creates the artifact. A user who reviews the delivered behavior and objects to nothing performs no further act, and that silence IS acceptance. A user who does object UNCHECKS the item.
+- **An unchecked item is a user-reported regression.** It refuses a terminal (`done`) transition and Gate G136 names it. The guard prints the item and stops; it never checks a box, because checking one would erase the only signal the user has for rejecting delivered behavior.
+- **After a fix, the USER re-checks.** No agent, guard or lint may re-check an item a user unchecked.
+- **Automation readiness and human acceptance are different facts with different writers.** Automation writes and checks `## Automation Readiness`; a fully checked readiness block discharges no acceptance obligation.
+- `## Human Acceptance Record` is OPTIONAL and is NOT required at a terminal transition. When it IS authored it must carry `acceptedBy`, `acceptedAt`, and a `method` from the closed vocabulary, and `acceptedBy` MUST NOT be an agent id — an agent cannot accept on a human's behalf.
 - Empty checklist or non-checkbox bullets are template violations.
 - The canonical checklist section heading is `## Checklist`. Legacy files that omit it should be upgraded before completion claims.
-- `bubbles.journey` structures the `## Goal`, `## Journey Steps`, and `## Open Refinements` sections against the live product, but NEVER auto-checks the human acceptance items under `## Checklist` and NEVER writes `## Human Acceptance Record` (G057, G136) — it records observations; the human accepts.
-- The section names, record fields, method vocabulary, and refusal codes are owned by [`bubbles/registry/acceptance-authority.yaml`](../../bubbles/registry/acceptance-authority.yaml), which `artifact-lint.sh` and Gate G136 both read through `bubbles/scripts/acceptance-authority-lib.sh`.
+- **The three-way rule on who may write a `[x]` (G057, G136).** Automation MAY author the INITIAL checked state at artifact creation — that permission belongs to `bubbles.plan`, which owns creation. Automation MUST NOT re-check an item a user unchecked. Automation MUST NOT toggle an item either way to mirror a test outcome. Only the first is mechanically checkable: a template-authored `[x]` and an agent's overwrite of a user's uncheck are byte-identical, so rows two and three are agent-instruction obligations rather than guard-enforced rules.
+- `bubbles.journey` structures the `## Goal`, `## Journey Steps`, and `## Open Refinements` sections against the live product. Its prohibition is ABSOLUTE and carries no authoring exception: it runs later, against a file that already exists, so it NEVER auto-checks a `## Checklist` item and NEVER writes `## Human Acceptance Record` (G057, G136) — it records observations; the user accepts.
+- The section names, shipped state, terminal condition, record fields, method vocabulary, and refusal codes are owned by [`bubbles/registry/acceptance-authority.yaml`](../../bubbles/registry/acceptance-authority.yaml), which `artifact-lint.sh` and Gate G136 both read through `bubbles/scripts/acceptance-authority-lib.sh`.
 
 ## scenario-manifest.json Template
 

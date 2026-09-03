@@ -585,6 +585,14 @@ build_scope_analysis_units() {
   local current_label=""
   local line=""
 
+  # BUG-041 F-041-02. The `done < "$scope_path"` below is a redirection, so a
+  # missing file is a redirection FAILURE, and under the `set -euo pipefail` at
+  # the top of this script that killed the guard outright — no verdict, no
+  # failureCount, no gate lines. A caller must never be able to turn a missing
+  # artifact into an un-evaluable packet; whether a missing scopes.md is a
+  # failure is Check 1's decision, made on a live guard.
+  [[ -f "$scope_path" ]] || return 0
+
   if [[ "$scope_layout" != "single-file" ]] || [[ "$(basename "$scope_path")" != "scopes.md" ]]; then
     scope_analysis_files+=("$scope_path")
     scope_analysis_labels+=("${scope_path#$feature_dir/}")
@@ -687,6 +695,162 @@ case "$workflow_grants_lint_script" in
   "$guard_repo_root/"*) workflow_grants_lint_args=(--repo-root "$guard_repo_root") ;;
 esac
 
+# ── BUG-041 F-041-02: packet-form-aware artifact resolution ──────────────────
+# BUG-041 taught artifact-lint.sh to read a BUG packet's artifact set from its
+# declared form and left THIS surface blind. The result was a split-brain the
+# same change created: a `compact` packet — the DEFAULT bug route since
+# IMP-047 S-D — passed lint and then died here, because the scope setup below
+# pushed "$feature_dir/scopes.md" unconditionally into a `done <` redirection.
+#
+# The artifact set is READ through bug-packet-resolve.sh, the sole production
+# reader of bubbles/registry/bug-packet.yaml, and is NOT restated here. A
+# private branch in this script would be the fourth copy of the contract that
+# BUG-041 exists to end (design.md §4).
+#
+# FAIL-CLOSED IN THE STRICT DIRECTION. `bug_packet_form` stays empty — and the
+# pre-existing `full`-shaped behaviour therefore applies verbatim — for a
+# non-bug directory, a missing or unreadable registry, a missing resolver, an
+# absent declaration, a word outside the declared vocabulary, or a declaration
+# that micro-fix admission does not confirm. A requirement is reduced ONLY when
+# the registry positively declares a reduced form AND admission grants it, so
+# silence, breakage, and ambiguity all resolve to MORE checking, never less.
+bug_packet_form=""
+bug_packet_required_artifacts=()
+bug_packet_requires_scopes_md=true
+bug_packet_form_note=""
+# BUG-042. Obligations the resolved form retains, as `id|dischargedIn|attestedIn`
+# triples, and the DISTINCT attestation artifacts they name. Empty for the `full`
+# form and for every feature directory, which is what keeps this change inert
+# everywhere except a reduced bug packet.
+bug_packet_obligations=()
+bug_packet_attestation_files=()
+
+guard_is_bug_packet=false
+if [[ -f "$feature_dir/state.json" ]] && grep -q '"bugId"[[:space:]]*:' "$feature_dir/state.json"; then
+  guard_is_bug_packet=true
+elif [[ "$(basename "$feature_dir")" =~ ^BUG-[0-9]{3} ]]; then
+  guard_is_bug_packet=true
+fi
+
+if [[ "$guard_is_bug_packet" == true ]]; then
+  bug_packet_resolver="$(resolve_guarded_framework_script bug-packet-resolve.sh || true)"
+  bug_packet_facts=""
+  if [[ -z "$bug_packet_resolver" ]]; then
+    bug_packet_form_note="bug-packet-resolve.sh not found; applying the unreduced artifact set"
+  elif ! bug_packet_facts="$(bash "$bug_packet_resolver" 2>/dev/null)"; then
+    bug_packet_form_note="bubbles/registry/bug-packet.yaml is unreadable; applying the unreduced artifact set"
+  else
+    bug_decl_field="$(printf '%s\n' "$bug_packet_facts" | sed -n 's/^field=//p' | head -1)"
+    bug_decl_default="$(printf '%s\n' "$bug_packet_facts" | sed -n 's/^default=//p' | head -1)"
+    bug_declared_word=""
+    if [[ -n "$bug_decl_field" ]] && [[ -f "$feature_dir/state.json" ]]; then
+      bug_declared_word="$(sed -n "s/.*\"${bug_decl_field}\"[[:space:]]*:[[:space:]]*\"\([A-Za-z-]*\)\".*/\1/p" "$feature_dir/state.json" | head -1)"
+    fi
+
+    bug_resolved_form=""
+    if [[ -z "$bug_decl_field" ]] || [[ -z "$bug_decl_default" ]]; then
+      bug_packet_form_note="bug-packet.yaml declares no form-declaration field or absent-default; applying the unreduced artifact set"
+    elif [[ -z "$bug_declared_word" ]]; then
+      bug_packet_form_note="no state.json .$bug_decl_field declaration; applying the registry absent-default '$bug_decl_default' artifact set"
+      bug_resolved_form="$bug_decl_default"
+    else
+      bug_resolved_form="$(printf '%s\n' "$bug_packet_facts" | sed -n "s/^vocab=${bug_declared_word}|//p" | head -1)"
+      if [[ -z "$bug_resolved_form" ]]; then
+        bug_packet_form_note="state.json .$bug_decl_field=\"$bug_declared_word\" is outside bug-packet.yaml's declared vocabulary; applying the '$bug_decl_default' artifact set"
+        bug_resolved_form="$bug_decl_default"
+      else
+        bug_packet_form_note="packet form '$bug_resolved_form' (state.json .$bug_decl_field=\"$bug_declared_word\")"
+      fi
+    fi
+
+    # Declaring a reduced form is a REQUEST, never a grant. bug-packet.yaml sets
+    # `escalation.overrideFlag: none` precisely so this field cannot become the
+    # override, so the request must also survive micro-fix admission.
+    if [[ -n "$bug_resolved_form" ]] && [[ "$bug_resolved_form" != "$bug_decl_default" ]]; then
+      bug_admission_script="$(resolve_guarded_framework_script micro-fix-admission.sh || true)"
+      bug_admitted_form=""
+      if [[ -n "$bug_admission_script" ]]; then
+        bug_admitted_form="$(bash "$bug_admission_script" --resolve-form "$feature_dir" 2>/dev/null | sed -n 's/^form=//p' | head -1)"
+      fi
+      if [[ "$bug_admitted_form" != "$bug_resolved_form" ]]; then
+        bug_packet_form_note="state.json declares the '$bug_resolved_form' packet but micro-fix admission resolves '${bug_admitted_form:-unavailable}'; the '$bug_decl_default' artifact set is required"
+        bug_resolved_form="$bug_decl_default"
+      else
+        bug_packet_form_note="packet form '$bug_resolved_form' confirmed by micro-fix admission"
+      fi
+    fi
+
+    if [[ -n "$bug_resolved_form" ]]; then
+      bug_packet_form="$bug_resolved_form"
+      bug_packet_requires_scopes_md=false
+      while IFS= read -r bug_artifact_fact; do
+        [[ -n "$bug_artifact_fact" ]] || continue
+        bug_artifact_conditional="${bug_artifact_fact##*|}"
+        bug_artifact_id="${bug_artifact_fact%|*}"
+        # A conditional artifact is not unconditionally required; its own gate owns it.
+        [[ "$bug_artifact_conditional" == "yes" ]] && continue
+        case "$bug_artifact_id" in
+          scopes.md) bug_packet_requires_scopes_md=true ;;
+          *) bug_packet_required_artifacts+=("$bug_artifact_id") ;;
+        esac
+      done < <(printf '%s\n' "$bug_packet_facts" | sed -n "s/^artifact=${bug_packet_form}|//p")
+
+      # An empty requirement set is a false-PASS. Refuse the reduction and keep
+      # the unreduced behaviour rather than emit it.
+      if [[ ${#bug_packet_required_artifacts[@]} -eq 0 ]] && [[ "$bug_packet_requires_scopes_md" == false ]]; then
+        bug_packet_form=""
+        bug_packet_required_artifacts=()
+        bug_packet_requires_scopes_md=true
+        bug_packet_form_note="bug-packet.yaml declares no artifacts for form '$bug_resolved_form'; applying the unreduced artifact set"
+      fi
+
+      # BUG-042. The obligations the form retains, read from the SAME facts.
+      # This is what gives a scopes.md-less form a completion basis: without it
+      # the DoD count is 0, Check 4 records Check-4-structure, and the DEFAULT
+      # bug route can be evaluated but never certified.
+      if [[ -n "$bug_packet_form" ]]; then
+        while IFS= read -r bug_obligation_fact; do
+          [[ -n "$bug_obligation_fact" ]] || continue
+          bug_packet_obligations+=("$bug_obligation_fact")
+          bug_obligation_attested="${bug_obligation_fact##*|}"
+          [[ -n "$bug_obligation_attested" ]] || continue
+          bug_obligation_seen=false
+          for bug_obligation_known in ${bug_packet_attestation_files[@]+"${bug_packet_attestation_files[@]}"}; do
+            [[ "$bug_obligation_known" == "$feature_dir/$bug_obligation_attested" ]] && bug_obligation_seen=true && break
+          done
+          [[ "$bug_obligation_seen" == true ]] || bug_packet_attestation_files+=("$feature_dir/$bug_obligation_attested")
+        done < <(printf '%s\n' "$bug_packet_facts" | sed -n "s/^obligation=${bug_packet_form}|//p")
+      fi
+    fi
+  fi
+fi
+
+# BUG-042 (DI-038-04). The attestation predicate for ONE registry-declared
+# obligation, extracted so Check 4 (completion basis) and Check 15 (Gate G027
+# work evidence) ask the SAME question of the SAME facts instead of two copies
+# free to drift. Exit: 0 attested, 1 unchecked, 2 no attestation line,
+# 3 attestation artifact absent.
+bug_packet_obligation_state() {
+  local _fact="$1"
+  local _id="${_fact%%|*}"
+  local _rest="${_fact#*|}"
+  local _discharged="${_rest%%|*}"
+  local _attested="${_rest##*|}"
+  local _file="$feature_dir/$_attested"
+
+  [[ -n "$_attested" ]] && [[ -f "$_file" ]] || return 3
+
+  # A bare tick asserts that something was done somewhere; a tick citing the
+  # artifact that carries the work is checkable against that artifact.
+  if grep -E '^\- \[x\] ' "$_file" | grep -F -- "$_id" | grep -qF -- "$_discharged"; then
+    return 0
+  fi
+  if grep -E '^\- \[ \] ' "$_file" | grep -qF -- "$_id"; then
+    return 1
+  fi
+  return 2
+}
+
 if [[ "$scope_layout" == "per-scope-directory" ]]; then
   while IFS= read -r scope_path; do
     scope_files+=("$scope_path")
@@ -696,7 +860,12 @@ if [[ "$scope_layout" == "per-scope-directory" ]]; then
     report_files+=("$scope_report_path")
   done < <(find "$feature_dir/scopes" -mindepth 2 -maxdepth 2 -type f -name 'report.md' | sort)
 else
-  scope_files+=("$feature_dir/scopes.md")
+  # A form whose artifact set omits scopes.md has no scope analysis to perform.
+  # A form that DOES require it still enrols the path so Check 1 can report the
+  # absence as a failure — enrolment is what makes the requirement visible.
+  if [[ "$bug_packet_requires_scopes_md" == true ]] || [[ -f "$feature_dir/scopes.md" ]]; then
+    scope_files+=("$feature_dir/scopes.md")
+  fi
   report_files+=("$feature_dir/report.md")
 fi
 
@@ -757,6 +926,20 @@ echo ""
 # =============================================================================
 echo "--- Check 1: Required Artifacts ---"
 required_files=("spec.md" "design.md" "uservalidation.md" "state.json")
+# BUG-041 F-041-02. The literal list above is the FEATURE contract and stays
+# authoritative for specs/<NNN-feature>/ and for every bug packet on the
+# unreduced form. When bug-packet.yaml positively declares a reduced form AND
+# micro-fix admission grants it, the required set comes from the registry
+# instead, so this surface and artifact-lint.sh answer the artifact question
+# from the same authority rather than from two private lists.
+if [[ -n "$bug_packet_form" ]] && [[ ${#bug_packet_required_artifacts[@]} -gt 0 ]]; then
+  info "Bug packet: $bug_packet_form_note"
+  if [[ "$bug_packet_requires_scopes_md" == false ]]; then
+    required_files=("${bug_packet_required_artifacts[@]}")
+  fi
+elif [[ -n "$bug_packet_form_note" ]]; then
+  info "Bug packet: $bug_packet_form_note"
+fi
 for required_file in "${required_files[@]}"; do
   if [[ -f "$feature_dir/$required_file" ]]; then
     pass "Required artifact exists: $required_file"
@@ -795,6 +978,15 @@ if [[ "$scope_layout" == "per-scope-directory" ]]; then
 else
   if [[ -f "$feature_dir/scopes.md" ]]; then
     pass "Required artifact exists: scopes.md"
+  elif [[ "$bug_packet_requires_scopes_md" == false ]]; then
+    # BUG-041 F-041-02. bug-packet.yaml's `compact` form declares three
+    # artifacts and scopes.md is not one of them, so its absence is the declared
+    # shape of the packet, not a missing artifact. This is a REDUCTION OF
+    # ARTIFACTS, NOT OF OBLIGATIONS: micro-fix-packet.yaml's four
+    # preservedObligations still bind, and the scope-derived checks below simply
+    # have no units to analyse. See the note in Check 1's output for the
+    # obligations this surface cannot mechanically evaluate on this form.
+    info "scopes.md not required by the '$bug_packet_form' packet form; scope-derived analysis has no units"
   else
     fail "Missing required artifact: $feature_dir/scopes.md"
   fi
@@ -1218,7 +1410,24 @@ sys.exit(0 if any(isinstance(r, dict) and (r.get("id") or "").strip() for r in r
   fi
 fi
 
-if [[ "$total_dod" -eq 0 ]]; then
+# BUG-042. THIRD completion basis, ranked BELOW scenario-states and ABOVE the
+# legacy checkbox count. It is selected only when bug-packet.yaml positively
+# declares obligations for the resolved packet form, so `full` — which declares
+# none — is untouched, and so is every feature directory.
+#
+# It is strictly STRONGER than the legacy basis it outranks. The legacy basis
+# counts a list the author wrote, so it can only ask "is anything unchecked" and
+# can never know the list is COMPLETE. Here the required SET comes from the
+# registry, so an author who omits an obligation does not shorten the
+# requirement, they fail it. Zero-unchecked is preserved verbatim on top.
+completion_basis="legacy-checkbox"
+if [[ "$scenario_basis" == "scenario-states" ]]; then
+  completion_basis="scenario-states"
+elif [[ ${#bug_packet_obligations[@]} -gt 0 ]]; then
+  completion_basis="registry-obligations"
+fi
+
+if [[ "$total_dod" -eq 0 ]] && [[ "$completion_basis" != "registry-obligations" ]]; then
   record_failed_check Check-4-structure
   fail "Resolved scope artifacts have ZERO DoD checkbox items — cannot verify completion"
 elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
@@ -1227,7 +1436,7 @@ elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
   info "NOT_APPLICABLE: Check-4-completion — planning maturity permits unchecked implementation DoD"
 elif ! check_is_applicable Check-4-completion; then
   info "NOT_APPLICABLE: Check-4-completion — a framework proposal never implements, so it certifies no DoD completion"
-elif [[ "$scenario_basis" == "scenario-states" ]]; then
+elif [[ "$completion_basis" == "scenario-states" ]]; then
   info "Completion basis: REQUIRED SCENARIO STATES (checkbox counts are reported, not decisive)"
   scenario_rc=0
   scenario_out="$(bash "$SCRIPT_DIR/scenario-state-resolve.sh" --spec-dir "$feature_dir" \
@@ -1247,6 +1456,43 @@ elif [[ "$scenario_basis" == "scenario-states" ]]; then
   fi
   if [[ "$total_unchecked" -gt 0 ]]; then
     info "$total_unchecked unchecked DoD item(s) remain; reported for the operator, not counted as the completion basis"
+  fi
+elif [[ "$completion_basis" == "registry-obligations" ]]; then
+  info "Completion basis: REGISTRY-DECLARED OBLIGATIONS (bug-packet.yaml '$bug_packet_form' form declares ${#bug_packet_obligations[@]}; the required set is not author-chosen)"
+  obligation_failures=0
+  for obligation_fact in "${bug_packet_obligations[@]}"; do
+    obligation_id="${obligation_fact%%|*}"
+    obligation_rest="${obligation_fact#*|}"
+    obligation_discharged="${obligation_rest%%|*}"
+    obligation_attested="${obligation_rest##*|}"
+    obligation_state=0
+    bug_packet_obligation_state "$obligation_fact" || obligation_state=$?
+
+    if [[ "$obligation_state" -eq 3 ]]; then
+      record_failed_check Check-4-obligations
+      fail "Obligation '$obligation_id' names attestation artifact '${obligation_attested:-<none>}', which does not exist in $feature_dir"
+      obligation_failures=$((obligation_failures + 1))
+      continue
+    fi
+
+    if [[ "$obligation_state" -eq 0 ]]; then
+      pass "Obligation '$obligation_id' is attested [x] in $obligation_attested, naming its discharge site $obligation_discharged"
+    elif [[ "$obligation_state" -eq 1 ]]; then
+      record_failed_check Check-4-obligations
+      fail "Obligation '$obligation_id' is declared by bug-packet.yaml but its attestation line in $obligation_attested is UNCHECKED"
+      obligation_failures=$((obligation_failures + 1))
+    else
+      record_failed_check Check-4-obligations
+      fail "Obligation '$obligation_id' has NO attestation line in $obligation_attested citing its discharge site $obligation_discharged — the required set is registry-derived and cannot be shortened"
+      obligation_failures=$((obligation_failures + 1))
+    fi
+  done
+  if [[ "$obligation_failures" -eq 0 ]]; then
+    pass "All ${#bug_packet_obligations[@]} registry-declared obligation(s) are attested [x] for the '$bug_packet_form' packet form"
+  fi
+  if [[ "$total_unchecked" -gt 0 ]]; then
+    record_failed_check Check-4-completion
+    fail "Resolved scope artifacts have $total_unchecked UNCHECKED DoD items — ALL must be [x] for 'done'"
   fi
 elif [[ "$total_unchecked" -gt 0 ]]; then
   record_failed_check Check-4-completion
@@ -1279,7 +1525,17 @@ echo ""
 # =============================================================================
 echo "--- Check 4A: DoD Format Manipulation Detection (Gate G041) ---"
 total_manipulated=0
-for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
+# BUG-042. On a reduced packet form the completion claim lives in the registry's
+# `attestedIn` artifact rather than in scopes.md, so this check must follow it
+# there. Scanning only scope_files would let the relocation reopen the exact
+# reformatting bypass this check exists to close. The array is EMPTY on every
+# feature directory and on the `full` form, so the scanned set is unchanged
+# there.
+c4a_scan_files=(
+  ${scope_files[@]+"${scope_files[@]}"}
+  ${bug_packet_attestation_files[@]+"${bug_packet_attestation_files[@]}"}
+)
+for scope_path in ${c4a_scan_files[@]+"${c4a_scan_files[@]}"}; do
   [[ -f "$scope_path" ]] || continue
 
   # BUG-026: consume the shared DoD parser (bubbles/scripts/dod-section-lib.sh).
@@ -1383,7 +1639,34 @@ total_scopes=$((not_started_scopes + in_progress_scopes + blocked_scopes + done_
 
 info "Resolved scopes: total=$total_scopes, Done=$done_scopes, In Progress=$in_progress_scopes, Not Started=$not_started_scopes, Blocked=$blocked_scopes"
 
-if [[ "$total_scopes" -eq 0 ]]; then
+# BUG-042. A form whose declared artifact set omits scopes.md has no scope
+# decomposition, so there is nothing to cross-reference and the structural
+# failure below is asking a question the contract does not pose. This does NOT
+# waive anything: it substitutes the assertion that IS meaningful on such a
+# form. A packet with no scope decomposition that nonetheless claims completed
+# scopes is a contradiction, and saying so ADDS a check where the guard
+# previously only blocked.
+check5_scopeless_form=false
+if [[ "$total_scopes" -eq 0 ]] && [[ -n "$bug_packet_form" ]] && [[ "$bug_packet_requires_scopes_md" == false ]]; then
+  check5_scopeless_form=true
+  info "NOT_APPLICABLE: Check-5-all-done — the '$bug_packet_form' packet form declares no scopes.md, so there is no scope decomposition to cross-reference"
+  scopeless_completed_count="$(jq -r '
+    if ((.certification? | type) == "object")
+        and ((.certification.completedScopes? | type) == "array") then
+      (.certification.completedScopes | length)
+    elif ((.completedScopes? | type) == "array") then
+      (.completedScopes | length)
+    else
+      0
+    end
+  ' "$state_file")"
+  if [[ "$scopeless_completed_count" -eq 0 ]]; then
+    pass "completedScopes is EMPTY, as the '$bug_packet_form' form requires — no scope decomposition, no completed scopes"
+  else
+    record_failed_check Check-5-scopeless-completed-scopes
+    fail "The '$bug_packet_form' packet form declares no scopes.md, yet state.json claims $scopeless_completed_count completed scope(s) — a packet with no scope decomposition cannot have completed one"
+  fi
+elif [[ "$total_scopes" -eq 0 ]]; then
   record_failed_check Check-5-structure
   fail "Resolved scope artifacts have no scope status markers"
 elif [[ "$transition_audit_profile" == "planning-maturity-v1" ]]; then
@@ -1431,6 +1714,11 @@ invalid_completed_scopes="$(printf '%s\n' "$completed_scopes_json" \
 
 if [[ "$invalid_completed_scopes" != "[]" ]]; then
   fail "completedScopes is present but its entries are not string scope IDs (found: ${invalid_completed_scopes:0:60}) — entries must be quoted scope IDs such as \"01-core-scope\", not ordinals; nothing can map an ordinal to a scope artifact"
+elif [[ "$check5_scopeless_form" == true ]]; then
+  # Already asserted above, against the emptiness rule that applies to a form
+  # with no scope decomposition. Re-deriving it here as a count mismatch would
+  # report one defect twice.
+  :
 elif [[ "$done_scopes" -gt 0 ]] && [[ "$state_completed_scopes_count" -eq 0 ]]; then
   fail "Resolved scope artifacts report $done_scopes Done scope(s) but state.json completedScopes is EMPTY — state.json integrity failure"
 elif [[ "$done_scopes" -ne "$state_completed_scopes_count" ]]; then
@@ -3964,15 +4252,53 @@ if [[ -n "$state_workflow_mode" ]]; then
       fi
 
       if [[ "$has_implement" == "true" || "$has_test" == "true" ]]; then
-        # Implementation phases claimed — completedScopes MUST be non-empty
-        if [[ "$state_completed_scopes_count" -eq 0 ]]; then
-          fail "Execution/certification phases claim implement/test phases but completedScopes is EMPTY — FABRICATION (Gate G027)"
-          info "This means phases were recorded without any scope actually completing"
+        # BUG-042 (DI-038-04). G027's INTENT is anti-fabrication: implement/test
+        # must not be recorded without evidence that work happened. Its PROXY
+        # was "scopes completed". A packet form whose declared artifact set
+        # omits scopes.md has no scope decomposition by construction, and
+        # Check 5 requires completedScopes to be EMPTY on exactly that form —
+        # so no value of completedScopes satisfied both checks and the DEFAULT
+        # bug route was unfalsifiable: claim the phases and G027 fires, omit
+        # them and G022 fires. The intent is kept in full; only the proxy is
+        # swapped for the one work-evidence signal such a form does carry, the
+        # registry-declared obligation attestations. Resolution reuses the
+        # SAME `bug_packet_form` facts every other check reads.
+        g027_scopeless_form=false
+        if [[ -n "$bug_packet_form" ]] && [[ "$bug_packet_requires_scopes_md" == false ]]; then
+          g027_scopeless_form=true
         fi
 
-        # Implementation phases claimed — scope artifact statuses must show work done
-        if [[ "$done_scopes" -eq 0 ]]; then
-          fail "Execution/certification phases claim implement/test phases but ZERO scopes are marked 'Done' — FABRICATION (Gate G027)"
+        if [[ "$g027_scopeless_form" == true ]]; then
+          if [[ ${#bug_packet_obligations[@]} -eq 0 ]]; then
+            fail "Execution/certification phases claim implement/test phases but the '$bug_packet_form' packet form declares NO scopes.md and NO obligations — nothing attests that work happened — FABRICATION (Gate G027)"
+            info "A form with neither a scope decomposition nor registry-declared obligations carries no work evidence to check"
+          else
+            g027_unattested=0
+            for g027_obligation_fact in "${bug_packet_obligations[@]}"; do
+              g027_obligation_state=0
+              bug_packet_obligation_state "$g027_obligation_fact" || g027_obligation_state=$?
+              if [[ "$g027_obligation_state" -ne 0 ]]; then
+                g027_unattested=$((g027_unattested + 1))
+                fail "Execution/certification phases claim implement/test phases but registry-declared obligation '${g027_obligation_fact%%|*}' is NOT attested — FABRICATION (Gate G027)"
+              fi
+            done
+            if [[ "$g027_unattested" -eq 0 ]]; then
+              pass "Phase-obligation coherence verified: implement/test are backed by all ${#bug_packet_obligations[@]} registry-declared obligation attestation(s) for the '$bug_packet_form' form"
+            else
+              info "This means phases were recorded without the work evidence the '$bug_packet_form' form declares"
+            fi
+          fi
+        else
+          # Implementation phases claimed — completedScopes MUST be non-empty
+          if [[ "$state_completed_scopes_count" -eq 0 ]]; then
+            fail "Execution/certification phases claim implement/test phases but completedScopes is EMPTY — FABRICATION (Gate G027)"
+            info "This means phases were recorded without any scope actually completing"
+          fi
+
+          # Implementation phases claimed — scope artifact statuses must show work done
+          if [[ "$done_scopes" -eq 0 ]]; then
+            fail "Execution/certification phases claim implement/test phases but ZERO scopes are marked 'Done' — FABRICATION (Gate G027)"
+          fi
         fi
 
         # If ALL phases claimed but scopes are partial, that's suspicious
@@ -4423,11 +4749,21 @@ echo "--- Check 22: DoD-Gherkin Content Fidelity (Gate G068) ---"
 
 dod_fidelity_failures=0
 dod_fidelity_total=0
-for scope_index in "${!scope_analysis_files[@]}"; do
-  scope_path="${scope_analysis_files[$scope_index]}"
+# BUG-042. Same reason as Check 4A: on a reduced form the DoD-shaped content is
+# in the attestation artifact, so G068 must see it. Empty elsewhere.
+c22_scan_files=(
+  ${scope_analysis_files[@]+"${scope_analysis_files[@]}"}
+  ${bug_packet_attestation_files[@]+"${bug_packet_attestation_files[@]}"}
+)
+for scope_index in "${!c22_scan_files[@]}"; do
+  scope_path="${c22_scan_files[$scope_index]}"
   [[ -f "$scope_path" ]] || continue
 
-  scope_label="$(scope_analysis_label "$scope_index")"
+  if [[ "$scope_index" -lt "${#scope_analysis_files[@]}" ]]; then
+    scope_label="$(scope_analysis_label "$scope_index")"
+  else
+    scope_label="${scope_path#$feature_dir/}"
+  fi
 
   # Extract Gherkin scenarios
   scope_scenarios="$(grep -E '^[[:space:]]*Scenario( Outline)?:' "$scope_path" | sed -E 's/^[[:space:]]*Scenario( Outline)?:[[:space:]]*//' || true)"
@@ -4588,6 +4924,7 @@ else
     # case that is now the only reachable one; it just cannot, alone, allege
     # forgery when command identity is single.
     c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    c43_analysis_rc=0
     c43_analysis="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
       # BUG-033 facet 2: unwrap every TRANSPARENT prefix, not just a bare
       # leading `bash`/`sh`. A shell invoked with `-c`, an `env` prefix, and
@@ -4599,12 +4936,58 @@ else
       # to tolerate. `bash -c x` was worse still: it stripped `bash` and left
       # `-c`, so the family was a flag. The recursion is what makes composed
       # prefixes (`env A=1 zsh -c ...`) collapse rather than half-collapse.
+      def normalize_tokens:
+        def walk($wrappers):
+          if ((.[0] // "") | test("^(bash|sh|zsh|ksh|dash)$"))
+            then (if ((.[1] // "") == "-c")
+              then (.[2:] | walk($wrappers + ["shell"]))
+              else (.[1:] | walk($wrappers + ["shell"])) end)
+          elif ((.[0] // "") == "env")
+            then (.[1:] | walk($wrappers + ["env"]))
+          elif ((.[0] // "") | test("^[A-Za-z_][A-Za-z0-9_]*="))
+            then (.[1:] | walk($wrappers + ["assignment"]))
+          elif ((.[0] // "") | test("^(timeout|gtimeout)$"))
+            and (length >= 3)
+            and (((.[1] // "") | startswith("-")) | not)
+            then (. as $tokens | ($tokens[2:] | walk($wrappers + [$tokens[0]])))
+          elif (length >= 9)
+            and ((.[0] // "") == "/usr/bin/perl")
+            and ((.[1] // "") == "-e")
+            and ((.[2] // "") == "\u0027alarm")
+            and ((.[3] // "") == "shift")
+            and ((.[4] // "") == "@ARGV;")
+            and ((.[5] // "") == "exec")
+            and ((.[6] // "") == "@ARGV\u0027")
+            and (((.[7] // "") | startswith("-")) | not)
+            then (.[8:] | walk($wrappers + ["portable-perl-alarm"]))
+          else {tokens: ., wrappers: $wrappers} end;
+        walk([]);
+      def command_normalization:
+        . as $recorded
+        | ( . / " " | map(select(length > 0)) ) as $raw
+        | ($raw | normalize_tokens) as $normalized
+        | ($normalized.tokens[0] // "") as $head
+        | (($head == "timeout") or ($head == "gtimeout") or ($head == "/usr/bin/perl")) as $unsupported
+        | ($normalized.wrappers | map(select(test("^(timeout|gtimeout|portable-perl-alarm)$")))) as $bounded
+        | (if $unsupported then ["unsupported"]
+           elif ($bounded | length) > 0 then $bounded
+           else ["direct"] end) as $launchers
+        | {
+            recordedCommand: $recorded,
+            tokens: $normalized.tokens,
+            wrappers: $normalized.wrappers,
+            launchers: $launchers,
+            launcher: $launchers[0],
+            identity: (if $unsupported then $recorded else ($normalized.tokens | join(" ")) end),
+            identitySource: (if $unsupported then "recorded-command"
+              elif ($normalized.wrappers | length) > 0 then "normalized-underlying-command"
+              else "underlying-command" end),
+            normalization: (if $unsupported then "unchanged"
+              elif ($normalized.wrappers | length) > 0 then "normalized"
+              else "unchanged" end)
+          };
       def strip_wrappers:
-        if ((.[0] // "") | test("^(bash|sh|zsh|ksh|dash)$"))
-          then (if ((.[1] // "") == "-c") then (.[2:] | strip_wrappers) else (.[1:] | strip_wrappers) end)
-        elif ((.[0] // "") == "env") then (.[1:] | strip_wrappers)
-        elif ((.[0] // "") | test("^[A-Za-z_][A-Za-z0-9_]*=")) then (.[1:] | strip_wrappers)
-        else . end;
+        normalize_tokens | .tokens;
       def cmd_parts:
         ( . / " " | map(select(length > 0)) ) | strip_wrappers;
       def command_family:
@@ -4713,6 +5096,70 @@ else
           and (($exits | unique | length) == 1)
           and ($targets | all_distinct_nonempty)
           and ($provenance | all_distinct_nonempty);
+      def collision_reason:
+        . as $rows
+        | ($rows | map(.cmd | command_family)) as $families
+        | ($rows | map(.cmd | program_identity)) as $programs
+        | ($rows | map(evidence_category)) as $categories
+        | ($rows | map(.exitCode)) as $exits
+        | ($rows | group_by(.cmd | cmd_identity) | map(.[0] | target_identity)) as $targets
+        | ($rows | map(provenance_identity)) as $provenance
+        | if (($families | unique | length) != 1)
+            or (($families[0] // "") == "")
+            or (($programs | unique | length) != 1)
+            or (($programs[0] // "") == "") then "command-identity-mismatch"
+          elif (($targets | all_distinct_nonempty) | not) then "target-conflict"
+          elif (($provenance | all_distinct_nonempty) | not) then "provenance-conflict"
+          elif (all($categories[]; . != "other" and ((startswith("mixed:")) | not)) | not) then "category-invalid"
+          elif (all($exits[]; type == "number") | not)
+            or (($exits | unique | length) != 1) then "exit-result-mismatch"
+          else "classification-error" end;
+      def receipt_detail:
+        . as $row
+        | ($row.cmd | command_normalization) as $normalized
+        | {
+            recordedCommand: $row.cmd,
+            identity: $normalized.identity,
+            commandIdentity: ($row.cmd | cmd_identity),
+            programIdentity: ($row.cmd | program_identity),
+            family: ($row.cmd | command_family),
+            category: ($row | evidence_category),
+            target: ($row | target_identity),
+            provenance: ($row | provenance_identity),
+            exit: $row.exitCode,
+            launcher: $normalized.launcher,
+            launchers: $normalized.launchers,
+            identitySource: $normalized.identitySource,
+            normalization: $normalized.normalization
+          };
+      def diagnostic_pair($reason):
+        map(receipt_detail) as $details
+        | ([range(0; ($details | length)) as $i
+            | range($i + 1; ($details | length)) as $j
+            | select(
+                if $reason == "command-identity-mismatch" then
+                  ($details[$i].programIdentity != $details[$j].programIdentity)
+                  or ($details[$i].family != $details[$j].family)
+                elif $reason == "target-conflict" then
+                  ($details[$i].target == "")
+                  or ($details[$j].target == "")
+                  or ($details[$i].target == $details[$j].target)
+                elif $reason == "provenance-conflict" then
+                  ($details[$i].provenance == "")
+                  or ($details[$j].provenance == "")
+                  or ($details[$i].provenance == $details[$j].provenance)
+                elif $reason == "category-invalid" then
+                  ($details[$i].category == "other")
+                  or ($details[$j].category == "other")
+                  or ($details[$i].category | startswith("mixed:"))
+                  or ($details[$j].category | startswith("mixed:"))
+                elif $reason == "exit-result-mismatch" then
+                  (($details[$i].exit | type) != "number")
+                  or (($details[$j].exit | type) != "number")
+                  or ($details[$i].exit != $details[$j].exit)
+                else true end)
+            | [$details[$i], $details[$j]]]
+          | .[0]) // $details[0:2];
       def identity_detail:
         "family=" + (.cmd | command_family)
         + " category=" + evidence_category
@@ -4721,28 +5168,169 @@ else
         + " cmd=" + .cmd;
       map(select((.stdoutHash // "") != "" and (.cmd // "") != "" and (.stdoutHash != $empty_sha) and ((has("stdoutBytes") and .stdoutBytes == 0) | not)))
       | group_by(.stdoutHash)
+      | map(select((map(.cmd | cmd_identity) | unique | length) > 1))
+      | map(. as $rows
+        | ($rows | deterministic_siblings) as $accepted
+        | ($rows | collision_reason) as $reason
+        | {
+            accepted: $accepted,
+            hash: $rows[0].stdoutHash,
+            reason: (if $accepted then "deterministic-siblings" else $reason end),
+            identities: ($rows | map(identity_detail)),
+            rows: ($rows | map(receipt_detail)),
+            pair: (if $accepted then [] else ($rows | diagnostic_pair($reason)) end)
+          })
       | {
-          siblings: map(select(
-            ((map(.cmd | cmd_identity) | unique | length) > 1)
-            and deterministic_siblings
-          )),
-          clones: (map(select(
-            ((map(.cmd | cmd_identity) | unique | length) > 1)
-            and (deterministic_siblings | not)
-          )) | map({hash: .[0].stdoutHash, identities: map(identity_detail)}))
+          siblings: map(select(.accepted) | del(.accepted)),
+          clones: map(select(.accepted | not) | del(.accepted))
         }
-    ' "$c43_log" 2>/dev/null || true)"
-    c43_sibling_count="$(printf '%s' "$c43_analysis" | jq -r '.siblings | length' 2>/dev/null || echo 0)"
-    c43_clones="$(printf '%s' "$c43_analysis" | jq -r '
-      .clones[]?
-      | "\(.hash[0:12])… reused across incompatible or unproven identities: \(.identities | join(" AND "))"
-    ' 2>/dev/null || true)"
-    if [[ -n "$c43_clones" ]]; then
-      fail "Evidence receipt CLONE — one substantive stdout is cited across incompatible command/category identities or receipts that cannot prove independent target/execution provenance: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 800)"
-    elif [[ "$c43_sibling_count" -gt 0 ]]; then
-      pass "No receipt clones ($c43_sibling_count deterministic sibling hash collision(s) accepted by compatible family/category/exit plus distinct target and execution provenance)"
+    ' "$c43_log" 2>/dev/null)" || c43_analysis_rc=$?
+
+    c43_emit_field() {
+      local line="$1"
+      local width="${COLUMNS:-80}"
+      local current candidate
+      local index
+      local -a words
+
+      case "$width" in
+        ""|*[!0-9]*) width=80 ;;
+      esac
+      if [[ "$width" -ge 60 ]] || [[ "${#line}" -le "$width" ]]; then
+        printf '%s\n' "$line"
+        return 0
+      fi
+
+      IFS=' ' read -r -a words <<< "$line"
+      [[ "${#words[@]}" -gt 0 ]] || {
+        printf '\n'
+        return 0
+      }
+      current="${words[0]}"
+      for ((index = 1; index < ${#words[@]}; index++)); do
+        candidate="$current ${words[$index]}"
+        if [[ "${#candidate}" -gt "$width" ]]; then
+          printf '%s\n' "$current"
+          current="  ${words[$index]}"
+        else
+          current="$candidate"
+        fi
+      done
+      printf '%s\n' "$current"
+    }
+
+    c43_sibling_count=0
+    c43_clone_count=0
+    if [[ "$c43_analysis_rc" -eq 0 ]] && printf '%s' "$c43_analysis" | jq -e 'type == "object"' >/dev/null 2>&1; then
+      c43_sibling_count="$(printf '%s' "$c43_analysis" | jq -r '.siblings | length')"
+      c43_clone_count="$(printf '%s' "$c43_analysis" | jq -r '.clones | length')"
+      c43_panels="$(printf '%s' "$c43_analysis" | jq -r '
+        def escaped: tostring | tojson | .[1:-1];
+        def accepted_lines:
+          ([.rows[].launchers[]?] | unique) as $seen
+          | ["direct", "timeout", "gtimeout", "portable-perl-alarm", "unsupported"] as $order
+          | ([$order[] as $candidate | select($seen | index($candidate)) | $candidate] | join(",")) as $launchers
+          | (if any(.rows[]; .identitySource == "recorded-command") then "recorded-command"
+             elif any(.rows[]; .identitySource == "normalized-underlying-command") then "normalized-underlying-command"
+             else "underlying-command" end) as $source
+          | [
+              "check=43 verdict=ACCEPTED",
+              "reason=deterministic-siblings",
+              "identity=" + (.rows[0].programIdentity | escaped),
+              "identity_source=" + $source,
+              "launchers=" + $launchers,
+              "targets=distinct-per-command-identity",
+              "provenance=distinct-per-receipt",
+              "exit_results=compatible",
+              "effect=COLLISION_ACCEPTED"
+            ];
+        def refused_lines:
+          . as $collision
+          | if .reason == "command-identity-mismatch" then
+              [
+                "check=43 verdict=REFUSED",
+                "reason=command-identity-mismatch",
+                "launcher_a=" + (.pair[0].launcher | escaped),
+                "identity_a=" + (.pair[0].identity | escaped),
+                "identity_source_a=" + (.pair[0].identitySource | escaped),
+                "normalization_a=" + (.pair[0].normalization | escaped),
+                "category_a=" + (.pair[0].category | escaped),
+                "launcher_b=" + (.pair[1].launcher | escaped),
+                "identity_b=" + (.pair[1].identity | escaped),
+                "identity_source_b=" + (.pair[1].identitySource | escaped),
+                "normalization_b=" + (.pair[1].normalization | escaped),
+                "category_b=" + (.pair[1].category | escaped),
+                "effect=TRANSITION_BLOCKED"
+              ]
+            elif .reason == "target-conflict" then
+              [
+                "check=43 verdict=REFUSED",
+                "reason=target-conflict",
+                "identity_a=" + (.pair[0].identity | escaped),
+                "target_a=" + (.pair[0].target | escaped),
+                "identity_b=" + (.pair[1].identity | escaped),
+                "target_b=" + (.pair[1].target | escaped),
+                "effect=TRANSITION_BLOCKED"
+              ]
+            elif .reason == "provenance-conflict" then
+              [
+                "check=43 verdict=REFUSED",
+                "reason=provenance-conflict",
+                "identity_a=" + (.pair[0].identity | escaped),
+                "provenance_a=" + (.pair[0].provenance | escaped),
+                "identity_b=" + (.pair[1].identity | escaped),
+                "provenance_b=" + (.pair[1].provenance | escaped),
+                "effect=TRANSITION_BLOCKED"
+              ]
+            elif .reason == "category-invalid" then
+              [
+                "check=43 verdict=REFUSED",
+                "reason=category-invalid",
+                "identity_a=" + (.pair[0].identity | escaped),
+                "category_a=" + (.pair[0].category | escaped),
+                "identity_b=" + (.pair[1].identity | escaped),
+                "category_b=" + (.pair[1].category | escaped),
+                "effect=TRANSITION_BLOCKED"
+              ]
+            elif .reason == "exit-result-mismatch" then
+              [
+                "check=43 verdict=REFUSED",
+                "reason=exit-result-mismatch",
+                "identity_a=" + (.pair[0].identity | escaped),
+                "exit_a=" + (.pair[0].exit | escaped),
+                "identity_b=" + (.pair[1].identity | escaped),
+                "exit_b=" + (.pair[1].exit | escaped),
+                "effect=TRANSITION_BLOCKED"
+              ]
+            else
+              [
+                "check=43 verdict=REFUSED",
+                "reason=classification-error",
+                "effect=TRANSITION_BLOCKED"
+              ]
+            end;
+        (.siblings[]? | accepted_lines[]),
+        (.clones[]? | refused_lines[])
+      ' 2>/dev/null || true)"
+      if [[ -n "$c43_panels" ]]; then
+        while IFS= read -r c43_line; do
+          c43_emit_field "$c43_line"
+        done <<< "$c43_panels"
+      fi
     else
-      pass "No receipt clones (no substantive stdout hash shared across incompatible or unproven receipt identities)"
+      c43_emit_field "check=43 verdict=REFUSED"
+      c43_emit_field "reason=classification-error"
+      c43_emit_field "effect=TRANSITION_BLOCKED"
+      c43_clone_count=1
+    fi
+
+    if [[ "$c43_clone_count" -gt 0 ]]; then
+      failures=$((failures + 1))
+      record_gate_ids_from_message fail "Check 43 receipt collision classification refused"
+    elif [[ "$c43_sibling_count" -gt 0 ]]; then
+      pass "Check 43 accepted $c43_sibling_count deterministic receipt collision group(s)"
+    else
+      pass "Check 43 found no substantive receipt collision requiring compatibility review"
     fi
   fi
 fi

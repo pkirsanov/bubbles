@@ -1,0 +1,199 @@
+{
+  "version": 3,
+  "bugId": "BUG-042",
+  "featureDir": "bugs/BUG-042-compact-packet-has-no-completion-basis",
+  "featureName": "The Compact Packet Form Has No Completion Basis",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packet": "full",
+  "packetResolution": "full packet required. This bug changes enforcement semantics across a registry and three scripts, so it does not clear the 'no-new-behavior' admission condition and cannot itself take the compact route it repairs.",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [
+    "BUG-041-artifact-lint-ignores-compact-packet-form",
+    "BUG-038-progress-timeout-bsd-wc-padding"
+  ],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-042-compact-packet-has-no-completion-basis"],
+    "allowedPaths": [
+      "bugs/BUG-042-compact-packet-has-no-completion-basis/**",
+      "bubbles/registry/bug-packet.yaml",
+      "bubbles/scripts/bug-packet-resolve.sh",
+      "bubbles/scripts/bug-packet-resolve-selftest.sh",
+      "bubbles/scripts/compact-obligation-basis-selftest.sh",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/artifact-lint.sh"
+    ],
+    "forbiddenPaths": [
+      "bugs/BUG-032-*/**",
+      "bugs/BUG-033-*/**",
+      "bugs/BUG-037-*/**",
+      "bugs/BUG-038-*/**",
+      "bugs/BUG-039-*/**",
+      "bubbles/registry/micro-fix-packet.yaml",
+      "bubbles/registry/report-sections.yaml"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "implemented",
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "completedPhaseClaims": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "claimedAt": "2026-08-25",
+        "note": "VERIFICATION, NOT AUTHORSHIP. The code changes were produced by a previous bubbles.implement dispatch that was killed by jetsam mid-task; its edits were already in the working tree when this session started. This session independently re-derived every claimed figure by execution rather than citing the dispatching brief, proved the change non-vacuous with four mutations each reverted by edit and hash-verified, executed the behavioural pin in both directions, and authored the six packet artifacts. Re-derived figures: resolver emits 8 obligation= lines at exit 0; bug-packet-resolve-selftest 16 checks 0 failures; compact-obligation-basis-selftest 13 checks 0 failures; guard on the compact BUG-038 exit 1 at 20 failures / 3 warnings with the REGISTRY-DECLARED OBLIGATIONS basis and 4 named BLOCKs; guard on the full BUG-037 exit 1 at 38 failures / 4 warnings, unchanged. One brief figure did not reproduce as stated and is recorded as re-derived: the resolver SOURCE carries 3 'obligation=' occurrences, not 8; the 8 is the OUTPUT line count."
+      }
+    ],
+    "executionHistory": [
+      {
+        "session": 1,
+        "agent": "bubbles.implement",
+        "outcome": "completed_owned",
+        "mutations": [
+          {
+            "id": "M1",
+            "target": "bubbles/registry/bug-packet.yaml",
+            "change": "removed the root-cause-stated obligationsRetained entry",
+            "observed": "compact obligation lines 4 -> 3; guard declared count 4 -> 3; obligation BLOCKs 4 -> 3; failures 20 -> 19",
+            "proves": "the required set is registry-derived and cannot be shortened by the author",
+            "revertedBy": "edit",
+            "postRevertSha256": "d8dc14eb30a7584c60e8bbc2a041490f333f3405cae3687d85f7d093e1704e82"
+          },
+          {
+            "id": "M2",
+            "target": "bubbles/scripts/bug-packet-resolve.sh",
+            "change": "renamed the emission key obligation= to obligationX= at line 295",
+            "observed": "obligation= lines 8 -> 0; the Completion basis line disappeared; guard returned verbatim to 'Resolved scope artifacts have ZERO DoD checkbox items — cannot verify completion'; failures 20 -> 16; bug-packet-resolve-selftest went to 3 failures at exit 1",
+            "proves": "the registry declaration and the guard basis are connected by the resolver and by nothing else; severing it reproduces the original defect on demand",
+            "revertedBy": "edit",
+            "postRevertSha256": "923197f143f06251b7a873a0991d750b2d718408699a79f3d49ed2b515fbb17f"
+          },
+          {
+            "id": "M3",
+            "target": "bubbles/registry/bug-packet.yaml",
+            "change": "renamed the compact form key obligationsRetained: to obligationsRetainedDISABLED: so the reduced form declares zero obligations",
+            "observed": "resolver exit 2, refusing by name: declares reduced form 'compact' (3 artifact(s) vs the 'full' default's 7) with ZERO obligationsRetained",
+            "proves": "fail-closed. A reduced form that certifies by proving nothing is refused structurally, which is design Option B enforced rather than asserted",
+            "revertedBy": "edit",
+            "postRevertSha256": "d8dc14eb30a7584c60e8bbc2a041490f333f3405cae3687d85f7d093e1704e82"
+          },
+          {
+            "id": "M4",
+            "target": "bubbles/scripts/bug-packet-resolve.sh",
+            "change": "reapplied M2 while running compact-obligation-basis-selftest.sh",
+            "observed": "selftest exit 1, FAIL at P0 refusing to run fixtures that would assert nothing; reverted, exit 0 at 13 checks 0 failures",
+            "proves": "the behavioural pin is non-vacuous — it goes red when the behaviour it pins is removed",
+            "revertedBy": "edit",
+            "postRevertSha256": "923197f143f06251b7a873a0991d750b2d718408699a79f3d49ed2b515fbb17f"
+          }
+        ],
+        "readOnlyIntegrity": {
+          "target": "bugs/BUG-038-progress-timeout-bsd-wc-padding",
+          "method": "composite sha256 over the sorted file list, taken before any guard run and again after all guard runs and mutations",
+          "before": "a59a48b53e98494519ab969f4d278cf96457ed190242d57e66d526a4b3f00dda",
+          "after": "a59a48b53e98494519ab969f4d278cf96457ed190242d57e66d526a4b3f00dda",
+          "verdict": "unchanged"
+        },
+        "notDone": [
+          "framework-validate was NOT run — the validation lock is held by another terminal and the command is explicitly out of scope for this session. Full framework validation is therefore UNPROVEN for this change.",
+          "release-check was NOT run — out of scope for this session. Release readiness is UNPROVEN.",
+          "No assertion was added to state-transition-guard-selftest.sh. That file is 5953 lines with no --only or --filter verb, so the assertion could not have been executed in this session, and an unexecuted assertion is worse than an absent one. See the F-041-04 disposition below.",
+          "The one new SC2295 note in state-transition-guard.sh versus HEAD was not individually located to a line. The working tree carries changes from several concurrent sessions, so it may belong to this change or to another. It is reported rather than dismissed."
+        ]
+      }
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "Scope 1 is implemented and verified by execution; the packet is authored and passes artifact-lint. Before promotion two things this session could not do must happen: (1) framework-validate and release-check must run to completion, both currently UNPROVEN because the validation lock was held elsewhere; (2) human acceptance must be recorded by the user, which this agent deliberately did not fabricate. Only then may bubbles.validate write certification fields. This agent wrote no certification.* field and left status at in_progress.",
+    "audit": []
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Registry-declared obligations as the compact completion basis",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": { "mode": "off", "provenance": "operator-request" },
+    "tdd": { "mode": "scenario-first", "provenance": "bugfix-fastlane-contract" },
+    "autoCommit": { "mode": "off", "provenance": "operator-request" },
+    "lockdown": { "mode": "unlocked", "provenance": "framework-default" },
+    "regression": { "mode": "required", "provenance": "framework-default" },
+    "validation": { "mode": "required", "provenance": "framework-default" }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "event": "packet-created",
+      "agent": "bubbles.implement",
+      "at": "2026-08-25",
+      "findings": [
+        {
+          "id": "F-041-03",
+          "origin": "bugs/BUG-041-artifact-lint-ignores-compact-packet-form",
+          "summary": "The compact form is the default bug route and has no completion basis: it declares no scopes.md, so the transition guard's DoD count is 0 and Check 4 blocks unconditionally.",
+          "disposition": "ADDRESSED. This packet is the one BUG-041's adjudication named. Option E from BUG-041 design.md section 8.3 is implemented and verified: registry-declared obligations with dischargedIn/attestedIn carriers, published by the resolver as a new obligation= line kind, consumed by Check 4 as a third completion basis. Proven registry-derived by M1 and load-bearing by M2.",
+          "evidence": "report.md E-2, E-4, E-6, E-7"
+        },
+        {
+          "id": "F-041-04",
+          "origin": "bugs/BUG-041-artifact-lint-ignores-compact-packet-form",
+          "summary": "The guard's form-awareness has no behavioural committed pin: state-transition-guard-selftest.sh contains zero references to bug_packet_form or bug-packet-resolve. BUG-041 could pin the wiring but not the behaviour.",
+          "disposition": "CLOSED AT A DIFFERENT SITE. Re-derived and confirmed as stated: the file is 5953 lines and the reference count is still 0. The behavioural assertion it asked for now exists and was EXECUTED in this session, in bubbles/scripts/compact-obligation-basis-selftest.sh — 13 checks, 0 failures, exit 0 — and was shown RED under mutation at exit 1, which is what separates it from an assertion nobody ran. It is bounded to three guard invocations, and framework-validate.sh's discovered-selftest sweep globs bubbles/scripts/*-selftest.sh, so the siting costs no coverage. Honest residue: a reader auditing state-transition-guard-selftest.sh itself will still find zero references, and the design records the siting decision so that is not silent.",
+          "evidence": "report.md E-9, E-10, and the Disposition of F-041-04 section"
+        }
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": [
+      "not_started",
+      "in_progress",
+      "blocked",
+      "specs_hardened",
+      "docs_updated",
+      "validated",
+      "done"
+    ],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "bugDoneRequires": "Scope 1 implemented and verified; mutations M1 through M4 each recording a real exit code with a hash-verified revert; the compact guard verdict showing the REGISTRY-DECLARED OBLIGATIONS basis; the full-form guard verdict unchanged; the behavioural pin green and shown red under mutation; framework-validate and release-check passing, both of which are currently UNPROVEN; human acceptance recorded by the user; and bubbles.validate certifying promotion."
+  },
+  "notes": "This agent VERIFIED code it did not author. The changes to bug-packet.yaml, bug-packet-resolve.sh, state-transition-guard.sh, artifact-lint.sh, bug-packet-resolve-selftest.sh and compact-obligation-basis-selftest.sh were produced by a jetsam-killed predecessor dispatch and were already in the working tree. Everything claimed here was re-derived by execution in this session. No obligation was weakened: the compact form proves the same four obligations micro-fix-packet.yaml preserves, and scopes.md was NOT added to the compact form. No forbidden packet was modified. Status is in_progress and no terminal certification.status was written."
+}

@@ -2492,6 +2492,2515 @@ made to fix any of the 31 failures. Nothing under `bugs/BUG-033-`,
 `bugs/BUG-032-`, or any path another session is editing was touched. No git
 command that discards changes was run.
 
+## Scope: implement — canonical validation registry reconciliation - 2026-08-31
+
+### Scope and finding
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+This node addressed origin finding `F-B033-DIAG-VALIDATION-CHECKS-DRIFT`.
+The work regenerated owned artifacts only. It changed no generator source or
+input source.
+
+Scope 4 remains nonterminal. `S4-T5` and `S4-T6` remain unchecked. This phase
+did not run `framework-validate` or `release-check`.
+
+### RED — stale validation closure reproduced
+
+**Executed:** YES (in this invocation)
+
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 240 /opt/homebrew/bin/bash bubbles/scripts/generate-validation-checks.sh --check`
+
+**Exit Code:** 1
+
+**Output:**
+
+```text
+# BUG-037 RED validation closure freshness
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 240 /opt/homebrew/bin/bash bubbles/scripts/generate-validation-checks.sh --check
+exit: 1
+lines: 1099
+sha256: 38ac9d21b94e26a38a9e89d647cddb6633844437e47466e383c7364f1e2a337a
+--- first 20 ---
+generate-validation-checks: DRIFT — bubbles/registry/validation-checks.yaml does not match the derivation.
+generate-validation-checks: this file is GENERATED. A hand edit is refused; regenerate it instead:
+generate-validation-checks:   bash bubbles/scripts/generate-validation-checks.sh
+193a194
+>     - bubbles/scripts/bug-packet-resolve.sh
+194a196,197
+>     - bubbles/scripts/micro-fix-admission.sh
+>     - bubbles/scripts/micro-fix-outcome-log.sh
+198a202,203
+>     - bubbles/registry/bug-packet.yaml
+>     - bubbles/registry/micro-fix-packet.yaml
+294a300
+>     - bubbles/scripts/bug-packet-resolve.sh
+317a324
+>     - bubbles/scripts/compact-obligation-basis-selftest.sh
+--- omitted 1059 line(s); sha256 above covers the full output ---
+--- last 20 ---
+>     label: "Discovered selftest: bug-packet-resolve-selftest.sh"
+>     closureComplete: true
+>     inputs:
+>     - bubbles/scripts/bug-packet-resolve-selftest.sh
+>     - bubbles/scripts/bug-packet-resolve.sh
+>     - bubbles/registry/bug-packet.yaml
+>     commands:
+>     - python3
+61749a62646
+>     - bubbles/scripts/bug-packet-resolve.sh
+61772a62670
+>     - bubbles/scripts/compact-obligation-basis-selftest.sh
+62463a63362
+>     - bubbles/scripts/bug-packet-resolve.sh
+62486a63386
+>     - bubbles/scripts/compact-obligation-basis-selftest.sh
+63192a64093
+>     - bubbles/scripts/bug-packet-resolve.sh
+63215a64117
+>     - bubbles/scripts/compact-obligation-basis-selftest.sh
+```
+
+**Result:** PASS. The required pre-regeneration failure was reproduced.
+
+### GREEN — canonical registry generation and focused selftest
+
+**Executed:** YES (in this invocation)
+
+**Commands:**
+
+- `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 300 /opt/homebrew/bin/bash bubbles/scripts/generate-validation-checks.sh`
+- `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 300 /opt/homebrew/bin/bash bubbles/scripts/generate-validation-checks.sh --check`
+- `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 300 /opt/homebrew/bin/bash bubbles/scripts/generate-validation-checks-selftest.sh`
+- A second canonical generation followed by a SHA-256 equality assertion and final `--check`.
+
+**Exit Code:** 0
+
+**Output:**
+
+```text
+BUG037_VALIDATION_GENERATOR_GREEN_BEGIN
+generate-validation-checks: OK — the committed closure map matches the derivation.
+VALIDATION_CHECK_EXIT=0
+  ok   P1 the generator writes a closure map (rc=0)
+  ok   P2 a sourced lib and a read registry both land in the traced closure
+  ok   P3 a tree-walking check is recorded closureComplete: false
+  ok   P4 --check accepts the file the generator just wrote
+  ok   A1 a hand edit inside the generated file is refused as DRIFT
+  ok   A2 two derivations of an unchanged tree are byte-identical
+  ok   A3 the compared derivation is non-empty and names both derived checks
+  ok   A4 adding a real reference changes the derivation and appears in it
+  ok   A5 --check refuses when the closure map is absent
+  ok   A6 an unsupported bypass-shaped flag is refused with exit 2
+generate-validation-checks-selftest: 10 check(s), 0 failure(s)
+VALIDATION_SELFTEST_EXIT=0
+VALIDATION_REGISTRY_BEFORE_SECOND_GENERATION_SHA256=6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862
+generate-validation-checks: wrote /Users/pkirsanov/Projects/bubbles/bubbles/registry/validation-checks.yaml
+SECOND_VALIDATION_GENERATION_EXIT=0
+VALIDATION_REGISTRY_AFTER_SECOND_GENERATION_SHA256=6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862
+SECOND_VALIDATION_GENERATION_BYTE_IDENTICAL=PASS
+generate-validation-checks: OK — the committed closure map matches the derivation.
+FINAL_VALIDATION_CHECK_EXIT=0
+BUG037_VALIDATION_GENERATOR_GREEN_END
+```
+
+**Result:** PASS. Canonical generation, focused adversarial checks, freshness,
+and byte identity all passed.
+
+### Release-manifest freshness and attribution
+
+**Claim Source:** executed
+
+The release manifest was current immediately before registry generation. Its
+pre-existing working-tree delta was therefore fresh for the prior registry
+bytes.
+
+Registry generation changed the registry SHA-256 from
+`51b3334faa0811c2b4bb9482212495f8a7ac81d312c21c6b1a0f4e2691fde607` to
+`6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862`.
+The unchanged manifest row still carried the first digest. The next freshness
+check therefore failed with exit 1.
+
+The canonical release generator reconciled that checksum. A second generation
+left the manifest byte-identical.
+
+**Executed:** YES (in this invocation)
+
+**Commands:** `generate-release-manifest.sh --check`, canonical generation,
+another `--check`, a second generation, and a final `--check`.
+
+**Exit Code:** 0 after the required stale intermediate result.
+
+**Output:**
+
+```text
+BUG037_PRE_REGISTRY_RELEASE_MANIFEST_CHECK_BEGIN
+Release manifest is current: 7.28.0 (930 managed files)
+BUG037_PRE_REGISTRY_RELEASE_MANIFEST_CHECK_EXIT=0
+BUG037_PRE_REGISTRY_RELEASE_MANIFEST_CHECK_END
+BUG037_POST_REGISTRY_RELEASE_MANIFEST_CHECK_BEGIN
+CURRENT_VALIDATION_REGISTRY_SHA256=6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862
+MANIFEST_VALIDATION_REGISTRY_SHA256=51b3334faa0811c2b4bb9482212495f8a7ac81d312c21c6b1a0f4e2691fde607
+Release manifest is stale. Run bubbles/scripts/generate-release-manifest.sh
+POST_REGISTRY_RELEASE_MANIFEST_CHECK_EXIT=1
+REGISTRY_CHECKSUM_DELTA=DETECTED
+BUG037_POST_REGISTRY_RELEASE_MANIFEST_CHECK_END
+BUG037_RELEASE_MANIFEST_RECONCILIATION_BEGIN
+RELEASE_MANIFEST_BEFORE_RECONCILIATION_SHA256=f4dce3071ab6179940b97d7d1cf0d83a06a87c82dd774da9f57fb8ab75e4eac1
+Updated release manifest: 7.28.0 (930 managed files)
+RELEASE_MANIFEST_GENERATION_EXIT=0
+Release manifest is current: 7.28.0 (930 managed files)
+RELEASE_MANIFEST_CHECK_EXIT=0
+CURRENT_VALIDATION_REGISTRY_SHA256=6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862
+RECONCILED_MANIFEST_REGISTRY_SHA256=6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862
+RELEASE_MANIFEST_BEFORE_SECOND_GENERATION_SHA256=21db8754191b7d750c9cdf8df360ead5e87db27e06782b34e8ba182a6a69e154
+Updated release manifest: 7.28.0 (930 managed files)
+SECOND_RELEASE_MANIFEST_GENERATION_EXIT=0
+RELEASE_MANIFEST_AFTER_SECOND_GENERATION_SHA256=21db8754191b7d750c9cdf8df360ead5e87db27e06782b34e8ba182a6a69e154
+SECOND_RELEASE_MANIFEST_GENERATION_BYTE_IDENTICAL=PASS
+Release manifest is current: 7.28.0 (930 managed files)
+FINAL_RELEASE_MANIFEST_CHECK_EXIT=0
+BUG037_RELEASE_MANIFEST_RECONCILIATION_END
+```
+
+**Result:** PASS. The observed freshness transition isolates this invocation's
+registry checksum as the follow-on manifest change. Existing deltas against
+`HEAD` remain pre-existing and are not attributed to BUG-037.
+
+### Focused boundary checks
+
+**Executed:** YES (in this invocation)
+
+**Exit Code:** 0
+
+**Output:**
+
+```text
+BUG037_FOCUSED_BOUNDARY_CHECKS_BEGIN
+[framework-health-evidence-lint] OK — 2 proposal(s) satisfy G125
+FRAMEWORK_HEALTH_EVIDENCE_LINT_EXIT=0
+generate-validation-checks: OK — the committed closure map matches the derivation.
+VALIDATION_GENERATOR_CHECK_EXIT=0
+Release manifest is current: 7.28.0 (930 managed files)
+RELEASE_MANIFEST_CHECK_EXIT=0
+GENERATED_TARGET_DIFF_CHECK_EXIT=0
+BUG037_POST_REGEN_SOURCE_IDENTITIES_BEGIN
+4ecd3ccacd1b01a6fa8db6ada604b09ccf68e3fe73e2a6b235d704955c662f0f  bubbles/scripts/generate-validation-checks.sh
+53b85386357d4761ab6cbc11afeabe76d9e19449b7a10e10abc4cab4dd11f92d  bubbles/scripts/generate-validation-checks-selftest.sh
+4ecd2e1c28cade403d12b087e1384e701f33b792650c7494cf575c690d038766  bubbles/scripts/generate-release-manifest.sh
+923197f143f06251b7a873a0991d750b2d718408699a79f3d49ed2b515fbb17f  bubbles/scripts/bug-packet-resolve.sh
+0746fc6e158143b89affb72572c2bd133a5e6ce33258456cc740cf0167240b27  bubbles/scripts/micro-fix-admission.sh
+84e9cba83ea68b89a1626489f207f871f02b35aee7085a796eb350fc49d5397e  bubbles/scripts/micro-fix-outcome-log.sh
+e9f234b99fc79f997eb95b5230b4f187b920fcd74f7a81f7e9b6b4d7b05accde  bubbles/registry/bug-packet.yaml
+ce7eccf0b00fb2de41ed87bb5a0ac59c2cab1561ae016cdf129ba31a977bbb24  bubbles/registry/micro-fix-packet.yaml
+94fe726ed71f0f7b0c34ec15937d2f88536ca3c8ffb9f1e5dff42f73a0fabdd4  bubbles/scripts/compact-obligation-basis-selftest.sh
+SOURCE_HASH_EXIT=0
+BUG037_POST_REGEN_TARGET_IDENTITIES_BEGIN
+6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862  bubbles/registry/validation-checks.yaml
+21db8754191b7d750c9cdf8df360ead5e87db27e06782b34e8ba182a6a69e154  bubbles/release-manifest.json
+TARGET_HASH_EXIT=0
+3643    1536    bubbles/registry/validation-checks.yaml
+47      44      bubbles/release-manifest.json
+TARGET_NUMSTAT_EXIT=0
+BUG037_GENERATED_CLOSURE_MEMBER_COUNTS_BEGIN
+94
+94
+94
+95
+95
+89
+CLOSURE_MEMBER_COUNTS_EXIT=0
+BUG037_FOCUSED_BOUNDARY_CHECKS_END
+```
+
+The post-generation source digests equal the pre-generation digests. This
+invocation changed no generator or generator-input source bytes.
+
+The pre-edit status already contained concurrent BUG-033 and BUG-042 work. This
+phase did not edit those artifacts. It also did not absorb the independent
+empty-output evidence-capture finding `F-B033-DIAG-EMPTY-OUTPUT-CAPTURE`.
+
+### Finding accounting and routing
+
+- **Addressed:** `F-B033-DIAG-VALIDATION-CHECKS-DRIFT`. The RED check exited 1.
+  Canonical regeneration made both freshness checks exit 0.
+- **Unresolved owned findings:** none.
+- **Preserved external finding:** `BLOCKED-ON-REPO-WIDE-RED` remains unchanged.
+  It still prevents BUG-037 terminal completion.
+
+The next owner is `bubbles.test`. That phase owns focused and canonical test
+verification. This IMPLEMENT phase records no certification claim.
+
+## Scope: test — linked-test resolution refused execution - 2026-08-31
+
+### Generated-chain freshness
+
+**Phase:** test
+
+**Claim Source:** executed
+
+**Command:** current canonical `generate-validation-checks.sh --check`,
+`generate-release-manifest.sh --check`, and SHA-256 identity checks.
+
+**Exit Code:** 0
+
+```text
+BUG037_FRESHNESS_EVIDENCE_BEGIN
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 300 /opt/homebrew/bin/bash bubbles/scripts/generate-validation-checks.sh --check
+generate-validation-checks: OK — the committed closure map matches the derivation.
+VALIDATION_CHECKS_FRESHNESS_EXIT=0
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 300 /opt/homebrew/bin/bash bubbles/scripts/generate-release-manifest.sh --check
+Release manifest is current: 7.28.0 (930 managed files)
+RELEASE_MANIFEST_FRESHNESS_EXIT=0
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 60 /usr/bin/shasum -a 256 bubbles/registry/validation-checks.yaml bubbles/release-manifest.json
+6cd898e97227aa49d97ad5c3f9b61f56e765aef7cca258286f4938f93f602862  bubbles/registry/validation-checks.yaml
+21db8754191b7d750c9cdf8df360ead5e87db27e06782b34e8ba182a6a69e154  bubbles/release-manifest.json
+BUG037_FRESHNESS_EVIDENCE_END
+```
+
+**Result:** PASS. Both generated targets match their current derivations.
+
+### Linked-test resolution
+
+**Phase:** test
+
+**Claim Source:** executed
+
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=5s 300
+/opt/homebrew/bin/bash bubbles/scripts/scenario-test-resolve.sh
+bugs/BUG-037-uservalidation-opt-out-acceptance --repo-root
+/Users/pkirsanov/Projects/bubbles`
+
+**Exit Code:** 1
+
+```text
+BUG037_LINK_RESOLUTION_EVIDENCE_BEGIN
+scenario-test-resolve: FAIL — linked tests that do not resolve (Gate G057)
+  MISSING-TITLE: SCN-B037-015 -> bubbles/scripts/generate-gate-coverage-map-selftest.sh#unimplemented
+    the referenced file contains no test with this exact title
+  MISSING-TITLE: SCN-B037-015 -> bubbles/scripts/generate-validation-checks-selftest.sh#unimplemented
+    the referenced file contains no test with this exact title
+
+scenario-test-resolve: 2 unresolved reference(s) of 16 checked.
+SCENARIO_TEST_RESOLVE_EXIT=1
+SCENARIO_TEST_RESOLVE_EXPECTED=0
+SCENARIO_TEST_RESOLVE_OBSERVED=BLOCKED
+BUG037_LINK_RESOLUTION_EVIDENCE_END
+```
+
+**Result:** FAIL. The resolver found two planning-owned `linkedTests.testId`
+values that name no test title.
+
+### Test-phase disposition
+
+- `F-B037-TEST-LINK-001` remains unresolved. `SCN-B037-015` names
+  `generate-gate-coverage-map-selftest.sh#unimplemented`.
+- `F-B037-TEST-LINK-002` remains unresolved. `SCN-B037-015` names
+  `generate-validation-checks-selftest.sh#unimplemented`.
+- `F-B037-TEST-SKIP-003` remains unresolved. The existing S4-T3 evidence says
+  `generate-gate-coverage-map-selftest.sh` skipped because PyYAML was absent.
+  This TEST phase does not count that skip as a pass.
+- The TEST phase did not execute focused tests after the mandatory linked-test
+  resolver failed.
+- `framework-validate` was not run. Its exit is `not-run`.
+- `release-check` was not run. Its exit is `not-run`.
+- `S4-T5` and `S4-T6` remain unchecked. Scope 4 remains blocked.
+- No certification field, user-acceptance item, BUG-033 artifact, or BUG-042
+  artifact changed.
+
+The planning owner must replace both non-resolving titles with real test
+identities. The TEST phase can then restart from linked-test resolution.
+
+<a name="bug037-scope4-test-closeout"></a>
+
+## Scope: test — Scope 4 durable-receipt closeout - 2026-09-01
+
+This section appends the current TEST evidence. It does not erase the earlier
+timeouts, refusals, or repository-wide red verdict. Those runs remain historical
+facts. The current green receipts supersede them only for operative routing.
+
+### Current receipt verification
+
+**Phase:** test
+
+**Claim Source:** executed
+
+**Command:** bounded direct assertions over the three matching rows in
+`.specify/runtime/tool-calls.jsonl` and the linked-reference count in
+`scenario-manifest.json`.
+
+**Exit Code:** 0
+
+```text
+BUG037_CURRENT_RECEIPT_VERIFICATION_BEGIN
+SESSION=vscode-890b012efcd4029f1bbec9142330177b
+SPEC=BUG-037-uservalidation-opt-out-acceptance
+SCOPE=SCOPE-04
+FOCUSED_TS=2026-09-01T05:30:17Z
+FOCUSED_EXIT=0
+FOCUSED_CHECK_COUNT=9
+LINKED_REFERENCE_COUNT=16
+FOCUSED_STDOUT_HASH=bd32b26244f096cc87ffacc8d5119a534e35ae7aaff0e85aa3825e824fbef3bc
+FRAMEWORK_TS=2026-09-01T07:40:23Z
+FRAMEWORK_EXIT=0
+FRAMEWORK_DURATION_MS=7754651
+FRAMEWORK_STDOUT_HASH=4d165462bbc85b63fc1efa82c17f61c0dde20d067deefbca6685021a8cd65185
+FRAMEWORK_COMMAND_CANONICAL=true
+RELEASE_TS=2026-09-01T09:40:09Z
+RELEASE_EXIT=0
+RELEASE_DURATION_MS=7142337
+RELEASE_STDOUT_HASH=e3afcd00cacd8ef7d1738c65136b48341c410dc0abf0d4cdeac75b4068bfed71
+RELEASE_COMMAND_CANONICAL=true
+RECEIPT_ASSERTION_FAILURES=0
+BUG037_CURRENT_RECEIPT_VERIFICATION_END
+```
+
+The focused row invokes nine checks and ends with an aggregate zero-failure
+assertion. The structured row exits zero. Its capture contains 105 underlying
+lines with SHA-256
+`138dad28ee2610277f0cc9d3c612d43ab3f4a22d7123a907c40b750e30e8f277`.
+It records `BUG037_FOCUSED_FAILURE_COUNT=0`. Linked references resolve 16 of 16.
+All three freshness checks are green. The framework-health check is green.
+Both generator selftests execute. The gate-map selftest does not skip.
+Acceptance-authority and human-acceptance regression checks are green.
+
+### S4-T5 current canonical framework validation
+
+**Phase:** test
+
+**Claim Source:** executed
+
+**Structured evidence:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-09-01T07:40:23Z`, current session, BUG-037, SCOPE-04.
+
+**Command:** `/opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label
+BUG-037 Scope 4 canonical framework validation -- /opt/local/bin/gtimeout
+--signal=TERM --kill-after=60s 21600 /opt/homebrew/bin/bash
+bubbles/scripts/cli.sh framework-validate`
+
+**Exit Code:** 0
+
+```text
+FRAMEWORK_RECEIPT_TS=2026-09-01T07:40:23Z
+FRAMEWORK_RECEIPT_SESSION=vscode-890b012efcd4029f1bbec9142330177b
+FRAMEWORK_RECEIPT_SPEC=BUG-037-uservalidation-opt-out-acceptance
+FRAMEWORK_RECEIPT_SCOPE=SCOPE-04
+FRAMEWORK_RECEIPT_EXIT=0
+FRAMEWORK_RECEIPT_DURATION_MS=7754651
+FRAMEWORK_RECEIPT_STDOUT_HASH=4d165462bbc85b63fc1efa82c17f61c0dde20d067deefbca6685021a8cd65185
+FRAMEWORK_RECEIPT_STDERR_HASH=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+FRAMEWORK_RECEIPT_TAG=current-session
+FRAMEWORK_RECEIPT_TAG=binding-revision-14
+FRAMEWORK_RECEIPT_TAG=canonical-source-root
+FRAMEWORK_RECEIPT_TAG=single-run
+FRAMEWORK_CAPTURE_EXIT=0
+FRAMEWORK_CAPTURE_LINES=19091
+FRAMEWORK_CAPTURE_SHA256=81b4012dec8862a08f329f3627aaa85874a36a95baaaab82199d1837c27a96c5
+FRAMEWORK_EXECUTED_CHECKS=348
+FRAMEWORK_POLICY_DENYLISTED_SKIPS=2
+FRAMEWORK_OWNED_TEST_SKIPS=0
+FRAMEWORK_SIGNAL=Framework validation passed (2 skipped: 2 denylisted)
+FRAMEWORK_FINAL_SIGNAL=Framework validation passed.
+```
+
+The two skips are policy-denylisted checks. They are not owned test skips.
+The owned test skip count is zero. This distinction preserves the exact result.
+
+### S4-T6 current canonical release check
+
+**Phase:** test
+
+**Claim Source:** executed
+
+**Structured evidence:** `.specify/runtime/tool-calls.jsonl`, timestamp
+`2026-09-01T09:40:09Z`, current session, BUG-037, SCOPE-04.
+
+**Command:** `/opt/homebrew/bin/bash bubbles/scripts/evidence-capture.sh --label
+BUG-037 Scope 4 canonical release check -- /opt/local/bin/gtimeout
+--signal=TERM --kill-after=60s 28800 /opt/homebrew/bin/bash
+bubbles/scripts/cli.sh release-check`
+
+**Exit Code:** 0
+
+```text
+RELEASE_RECEIPT_TS=2026-09-01T09:40:09Z
+RELEASE_RECEIPT_SESSION=vscode-890b012efcd4029f1bbec9142330177b
+RELEASE_RECEIPT_SPEC=BUG-037-uservalidation-opt-out-acceptance
+RELEASE_RECEIPT_SCOPE=SCOPE-04
+RELEASE_RECEIPT_CWD=/Users/pkirsanov/Projects/bubbles
+RELEASE_RECEIPT_EXIT=0
+RELEASE_RECEIPT_DURATION_MS=7142337
+RELEASE_RECEIPT_STDOUT_HASH=e3afcd00cacd8ef7d1738c65136b48341c410dc0abf0d4cdeac75b4068bfed71
+RELEASE_RECEIPT_STDERR_HASH=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+RELEASE_RECEIPT_TAG=current-session
+RELEASE_RECEIPT_TAG=binding-revision-19
+RELEASE_RECEIPT_TAG=canonical-source-root
+RELEASE_RECEIPT_TAG=single-run
+RELEASE_RECEIPT_FRAMEWORK=bubbles
+RELEASE_RECEIPT_FRAMEWORK_VERSION=7.28.0
+RELEASE_RECEIPT_COMMAND_CANONICAL=true
+```
+
+This row proves the canonical source command completed with exit zero. It also
+proves the duration, hashes, tags, and working directory shown above. This
+section attributes no additional output line to the release run.
+
+### TEST finding accounting and routing
+
+- `F-B037-TEST-LINK-001` is resolved. The current linked-test check exits zero.
+- `F-B037-TEST-LINK-002` is resolved by the same 16-of-16 resolution.
+- `F-B037-TEST-SKIP-003` is resolved. The gate-map selftest executed without a
+  skip, and the focused matrix reports zero owned test skips.
+- `BLOCKED-ON-REPO-WIDE-RED` is resolved as an operative blocker. The current
+  framework and release receipts both exit zero. Its original red evidence and
+  text remain preserved in this report and in `state.json`.
+- No finding discovered by this TEST closeout remains unresolved.
+
+The persisted `bugfix-fastlane` order routes next to `bubbles.regression`.
+This TEST phase makes no node-completion, bug-completion, or certification claim.
+
+<a name="bug037-regression-phase"></a>
+
+## Scope: regression — current-session compatibility review - 2026-09-01
+
+This section records the completed regression phase from existing receipts.
+It does not rerun any regression, framework-validation, or release command.
+
+### Receipt interval and source integrity
+
+**Phase:** regression
+
+**Claim Source:** executed
+
+**Structured evidence:** `.specify/runtime/tool-calls.jsonl` rows 257 through
+270, inclusive.
+
+**Exit Code:** 0 for every row.
+
+```text
+RECEIPT_INTERVAL=257-270
+RECEIPT_COUNT=14
+STARTED_AT=2026-09-01T16:03:14Z
+COMPLETED_AT=2026-09-01T16:14:14Z
+ALL_EXIT_ZERO=true
+IDENTITY_MATCH=true
+INPUT_CLOSURES_PRESENT=true
+NON_BOOKKEEPING_CLOSURE_PATH_COUNT=43
+NON_BOOKKEEPING_CLOSURE_MISSING_COUNT=0
+NON_BOOKKEEPING_CLOSURE_HASH_MISMATCH_COUNT=0
+SOURCE_EDIT_SHAPED_COMMAND_COUNT=0
+```
+
+All rows name the current session, `bubbles.regression`, BUG-037, and SCOPE-04.
+The closure check compared current bytes with each path's last recorded hash.
+It found no missing path or changed non-bookkeeping input.
+The command audit found no source-edit-shaped command.
+
+### Exhaustive finding accounting
+
+| Row | Regression check | Exit | stdout SHA-256 | New findings |
+|---:|---|---:|---|---:|
+| 257 | Acceptance-authority full compatibility | 0 | `27f87059ec871d59131ef498b8463be837ddd7f8444c9e4306b103a540abf53b` | 0 |
+| 258 | Persistent G136 and BUG-029 regression | 0 | `c94fa20efc5715e56ee9cb35d1cc04f33731c6704e0c6bdc8974d7fb5cac152e` | 0 |
+| 259 | Regression-quality and adversarial guard | 0 | `74d100cb4e0bc546e0e71ad4c1bda759f500d76f9a36ee97a67c6b10c793e17d` | 0 |
+| 260 | Linked scenario resolution | 0 | `4d26dafd1918cc5fe7937e452c8b49afbb24e38a8e44f4b2b0b08c5dc6deb1b8` | 0 |
+| 261 | Validation-registry freshness | 0 | `604971ec9fbadec89c4d9385bbc0ff887c85cbf6408c47a0b239edb00f844174` | 0 |
+| 262 | Gate-coverage-map freshness | 0 | `1701e230e9c240983a0f1c2a8c4b3005b1d886bfe596afb6b7e2c41e4256a7d1` | 0 |
+| 263 | Release-manifest freshness | 0 | `a4f2ebb5300a18c88ff2f8fe0f5907114a23720507c1a76a79a52e7e6147e7ef` | 0 |
+| 264 | Canonical G044 baseline guard | 0 | `2d0c70fbf984a2dbcb8b575fcf2e4f20edb167e692822e623a26bc10b4d700a9` | 0 |
+| 265 | Domain-model consistency | 0 | `3e256f55afe63dbd06ccb9baf6d664e1dc21da41a90c2e72ec1458670c54100c` | 0 |
+| 266 | Expand-migrate-contract applicability | 0 | `9c39deba1df59f4047a606c34bd955df345dc40afdf1a4c3ed4fb68b759dbbed` | 0 |
+| 267 | Actual BUG-032 compatibility and read-only proof | 0 | `73635d0e5d9020229a466220433f957d08de8128dd1c191ab97ae43a3944a8ed` | 0 |
+| 268 | Pre-bookkeeping state invariants | 0 | `76cd59ad7c2da760d7838d5a51e72d349c1727400df133429615b4c3dd2ac0d4` | 0 |
+| 269 | Technical-prose baseline | 0 | `77b7b671e74996619abece2dd34ac7185a32370931c11dfee3a05b0da4f2f5d1` | 0 |
+| 270 | BUG-032 G101 cross-spec compatibility | 0 | `01155aa4c04e9cf7c8048cafb963e7a7ca25fb91aab935dd31ecb3f04ef21dee` | 0 |
+
+Every executed regression check produced zero new findings. Therefore,
+`addressedFindings` and `unresolvedFindings` are both empty for this phase.
+
+### Regression disposition
+
+The regression phase is execution-complete. All four scopes remain
+execution-done and uncertified. Top-level status and certification remain
+`in_progress`, and `certifiedAt` remains null. The bug and scenario node remain
+incomplete. The next required owner is `bubbles.simplify`.
+
+<a name="bug037-simplify-phase"></a>
+
+## Scope: simplify — no-change review - 2026-09-01
+
+### Decision
+
+**Phase:** simplify
+
+**Claim Source:** interpreted
+
+**Interpretation:** Three focused review passes found no safe, useful reduction
+in the BUG-037 implementation. This phase changed no source, test, generated,
+human-acceptance, BUG-029, or BUG-032 file. It changed only this report section
+and BUG-037 execution bookkeeping in `state.json`.
+
+### Three-pass review
+
+| Pass | Findings | Decision |
+| --- | ---: | --- |
+| Code reuse | 0 | The only checklist section-parser definitions found in the reviewed files are the two shared readers in `acceptance-authority-lib.sh`. The regression test continues to source that library. |
+| Code quality | 0 | The registry-gated `requiredAtTerminal` branch is not dead compatibility code. S1-T8 proves the downstream override path, while the shipped registry keeps the record optional. The unreferenced readiness-section helper already exists at `HEAD`; deleting a sourceable downstream API without a consumer inventory is outside this delta. |
+| Efficiency | 0 | The repeated assertions are distinct negative controls for BUG-029 closure, optional-record validation, template-to-registry agreement, and guard read-only behavior. Removing them would reduce diagnostic coverage rather than implementation complexity. |
+
+Generated outputs were not edited. The governance restatements remain because
+the packet requires those public surfaces to agree with the registry and guard.
+
+### Current-byte review evidence
+
+**Phase:** simplify
+
+**Claim Source:** executed
+
+**Structured evidence:** `.specify/runtime/tool-calls.jsonl` row 272.
+
+**Exit Code:** 0
+
+```text
+BUG037_SIMPLIFY_REVIEW_BEGIN
+PASS_1_REUSE_BEGIN
+PARSER_DEFINITION_SEARCH_EXIT=0
+PARSER_DEFINITION_COUNT=2
+PASS_1_REUSE_END
+PASS_2_QUALITY_BEGIN
+QUALITY_CONTRACT_SEARCH_EXIT=0
+PREEXISTING_UNUSED_CANDIDATE_SEARCH_EXIT=0
+PASS_2_QUALITY_END
+PASS_3_EFFICIENCY_BEGIN
+LOAD_BEARING_BRANCH_COVERAGE_SEARCH_EXIT=0
+PASS_3_EFFICIENCY_END
+FOREIGN_BOUNDARY_STATUS_EXIT=0
+FOREIGN_BOUNDARY_CHANGED_LINE_COUNT=0
+IMPLEMENTATION_MANIFEST_SHA256=08c6e448d4fe61ca3242d3809be3ac8574830cf08073b3cddbf50b6658f9c6ce
+SIMPLIFY_REVIEW_FAILURES=0
+BUG037_SIMPLIFY_REVIEW_END
+```
+
+The first capture attempt, row 271, exited 1 because its in-memory manifest
+separator was malformed. It changed no repository file. Row 272 corrected the
+command and completed the same review. This execution issue is fixed in this
+phase and is not a BUG-037 implementation finding.
+
+### Receipt preservation and routing
+
+The current TEST receipts are rows 254 through 256. The current regression
+receipts are rows 257 through 270. This phase read those rows and made no
+implementation or generated mutation, so it did not invalidate their input
+bytes. It did not rerun framework validation or release checks.
+
+No simplify finding remains open. Top-level status and certification remain
+`in_progress`. All certified flags remain false. Human acceptance is unchanged.
+The bug and scenario node remain incomplete. The next required owner is
+`bubbles.gaps`.
+
+<a name="bug037-gaps-phase"></a>
+
+## Scope: gaps — implementation fidelity review - 2026-09-01
+
+This phase compared every BUG-037 acceptance requirement, scenario, design
+decision, scope DoD item, linked test, generated target, and migration claim
+against the current implementation. It changed no source, test, generated,
+human-acceptance, BUG-029, or BUG-032 file.
+
+### Current implementation checks
+
+**Phase:** gaps
+
+**Claim Source:** executed
+
+**Structured evidence:** `.specify/runtime/tool-calls.jsonl` rows 283 through
+288.
+
+The focused matrix ran eleven checks. Ten exited zero. The only failure came
+from passing the packet directory to `regression-quality-guard.sh`, which
+accepts test files or test directories. Row 284 corrected the invocation over
+the six planned test files and exited zero with 0 violations and 0 warnings.
+The matrix otherwise established these current results:
+
+- acceptance authority and the persistent G136 regression execute cleanly;
+- all sixteen scenario links resolve to real test titles;
+- all three generated targets match their generators;
+- both generator selftests and the release-manifest selftest execute cleanly;
+- the implementation-reality scan examines 42 design-resolved files and finds
+  0 violations;
+- the reality scan emits one planning-shape warning because `scopes.md` lacks
+  canonical `### Implementation Files` sections and requires its design
+  fallback.
+
+The initial semantic diagnostic at row 285 stopped on a malformed in-memory
+newline substitution. It changed no file. Row 286 corrected the diagnostic and
+completed the comparison.
+
+### Gap findings
+
+**Claim Source:** executed
+
+Rows 286 through 288 establish the following ten findings. Green test exits do
+not close them because the findings concern semantic coverage, fail-closed
+behavior, and contract coherence rather than test-title existence.
+
+| Finding | Class | Severity | Concrete discrepancy | Required owner |
+| --- | --- | --- | --- | --- |
+| F-B037-GAPS-LINK-003 | PARTIAL | high | `SCN-B037-003` requires one checked plus five unchecked items and requires all five names. Its linked regression title covers two unchecked items. The exact five-item assertion exists in `acceptance-authority-selftest.sh` but is not the linked test. | `bubbles.plan`, then `bubbles.test` |
+| F-B037-GAPS-LINK-015 | UNTESTED | high | `SCN-B037-015` names three generated artifacts, including `bubbles/release-manifest.json`, but links only the gate-map and validation-check generator selftests. The executed release-manifest selftest has no scenario link. | `bubbles.plan`, then `bubbles.test` |
+| F-B037-GAPS-S2T8 | PARTIAL | high | S2-T8 promises that the change modifies no foreign `uservalidation.md`. Its persistent check detects only an unchecked-to-checked item transition. Other foreign-file edits satisfy the test. | `bubbles.test` |
+| F-B037-GAPS-S4T4 | PARTIAL | medium | S4-T4 requires the corrected BUG-029 changelog entry. Its check requires global BUG-037, PD-12, and migration-note text and only rejects one stale phrase. Deleting the BUG-029 entry satisfies the check. | `bubbles.test` |
+| F-B037-GAPS-S4T8 | PARTIAL | medium | S4-T8 requires all three D-3 rules and their mechanical/advisory split. Its check requires only the word `advisory` and proves the enforcer does not read `uservalidation.md`. Removing any of the three rules satisfies the check. | `bubbles.test` |
+| F-B037-GAPS-S4T2 | PARTIAL | medium | GC-2 requires G136 to describe its sections, refusal codes, and done-only condition. S4-T2 checks code-set membership and absence of two stale phrases, but not the three sections or terminal condition. | `bubbles.test` |
+| F-B037-GAPS-D5 | DIVERGENT | high | D-5 says `PD12-NO-RECORD` is retired because no path can emit it. The library retains an emitter, S1-T8 deliberately executes it when `requiredAtTerminal` is true, and the code is absent from the registry's closed `failureCodes` set. | `bubbles.design` |
+| F-B037-GAPS-FAILCLOSED | PARTIAL | high | Pointing the production reader at a missing acceptance registry returns exit 0 with no finding for a checked BUG-037 artifact. Missing authority therefore degrades to acceptance rather than refusing. | `bubbles.plan`, then `bubbles.implement` and `bubbles.test` |
+| F-B037-GAPS-RECORD-AUTHORSHIP | PARTIAL | medium | `bubbles_acceptance_record_authored()` examines only required fields. A real method-conditional field in an otherwise placeholder record is treated as an untouched template, so present-record validation does not run. | `bubbles.plan`, then `bubbles.implement` and `bubbles.test` |
+| F-B037-GAPS-MIGRATION | DIVERGENT | medium | The upgrade note says any pre-cutover `uservalidation.md` ships unchecked. The design inventory records BUG-032 as pre-PD-12 and checked. The note overstates the affected population and contradicts D-1's own evidence. | `bubbles.design`, then `bubbles.docs` |
+
+The current BUG-029 and BUG-032 acceptance artifacts have zero worktree
+changes. The findings above do not reopen either bug and do not authorize any
+edit to their packets.
+
+### Finding accounting and routing
+
+- Addressed invocation findings: `F-B037-GAPS-HARNESS-001` was corrected by
+  row 284. `F-B037-GAPS-HARNESS-002` was corrected by row 286.
+  `F-B037-GAPS-HARNESS-003`, a shell-quoting error before the first
+  post-bookkeeping matrix could execute, was corrected by row 289.
+- Unresolved BUG-037 findings: the ten rows in the table above.
+- Source, test, generated, user-acceptance, and certification mutations: none.
+- Scope execution status remains done for all four scopes. Certification stays
+  `in_progress`, `certifiedAt` stays null, and every certified flag stays false.
+
+Row 289 then ran the required post-bookkeeping checks. Artifact lint, technical
+prose lint, JSON and state invariants, 16-of-16 linked-test resolution, diff
+whitespace validation, and both strict work-boundary checks all exited zero.
+
+The first required owner is `bubbles.design`, because D-5 and the D-1 upgrade
+note contain contradictory active design claims. Planning must then align the
+scenario links and add the fail-closed and partial-record cases. Implementation
+and TEST own the resulting code and persistent coverage. Broad TEST evidence
+must be re-executed after any source, test, generated, or planning-contract
+mutation.
+
+<a name="bug037-design-remediation"></a>
+
+## Scope: design remediation — failure-code and migration contracts - 2026-09-01
+
+### Reconciliation basis
+
+**Phase:** design
+
+**Claim Source:** interpreted
+
+**Interpretation:** The remediation compared D-1 and D-5 with the current
+registry, shared reader, guard, focused selftests, persistent regression, and
+changelog. It changed only `design.md`, this append-only report section, and
+BUG-037 execution bookkeeping in `state.json`.
+
+### Failure-code lifecycle decision
+
+`PD12-NO-RECORD` is conditionally active, not retired. The shipped
+`requiredAtTerminal: false` value keeps opt-out acceptance unchanged. A
+downstream `true` override activates the refusal without forking the library.
+
+The canonical `failureCodes` set must declare every supported source emission.
+S1-T10 may not exempt an undeclared source literal. Missing, unreadable, or
+malformed authority must fail closed with the planned bootstrap code
+`PD12-AUTHORITY-UNAVAILABLE`.
+
+This decision resolves the contradiction in D-5. It does not claim that the
+current registry, source, documentation, or tests already implement the
+reconciled contract.
+
+### Legacy migration decision
+
+D-1 now defines four classes: current opt-out, legacy pre-PD-12 checked, legacy
+PD-12 unchecked, and legacy provenance unknown. The contract that scaffolded
+the checklist determines its class. A cutover date or current checkbox bytes
+alone cannot determine user intent.
+
+Unknown provenance fails closed. The packet stays `in_progress`, and
+automation leaves checkbox state unchanged until the artifact owner resolves
+provenance with the user. No bulk migration script ships.
+
+This decision resolves the contradiction in D-1. It does not claim that the
+current changelog upgrade note already describes the four classes.
+
+### Finding accounting and planning route
+
+Exactly two gaps findings are resolved by this design slice:
+
+- `F-B037-GAPS-D5`
+- `F-B037-GAPS-MIGRATION`
+
+The following eight findings remain open and unchanged:
+
+- `F-B037-GAPS-LINK-003` — owner `bubbles.plan`, then `bubbles.test`
+- `F-B037-GAPS-LINK-015` — owner `bubbles.plan`, then `bubbles.test`
+- `F-B037-GAPS-S2T8` — owner `bubbles.test`
+- `F-B037-GAPS-S4T4` — owner `bubbles.test`
+- `F-B037-GAPS-S4T8` — owner `bubbles.test`
+- `F-B037-GAPS-S4T2` — owner `bubbles.test`
+- `F-B037-GAPS-FAILCLOSED` — owner `bubbles.plan`, then
+  `bubbles.implement` and `bubbles.test`
+- `F-B037-GAPS-RECORD-AUTHORSHIP` — owner `bubbles.plan`, then
+  `bubbles.implement` and `bubbles.test`
+
+`bubbles.plan` must make four immediate planning corrections. Link
+`SCN-B037-003` to the exact five-unchecked-item assertion. Link
+`SCN-B037-015` to release-manifest regeneration coverage. Add fail-closed
+registry cases. Add present-record authorship cases for real
+method-conditional fields.
+
+The plan must also apply both resolved decisions. It must restore
+`PD12-NO-RECORD` to the declared conditional set, replace the S1-T10 exception,
+and add bootstrap authority-failure coverage. It must classify all legacy
+migration cases and require the changelog to replace its one-bucket warning.
+
+The plan must preserve the four test-owned findings for `bubbles.test`. It must
+not change completed DoD checkboxes during planning. Source, registry, test,
+generated, changelog, acceptance, and certification changes remain unclaimed.
+
+<a name="bug037-planning-remediation"></a>
+
+## Scope: planning remediation — D-1 and D-5 contract handoff - 2026-09-01
+
+### Summary
+
+**Phase:** plan
+
+**Claim Source:** interpreted
+
+**Interpretation:** This slice reconciled the planning contract only. It changed
+`spec.md`, `scopes.md`, `scenario-manifest.json`, `test-plan.json`, this
+append-only report, and execution routing in `state.json`.
+
+The plan now declares `PD12-NO-RECORD` as conditional-active. It declares
+`PD12-AUTHORITY-UNAVAILABLE` as bootstrap-active. It defines exact fail-closed
+output and return semantics for every authority failure class.
+
+The plan defines authored-record detection across base and method-specific
+fields. Empty values and complete bracket placeholders remain inert. Any other
+recognized value triggers complete present-record validation.
+
+The migration contract now distinguishes four provenance classes. It forbids
+bulk migration and preserves unknown-provenance bytes. It keeps ambiguous
+packets `in_progress` until the owner resolves provenance with the user.
+
+### Scenario and test-link reconciliation
+
+`SCN-B037-003` now links to two existing exact identities. S1-T3 proves the
+shared reader refuses one checked plus five unchecked items and names all five.
+S3-T3 proves the same shape through the real Check 43 consumer.
+
+`SCN-B037-015` now links to the existing release-manifest selftest scenario.
+That link complements the existing gate-map and validation-check generator
+links. The three generated targets now have explicit planned coverage.
+
+`SCN-B037-016`, `SCN-B037-017`, and `SCN-B037-019` name tests that do not exist
+yet. Their manifest entries use `testState: planned-not-authored` and the
+framework's `__FUTURE_TEST__` title sentinel. Each entry also records exact
+planned identities. The sentinel prevents a planning packet from pretending
+that an absent title already resolved.
+
+The linked-test resolver reported 22 resolved references. It also reported 19
+category comparisons as not applicable because this repository declares no
+test-discovery adapter. This result proves path and existing-title resolution.
+It does not prove that planned tests ran.
+
+### Historical execution and certification posture
+
+All four scope execution statuses remain `done`. Every certification flag stays
+false. Existing checked DoD items remain unchanged as historical receipts.
+
+Nine amended scenario obligations are unchecked. Each carries an Uncertainty
+Declaration. `state.json` remains `in_progress` with
+`execution.substate: needs_reverification` and `requiresRevalidation: true`.
+
+Prior broad framework-validation and release-check receipts remain historical.
+The planned source, registry, test, changelog, and generated changes require new
+focused and broad evidence.
+
+### Finding accounting
+
+This planning slice resolved exactly two prior findings:
+
+- `F-B037-GAPS-LINK-003`.
+- `F-B037-GAPS-LINK-015`.
+
+Seven findings remain open:
+
+- `F-B037-GAPS-FAILCLOSED` — `bubbles.implement`.
+- `F-B037-GAPS-RECORD-AUTHORSHIP` — `bubbles.implement`.
+- `F-B037-PLAN-D1-D5-SYNC` — `bubbles.implement`.
+- `F-B037-GAPS-S2T8` — `bubbles.test`.
+- `F-B037-GAPS-S4T2` — `bubbles.test`.
+- `F-B037-GAPS-S4T4` — `bubbles.test`.
+- `F-B037-GAPS-S4T8` — `bubbles.test`.
+
+The new `F-B037-PLAN-D1-D5-SYNC` finding preserves cross-surface work exposed
+by the reconciled design. It covers registry, source, changelog, gate prose,
+generated projections, and focused-test synchronization.
+
+### Focused planning validation
+
+**Phase:** plan
+
+**Command:** `/opt/local/bin/gtimeout --signal=TERM --kill-after=10s 1200 /opt/homebrew/bin/bash /private/tmp/bug037-planning-validation.sh`
+
+**Exit Code:** 0
+
+**Claim Source:** executed
+
+```text
+# BUG-037 planning remediation focused validation matrix GREEN
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=10s 1200 /opt/homebrew/bin/bash /private/tmp/bug037-planning-validation.sh
+exit: 0
+lines: 345
+sha256: 40425d88155521f4fd2490fe148d9c03836f5d79940760e86d0a9ab52acb73a5
+--- first 20 ---
+CHECK_BEGIN=json-state
+CHECK_EXIT json-state=0
+CHECK_BEGIN=json-scenarios
+CHECK_EXIT json-scenarios=0
+CHECK_BEGIN=json-test-plan
+CHECK_EXIT json-test-plan=0
+CHECK_BEGIN=scenario-links
+[scenario-test-resolve] OK — 22 reference(s) resolved via literal-scan; 19 category comparison(s) not applicable (no test-discovery adapter declared)
+CHECK_EXIT scenario-links=0
+CHECK_BEGIN=scenario-obligations
+[scenario-obligation-lint] OK — 19 scenario(s) with a coherent derived obligation matrix
+CHECK_EXIT scenario-obligations=0
+CHECK_BEGIN=artifact-lint
+--- omitted 305 line(s); sha256 above covers the full output ---
+--- last 20 ---
+CHECK_EXIT boundary:bugs/BUG-037-uservalidation-opt-out-acceptance/scenario-manifest.json=0
+CHECK_BEGIN=boundary:bugs/BUG-037-uservalidation-opt-out-acceptance/report.md
+disposition=in-boundary
+repoMatch=true
+reason=candidate repo 'bubbles' is within repositoryRoots and within any declared spec/path scope
+CHECK_EXIT boundary:bugs/BUG-037-uservalidation-opt-out-acceptance/report.md=0
+CHECK_BEGIN=boundary:bugs/BUG-037-uservalidation-opt-out-acceptance/state.json
+disposition=in-boundary
+repoMatch=true
+reason=candidate repo 'bubbles' is within repositoryRoots and within any declared spec/path scope
+CHECK_EXIT boundary:bugs/BUG-037-uservalidation-opt-out-acceptance/state.json=0
+PLANNING_VALIDATION_FAILURES=0
+```
+
+Tool-log row 296 records this run with exit `0`, duration `13030ms`, stdout
+hash `569f93b822b361497e42834d029c8ea97f39cf56495e57524721ef1da23d392f`,
+and 15 current input-closure entries.
+
+The report-only prose check emitted 27 over-long-sentence findings and 37
+semicolon findings across `spec.md` and `scopes.md`. It exited `0` by contract.
+This report does not relabel those findings as a clean prose verdict.
+
+The first recorded matrix at tool-log row 295 exited `1`. Artifact lint found
+nine scenarios without faithful DoD items. The plan added nine unchecked items
+with Uncertainty Declarations and changed no completed checkbox. Row 296 then
+exited `0`.
+
+<a name="bug037-implementation-remediation"></a>
+
+## Scope: implementation remediation — D-1 and D-5 current-byte closure - 2026-09-01
+
+### Summary
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+The goal-node binding remained scoped to repository `bubbles`, node
+`reconcile-bug-037-validation-registry`, session
+`vscode-d6173f50fde08e4fc6fdf133dac19e92`, and control revision `1`.
+Repository packet validation returned exit `0` before any local inspection.
+
+The fail-closed authority preflight, union-field authorship predicate, failure
+code declarations, and aligned gate prose were already present in the dirty
+checkout when this invocation began. This invocation does not claim authorship
+of those inherited bytes. It re-read them and executed their planned cases on
+the current files.
+
+This invocation changed the implementation-owned focused selftest, the BUG-037
+changelog entry, and the generated release manifest. It added exact conditional
+code cardinality under S1-T10 and structural S4-T10 checks for all four migration
+classes. It changed the changelog heading from "No bulk migration script" to
+"No migration script exists, and no bulk migration script will be shipped" so
+the existing S4-T4 assertion and the stronger S4-T10 contract both apply.
+
+No `uservalidation.md`, BUG-029 packet, BUG-032 packet, BUG-033 packet,
+downstream repository, certification field, terminal status, session mirror, or
+session lock was changed.
+
+### RED — current bytes before the focused edit
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+**Command:** stock/Homebrew Bash matrix, stopping at its first non-zero case
+
+**Exit Code:** 1
+
+```text
+# BUG-037 remediation pre-edit cross-shell first-failure matrix
+exit: 1
+lines: 58
+sha256: f9ae8a7729f75067514460e5560ddb44fbeabb49b4c22566ef33f52a1f569cc5
+BUG037_PREEDIT_MATRIX_BEGIN
+CASE_BEGIN=stock-acceptance-authority
+  ok   S1-T11 SCN-B037-016: missing authority fails closed
+  ok   S1-T12 SCN-B037-016: unreadable authority fails closed
+  ok   S1-T13 SCN-B037-016: malformed authority fails closed
+  FAIL S4-T4 changelog records the contract change
+       missing: D-1-upgrade-note
+acceptance-authority-selftest: 47/48 checks passed
+acceptance-authority-selftest: FAILED
+CASE_EXIT name=stock-acceptance-authority exit=1
+FIRST_FAILURE=stock-acceptance-authority
+BUG037_PREEDIT_MATRIX_END
+```
+
+Tool-log row 303 records the command at exit `1`. The exact first failure was
+S4-T4 in the stock-Bash authority selftest. The failure was reproduced rather
+than inferred from inherited evidence.
+
+### Current-byte implementation proof
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+The narrow stock-Bash rerun completed after two test-helper micro-fixes. The
+first exposed line-wrap sensitivity in S4-T10. The second exposed a current-class
+selector whose negative control did not mutate the intended paragraph. Both
+were corrected before broader execution.
+
+```text
+# BUG-037 remediation narrow stock Bash authority selftest after selector fix
+exit: 0
+lines: 57
+sha256: ff6a840c53c6efbb5cb4ef4171093a179a7d29784eb3ddc77eb53e4f7ac2a86b
+  ok   S1-T11 SCN-B037-016: missing authority fails closed
+  ok   S1-T12 SCN-B037-016: unreadable authority fails closed
+  ok   S1-T13 SCN-B037-016: malformed authority fails closed
+  ok   S4-T10 SCN-B037-019: the changelog distinguishes all four migration classes
+  ok   S4-T10a SCN-B037-019: unknown provenance preserves bytes and remains in progress
+  ok   S4-T10b SCN-B037-019: no bulk acceptance migration script exists
+  ok   S4-T10c ADVERSARIAL: deleting any migration-class paragraph is detected
+acceptance-authority-selftest: 53/53 checks passed
+acceptance-authority-selftest: OK
+```
+
+Tool-log row 306 records this narrow run at exit `0`.
+
+The final focused matrix ran the authority selftest and persistent G136
+regression under both macOS stock Bash and Homebrew Bash. The command hashed 17
+covered files before and after execution. All four cases returned zero, the
+aggregate command returned zero, and the two hash manifests were identical.
+
+```text
+# BUG-037 stable current-byte stock and Homebrew Bash focused matrix
+exit: 0
+lines: 191
+sha256: ed2208523031edd59008097238b82d74897f94e4ef3fc039698993648d073fc5
+CASE_BEGIN=stock-acceptance-authority
+CASE_EXIT name=stock-acceptance-authority exit=0
+CASE_BEGIN=homebrew-acceptance-authority
+CASE_EXIT name=homebrew-acceptance-authority exit=0
+CASE_BEGIN=stock-human-acceptance-regression
+CASE_EXIT name=stock-human-acceptance-regression exit=0
+CASE_BEGIN=homebrew-human-acceptance-regression
+CASE_EXIT name=homebrew-human-acceptance-regression exit=0
+COVERED_BYTES_STABLE=true
+BUG037_FOCUSED_MATRIX_END
+```
+
+Tool-log row 308 records the matrix at exit `0`, duration `17073ms`, and 22
+current input-closure entries. Its test identities cover S1-T10 through S1-T18,
+S2-T3 through S2-T5, S4-T10 through S4-T10c, and the persistent G136 regression.
+
+### Generated projections and focused validation
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+The three packet-declared generators ran through their owning scripts.
+
+```text
+BUG037_GENERATION_BEGIN
+GENERATOR_BEGIN=gate-coverage
+generate-gate-coverage-map: no change (121 gates mapped)
+GENERATOR_EXIT name=gate-coverage exit=0
+GENERATOR_BEGIN=validation-checks
+generate-validation-checks: wrote /Users/pkirsanov/Projects/bubbles/bubbles/registry/validation-checks.yaml
+GENERATOR_EXIT name=validation-checks exit=0
+GENERATOR_BEGIN=release-manifest
+Updated release manifest: 7.28.0 (930 managed files)
+GENERATOR_EXIT name=release-manifest exit=0
+BUG037_GENERATION_END
+```
+
+Tool-log row 307 records exit `0`, duration `80838ms`, and evidence-capture
+sha256 `636dfdae0766128aa41654e88a3a48ef77dd378f7e50935b3bc937076d697f2d`.
+The gate map and validation registry were byte-identical before and after. The
+release manifest changed to capture the current managed-file checksums.
+
+The focused validation command then ran dual-Bash syntax checks, all three
+generator `--check` modes, all three generator freshness selftests, artifact
+lint for this packet, and `git diff --check` for the declared path set.
+
+```text
+# BUG-037 focused generators syntax artifact lint and diff checks
+exit: 0
+lines: 119
+sha256: 7f7d912deac4714e77114125600d2f97d4a7d72c7645ee40f09abe9cf5005e69
+CASE_BEGIN=stock-lib-syntax
+CASE_EXIT name=stock-lib-syntax exit=0
+CASE_BEGIN=homebrew-selftest-syntax
+CASE_EXIT name=homebrew-selftest-syntax exit=0
+generate-gate-coverage-map: docs/generated/gate-coverage-map.md is in sync (121 gates mapped)
+generate-validation-checks: OK — the committed closure map matches the derivation.
+Release manifest is current: 7.28.0 (930 managed files)
+Artifact lint PASSED.
+CASE_EXIT name=artifact-lint exit=0
+CASE_EXIT name=diff-check exit=0
+BUG037_FOCUSED_VALIDATION_END
+```
+
+Tool-log row 309 records exit `0`, duration `106500ms`, and 23 current
+input-closure entries. No `framework-validate` or `release-check` command ran in
+this implementation slice.
+
+### Finding accounting and route
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+Addressed implementation findings:
+
+- `F-B037-GAPS-FAILCLOSED` — S1-T11 through S1-T15 exercise both public
+  verdicts across all five authority-failure classes. Each case requires exit
+  `1` and exactly one `PD12-AUTHORITY-UNAVAILABLE` line.
+- `F-B037-GAPS-RECORD-AUTHORSHIP` — S1-T16 through S1-T18 exercise union-field
+  authorship, inert empty and complete-bracket defaults, and both method schemas.
+- `F-B037-PLAN-D1-D5-SYNC` — the current authority, reader, gate prose, and
+  lifecycle declarations agree; the four migration classes are published;
+  S1-T10 and S4-T10 are implemented; and all three projections were regenerated.
+
+Unresolved findings, preserved one-for-one for `bubbles.test`:
+
+- `F-B037-GAPS-S2T8`.
+- `F-B037-GAPS-S4T2`.
+- `F-B037-GAPS-S4T4`.
+- `F-B037-GAPS-S4T8`.
+
+The focused selftest returning zero does not close those four assertion-fidelity
+findings. Their current assertions remain weaker than the reconciled Test Plan.
+The packet and certification remain `in_progress`; the next required owner is
+`bubbles.test`.
+
+### Post-bookkeeping validation
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+```text
+# BUG-037 post-bookkeeping Tier 1 and Implement profile checks
+exit: 0
+lines: 98
+sha256: 985c3b0709d299eaa92c531ec2e79bab3c5f53e02316c6da4f11de8edf4a3a51
+CASE_BEGIN=state-json
+true
+CASE_EXIT name=state-json exit=0
+CASE_BEGIN=artifact-lint
+Artifact lint PASSED.
+CASE_EXIT name=artifact-lint exit=0
+SOURCE_HASH_FAILURES=0
+NEIGHBOR_PACKET_STATUS_END
+TARGET_STATUS_END
+BUG037_POST_BOOKKEEPING_END
+```
+
+Tool-log row 310 records exit `0`, duration `83207ms`, stdout hash
+`91b7126f1f76d8c4c058395312cfc7b829829212bf9b75fd7b1c14ac0c0787c0`,
+and 13 input-closure entries. The state assertion required exactly four open
+findings, all owned by `bubbles.test`. It required the three implementation
+findings to be resolved, `execution.substate` to equal `implemented`, and every
+certification flag to remain false. The same command rechecked all three
+generated targets, artifact lint, diff whitespace, and the nine current source
+hashes from the green matrix.
+
+<a name="bug037-test-assertion-fidelity-remediation"></a>
+
+## Scope: TEST assertion-fidelity remediation - 2026-09-01
+
+### Summary
+
+**Phase:** test
+
+**Claim Source:** executed
+
+The invocation validated this exact repository binding before reading the
+packet or running a repository command:
+
+- `repositoryRoot`: canonical `bubbles` source checkout
+- `repositoryAlias`: `bubbles`
+- `sessionId`: `vscode-d6173f50fde08e4fc6fdf133dac19e92`
+- `decisionId`: `rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:1:node:reconcile-bug-037-validation-registry`
+- `controlRevision`: `1`
+- `controlPathDigest`: `sha256:31af946ba99c9cc0dfa9f0c87a9a2e2ef4232d504026d42c7302fffb144ec8fe`
+- `authority`: `scoped-scenario-node`
+- `transition`: `scoped-override`
+- `scopeKind`: `goal-node`
+- `scopeId`: `reconcile-bug-037-validation-registry`
+- `targetKind`: `goal-node`
+- `pathVisibility`: `local`
+- `actionable`: `true`
+
+The packet validator returned exit `0`. The test edit touched only
+`bubbles/scripts/acceptance-authority-selftest.sh`. It strengthened S2-T8,
+S4-T2, S4-T4, and S4-T8 without changing production behavior.
+
+### RED - missing assertion mechanisms
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 311 records exit `1`. The original focused selftest passed its
+existing 53 checks, but the assertion-fidelity probe found all eight required
+mechanism signals absent.
+
+```text
+# BUG-037 four-finding assertion-fidelity RED
+exit: 1
+lines: 68
+sha256: 89ce706d8b7a7948fc2ec218cf944414f92bc7ace3c89e6433ab094041dbc73e
+RED_MISSING_ASSERTION=delivery_range_foreign_uservalidation_findings
+RED_MISSING_ASSERTION=G136-SECTION-MISSING
+RED_MISSING_ASSERTION=G136-DONE-SCOPE-MISSING
+RED_MISSING_ASSERTION=G136-CODE-SET-MISMATCH
+RED_MISSING_ASSERTION=CHANGELOG-BUG029-CORRECTION-MISSING
+RED_MISSING_ASSERTION=G057-RULE-1-MISSING
+RED_MISSING_ASSERTION=G057-ADVISORY-CLASSIFICATION-MISSING
+RED_MISSING_ASSERTION=G057-ENFORCER-READS-USERVALIDATION
+RED_MISSING_ASSERTION_COUNT=8
+BUG037_ASSERTION_FIDELITY_RED_END
+```
+
+### GREEN - final current-byte focused matrix
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 316 records the final focused matrix at exit `0`. Both Bash
+runtimes executed the 71-check authority selftest and the 13-check persistent
+G136 regression. The selected tests contained no skip marker.
+
+```text
+# BUG-037 final current-byte dual-Bash acceptance matrix
+exit: 0
+lines: 192
+sha256: 006277e8184435276c5c3228808e687b7938ef38d7b324691ad6810513a37d23
+CASE_BEGIN=stock-acceptance-authority
+CASE_EXIT name=stock-acceptance-authority exit=0
+CASE_BEGIN=homebrew-acceptance-authority
+CASE_EXIT name=homebrew-acceptance-authority exit=0
+CASE_BEGIN=stock-human-acceptance-regression
+CASE_EXIT name=stock-human-acceptance-regression exit=0
+CASE_BEGIN=homebrew-human-acceptance-regression
+test_35_human_acceptance_terminal: 13 passed, 0 failed
+CASE_EXIT name=homebrew-human-acceptance-regression exit=0
+SKIP_MARKER_SCAN=PASS
+BUG037_FINAL_CURRENT_BYTE_MATRIX_FAILURES=0
+BUG037_FINAL_CURRENT_BYTE_MATRIX_END
+```
+
+Tool-log row 315 records dual-Bash syntax checks, all 22 linked-test
+references, and the bugfix regression-quality guard at exit `0`. The guard
+reported zero violations and zero warnings across both selected files.
+
+Tool-log row 318 records the selected-test audit at exit `0`. It reports zero
+mock interceptions, zero live-system categories, zero skip markers, and a clean
+diff whitespace check.
+
+### One-to-one finding closure
+
+**Phase:** test
+
+**Claim Source:** executed
+
+- `F-B037-GAPS-S2T8` is closed by S2-T8 and S2-T8a. The test compares explicit
+  base and candidate tree revisions. A prose-only foreign
+  `*uservalidation.md` change emits `FOREIGN-USERVALIDATION-CHANGE`.
+- `F-B037-GAPS-S4T2` is closed by description-only parsing of G136. The test
+  requires all three sections, the done-only scope, opt-out semantics, and
+  exact code-set equality. Seven clause controls and one extra-code control
+  prove sensitivity.
+- `F-B037-GAPS-S4T4` is closed by named changelog-section parsing. The test
+  requires BUG-037, PD-12, corrected BUG-029, and four distinct migration
+  classes. Deleting the corrected BUG-029 entry fails its exact control.
+- `F-B037-GAPS-S4T8` is closed by description-only parsing of G057. The test
+  requires all three D-3 rules and their mechanical or advisory labels. A
+  mutated enforcer that reads `uservalidation.md` fails its exact control.
+
+Each closure signal appears in both authority-selftest runs in tool-log row
+316. The embedded negative controls exercise the same assertion helpers as the
+positive repository surfaces.
+
+### Generator freshness and packet lint
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 317 records the final generator slice at exit `1`. Linked-test
+resolution, gate-map freshness, gate-map selftest, validation-check freshness,
+validation-check selftest, and packet artifact lint returned zero. The release
+manifest freshness check and its linked selftest remained non-zero.
+
+Tool-log row 319 isolates the release-manifest selftest at exit `1`:
+
+```text
+# BUG-037 isolated release-manifest freshness failure
+exit: 1
+lines: 31
+sha256: 2715bfe54957d0c268ecb3a0ecbd6ad03e55bcdfc2a6da47c4433ce4baeb536d
+Running release-manifest selftest...
+Scenario: release hygiene generates one complete trust manifest for downstream installs.
+Release manifest is stale. Run bubbles/scripts/generate-release-manifest.sh
+FAIL: Committed release manifest is current
+PASS: Release manifest exists
+PASS: Manifest records release version
+PASS: Manifest records source git SHA
+PASS: Manifest records trust docs digest
+PASS: Manifest records framework-managed file count (930)
+release-manifest selftest failed with 1 issue(s).
+```
+
+The manifest records checksum
+`dbc2e80e5a03a3563dccc9bf895a3506d16686418df17b3aee719df9c71ff071`
+for the edited authority selftest. Its current checksum is
+`944ec318aa756731cb357b3fb401684645c6c21a04f3dd9f28d338b3fcc9faf0`.
+This mismatch directly explains at least one freshness difference.
+
+The test phase did not regenerate `bubbles/release-manifest.json`. That file is
+not test-owned, and the request limited edits to test and test-evidence state.
+The unresolved owner is `bubbles.implement`.
+
+### Test verdict and broad-suite boundary
+
+**Phase:** test
+
+**Claim Source:** executed
+
+The four inherited test-owned findings are addressed. The selected focused
+tests pass under both required Bash runtimes. Packet artifact lint passes.
+
+The test verdict is `NOT_TESTED` for phase completion because the required
+release-manifest freshness check is red. The top-level status and every
+certification field remain `in_progress` or uncertified.
+
+Broad suite status: NOT RUN. The requested slice excluded `framework-validate`
+and `release-check`, so this invocation started neither command.
+
+Tool-log row 320 records the post-bookkeeping profile checks at exit `0`.
+State integrity, linked-test resolution, packet artifact lint, execution
+substate integrity, technical prose, and diff whitespace all passed.
+
+## BUG-037 release-manifest freshness remediation
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+### Repository binding
+
+The goal-node packet was rebuilt in memory from the canonical scenario plan.
+The packet derived repository alias `bubbles` and the canonical source root
+from the scenario repository table. The packet validator returned exit `0`
+before any repository read or write. It reported decision
+`rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:1:node:reconcile-bug-037-validation-registry`,
+control revision `1`, and scope `reconcile-bug-037-validation-registry`.
+
+### Current-byte RED proof
+
+Tool-log rows 321 and 322 reproduce the routed failure on the bytes present
+before regeneration. The freshness check and release-manifest selftest each
+returned exit `1`.
+
+| Tool-log row | Command | Exit | Evidence-capture SHA-256 |
+| --- | --- | ---: | --- |
+| 321 | `bash bubbles/scripts/generate-release-manifest.sh --check` | 1 | `52f27aa0b967c3135d4550f4c8f46fd2fc97318332ea133fe49986f62dc34f9b` |
+| 322 | `bash bubbles/scripts/release-manifest-selftest.sh` | 1 | `2715bfe54957d0c268ecb3a0ecbd6ad03e55bcdfc2a6da47c4433ce4baeb536d` |
+
+The selftest reported `FAIL: Committed release manifest is current` and ended
+with `release-manifest selftest failed with 1 issue(s).` The remaining 26
+manifest contract assertions passed.
+
+### Owning regeneration and exact-diff control
+
+The canonical generator first wrote an isolated candidate. A structured
+comparison against the existing manifest reported all of the following:
+
+- metadata excluding volatile provenance fields was equal.
+- managed path order was equal.
+- source-only path order was equal.
+- source-only checksum changes were empty.
+- the only managed checksum change was
+  `bubbles/scripts/acceptance-authority-selftest.sh`.
+- that checksum changed from
+  `dbc2e80e5a03a3563dccc9bf895a3506d16686418df17b3aee719df9c71ff071`
+  to
+  `944ec318aa756731cb357b3fb401684645c6c21a04f3dd9f28d338b3fcc9faf0`.
+
+The exact unified diff contained one removed checksum line and one added
+checksum line for that path. The candidate-scope assertion returned exit `0`.
+This proves the generator did not absorb another uncommitted file into this
+regeneration.
+
+Tool-log row 323 records the owning generator at exit `0`, one output line, and
+evidence-capture SHA-256
+`bf9214e61a05121d87639384c57055f70b99e532c60572a2b34203e934d5afa6`.
+The generated repository file was byte-identical to the approved candidate.
+
+### Current-byte GREEN proof
+
+Tool-log rows 324 and 325 record the required post-generation checks.
+
+| Tool-log row | Command | Exit | Evidence-capture SHA-256 |
+| --- | --- | ---: | --- |
+| 324 | `bash bubbles/scripts/generate-release-manifest.sh --check` | 0 | `508cfb7f98ab0a368946caccccd443feec43a76507bc0160c70500c69fd5b14e` |
+| 325 | `bash bubbles/scripts/release-manifest-selftest.sh` | 0 | `c58088077f5f1a80bca831122ccd9593c23cb6c07ef48acdb944a6dbbda3808e` |
+
+The freshness check reported `Release manifest is current: 7.28.0 (930 managed
+files)`. The selftest emitted 27 PASS lines and ended with
+`release-manifest selftest passed.`
+
+### Finding closure and routing
+
+`F-B037-TEST-RELEASE-MANIFEST-FRESHNESS` is resolved by tool-log rows 323
+through 325. Rows 321 and 322 preserve the pre-fix failure. No test assertion,
+terminal status, certification field, neighboring bug packet, session state,
+branch, worktree, remote, host, or Git history operation was part of this
+remediation.
+
+The implementation result is `route_required` to `bubbles.test` for
+independent current-byte verification. The bug and certification remain
+`in_progress`.
+
+<a name="bug037-independent-final-byte-test"></a>
+
+## Scope: TEST independent final-byte verification - 2026-09-01
+
+### Repository binding and baseline
+
+**Phase:** test
+
+**Claim Source:** executed
+
+The goal-node packet validated before any repository read or command. The
+validator returned exit `0` with these unchanged fields:
+
+- `repositoryRoot`: `/Users/pkirsanov/Projects/bubbles`
+- `repositoryAlias`: `bubbles`
+- `sessionId`: `vscode-d6173f50fde08e4fc6fdf133dac19e92`
+- `decisionId`: `rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:1:node:reconcile-bug-037-validation-registry`
+- `controlRevision`: `1`
+- `controlPathDigest`: `sha256:31af946ba99c9cc0dfa9f0c87a9a2e2ef4232d504026d42c7302fffb144ec8fe`
+- `authority`: `scoped-scenario-node`
+- `transition`: `scoped-override`
+- `scopeKind`: `goal-node`
+- `scopeId`: `reconcile-bug-037-validation-registry`
+- `targetKind`: `goal-node`
+- `pathVisibility`: `local`
+- `actionable`: `true`
+
+Tool-log row 340 records the final-byte baseline at exit `0`. The 36 immutable
+inputs had aggregate SHA-256
+`2d786165a1101a31760c77a1d79bd317af366fc557d3f725cccae67ad2a13409`.
+The BUG-032 and BUG-033 aggregate was
+`1e5e45612f79f479e8cf0fea81d86bcd18a68da81228e0fe72cce554f82d8475`.
+The certification object was
+`fb84636b3c65fa9fcb9e4389a04ecf89fd84e8dbb6422284b23d014220085fd8`.
+
+### Dual-Bash acceptance matrix
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 341 records exit `0`, stdout hash
+`b5314e5fad8a6cfcbdad6f943d259a4c5143be2feb577eaabed702a6aeedfc67`,
+and evidence-capture SHA-256
+`dc1e41b395b2df0d78054469e00530aa07098a1873c8f0559a4ce7a9bf68fade`.
+
+```text
+BUG037_DUAL_BASH_FINAL_MATRIX_BEGIN
+IMMUTABLE_PRE_SHA256=2d786165a1101a31760c77a1d79bd317af366fc557d3f725cccae67ad2a13409
+CASE_BEGIN name=stock-acceptance-authority command=/bin/bash bubbles/scripts/acceptance-authority-selftest.sh
+CASE_EXIT name=stock-acceptance-authority exit=0
+CASE_BEGIN name=homebrew-acceptance-authority command=/opt/homebrew/bin/bash bubbles/scripts/acceptance-authority-selftest.sh
+CASE_EXIT name=homebrew-acceptance-authority exit=0
+CASE_BEGIN name=stock-human-acceptance-regression command=/bin/bash tests/regression/test_35_human_acceptance_terminal.sh
+CASE_EXIT name=stock-human-acceptance-regression exit=0
+CASE_BEGIN name=homebrew-human-acceptance-regression command=/opt/homebrew/bin/bash tests/regression/test_35_human_acceptance_terminal.sh
+test_35_human_acceptance_terminal: 13 passed, 0 failed
+CASE_EXIT name=homebrew-human-acceptance-regression exit=0
+IMMUTABLE_POST_SHA256=2d786165a1101a31760c77a1d79bd317af366fc557d3f725cccae67ad2a13409
+BUG037_DUAL_BASH_FINAL_MATRIX_FAILURES=0
+BUG037_DUAL_BASH_FINAL_MATRIX_END
+```
+
+### Linked tests and regression quality
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 342 records exit `0`, stdout hash
+`74bd1a6adae3b7f900a68339bea7febf1ddbac98c7939e9f39352a3501632999`,
+and evidence-capture SHA-256
+`37802e0cc59d85ef4a415650fe3617bc62cd7c0307e38fb83bd904c0b6c597cb`.
+
+```text
+BUG037_LINK_AND_REGRESSION_CHECKS_BEGIN
+IMMUTABLE_PRE_SHA256=2d786165a1101a31760c77a1d79bd317af366fc557d3f725cccae67ad2a13409
+[scenario-test-resolve] OK — 22 reference(s) resolved via literal-scan; 19 category comparison(s) not applicable (no test-discovery adapter declared)
+CASE_EXIT name=scenario-test-resolve exit=0
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 2
+Files with adversarial signals: 2
+CASE_EXIT name=regression-quality-guard exit=0
+SKIP_MARKER_SCAN=PASS matches=0
+CASE_EXIT name=skip-marker-scan exit=0
+DECLARED_LIVE_SYSTEM_TEST_COUNT=0
+MOCK_INTERCEPTION_SCAN=PASS matches=0
+CASE_EXIT name=live-and-mock-classification exit=0
+IMMUTABLE_POST_SHA256=2d786165a1101a31760c77a1d79bd317af366fc557d3f725cccae67ad2a13409
+BUG037_LINK_AND_REGRESSION_FAILURES=0
+BUG037_LINK_AND_REGRESSION_CHECKS_END
+```
+
+### Generated-artifact freshness
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 343 records the first matrix at exit `1`. Five checks returned
+zero, but the gate-map selftest skipped because the selected Python lacked
+PyYAML. The skip was not counted as a pass.
+
+Row 344 found two existing interpreters with PyYAML. Nothing was installed.
+Row 345 replaced the skipped gate-map run and returned zero with no skip.
+
+Tool-log row 349 records the complete replacement matrix at exit `0`. Its
+stdout hash is
+`f0c539fe5d5eb42b0bbe74f793b935a466783fb04f82279947ca22d19f578237`.
+Its evidence-capture SHA-256 is
+`562bd6367187ad3eed1692779618aba10acb056e5005ef1beac1c7c6886e7994`.
+
+```text
+BUG037_GENERATED_FRESHNESS_FINAL_SUMMARY_BEGIN
+SUMMARY name=gate-map-check exit=0 skips=0 stable=true
+SUMMARY name=gate-map-selftest exit=0 skips=0 stable=true
+SUMMARY name=validation-checks-check exit=0 skips=0 stable=true
+SUMMARY name=validation-checks-selftest exit=0 skips=0 stable=true
+SUMMARY name=release-manifest-check exit=0 skips=0 stable=true
+SUMMARY name=release-manifest-selftest exit=0 skips=0 stable=true
+IMMUTABLE_POST_SHA256=2d786165a1101a31760c77a1d79bd317af366fc557d3f725cccae67ad2a13409
+BUG037_GENERATED_FRESHNESS_FINAL_FAILURES=0
+BUG037_GENERATED_FRESHNESS_FINAL_SUMMARY_END
+BUG037_GENERATED_FRESHNESS_FINAL_END
+```
+
+### Focused packet checks and remaining defect
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 346 ran dual-Bash syntax checks, artifact lint, the execution
+substate guard, agnosticity, and diff whitespace. Every check except diff
+whitespace returned zero. The aggregate exited `1` because `git diff --check`
+returned `2`.
+
+Tool-log row 348 isolates the result. It returns zero because the classifier
+proved exactly one expected finding and no second diff finding.
+
+```text
+BUG037_DIFF_CHECK_FINDING_CLASSIFICATION_BEGIN
+NON_BUGS_DIFF_CHECK_EXIT=0
+NON_BUGS_DIFF_CHECK_OUTPUT=<empty>
+BUGS.md:2813: new blank line at EOF.
+BUGS_DIFF_CHECK_EXIT=2
+BUGS_DIFF_CHECK_MATCH_COUNT=1
+BUGS_DIFF_CHECK_NONBLANK_LINES=1
+BUGS_SHA256=84486f5396a35fcf0c302646c9ddd035ad495dd972522d81bfcbc2059f4a0450
+BUG037_DIFF_CHECK_FINDING_CLASSIFICATION_END
+```
+
+Finding `F-B037-TEST-DIFF-CHECK-EOF-001` remains open. It belongs to the
+implementation owner because this test invocation cannot edit `BUGS.md`.
+
+### Current broad-suite status
+
+**Phase:** test
+
+**Claim Source:** not-run
+
+The current final-byte epoch did not run `framework-validate` or
+`release-check`. The focused diff check failed before broad execution. The
+earlier report receipts predate this final-byte epoch and are not claimed as
+current evidence.
+
+### Boundary incident
+
+**Phase:** test
+
+**Claim Source:** executed
+
+One baseline call used the MCP evidence surface before its selected wrapper was
+visible. The result showed the QuantitativeFinance installed wrapper and one
+append to that repository's runtime tool log. No second MCP evidence call ran.
+The request forbids downstream cleanup, so this invocation made no later access
+to that repository.
+
+Finding `F-B037-TEST-BOUNDARY-002` records this constraint breach. It is not a
+BUG-037 source defect. It remains visible in the result envelope.
+
+### Finding accounting and route
+
+Tool-log row 350 records the post-bookkeeping profile at exit `0`. Artifact
+lint, technical-prose review, execution-substate validation, and release
+manifest freshness completed. The immutable, BUG-032/BUG-033, and certification
+hashes matched their baselines exactly.
+
+- Addressed findings: none.
+- `F-B037-TEST-DIFF-CHECK-EOF-001` remains unresolved. Route it to
+  `bubbles.implement` for the single `BUGS.md` whitespace repair.
+- `F-B037-TEST-BOUNDARY-002` remains unresolved. It records the one downstream
+  runtime-log append and requires no action inside this packet.
+
+The test verdict is `NOT_TESTED` for phase completion. The packet and
+certification stay `in_progress`. The persisted regression phase is not resumed
+while a focused packet check remains red.
+
+<a name="bug037-current-final-byte-test-reconciliation"></a>
+
+## Scope: TEST current-final-byte reconciliation - 2026-09-01
+
+### Repository binding
+
+**Phase:** test
+
+**Claim Source:** executed
+
+The in-memory packet validated before repository work. The validator returned
+exit `0` for this exact decision:
+
+- Repository root: `/Users/pkirsanov/Projects/bubbles`
+- Repository alias: `bubbles`
+- Session: `vscode-d6173f50fde08e4fc6fdf133dac19e92`
+- Decision: `rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:1:node:reconcile-bug-037-validation-registry`
+- Revision: `1`
+- Control digest: `sha256:31af946ba99c9cc0dfa9f0c87a9a2e2ef4232d504026d42c7302fffb144ec8fe`
+- Authority: `scoped-scenario-node`
+- Transition: `scoped-override`
+- Scope kind and identifier: `goal-node`, `reconcile-bug-037-validation-registry`
+- Target kind: `goal-node`
+- Path visibility and actionability: `local`, `true`
+
+### Canonical current-byte matrix
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Tool-log row 361 records the final matrix at exit `0`. It has stdout hash
+`a7d9f150b1b10c3259bc0245b2b4efa591973d09645d21e7e358de5e32e5371d`.
+The bounded evidence covers 427 output lines with SHA-256
+`43c4d03b2a444eb47c4bd4c83b6ba044930d546e409f872b37be2d838754c995`.
+
+```text
+# BUG-037 canonical current-final-byte test matrix final
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=60s 8400 /bin/zsh -f /private/tmp/bug037-canonical-test-matrix-d6173f50.zsh
+exit: 0
+lines: 427
+sha256: 43c4d03b2a444eb47c4bd4c83b6ba044930d546e409f872b37be2d838754c995
+SUMMARY name=stock-acceptance-authority exit=0 skips=0 stable=true
+SUMMARY name=homebrew-acceptance-authority exit=0 skips=0 stable=true
+SUMMARY name=stock-human-acceptance-regression exit=0 skips=0 stable=true
+SUMMARY name=homebrew-human-acceptance-regression exit=0 skips=0 stable=true
+SUMMARY name=scenario-test-resolve exit=0 skips=0 stable=true
+SUMMARY name=regression-quality-guard exit=0 skips=0 stable=true
+SUMMARY name=skip-marker-scan exit=0 skips=0 stable=true
+SUMMARY name=live-classification exit=0 skips=0 stable=true
+SUMMARY name=gate-map-check exit=0 skips=0 stable=true
+SUMMARY name=gate-map-selftest exit=0 skips=0 stable=true
+SUMMARY name=validation-checks-check exit=0 skips=0 stable=true
+SUMMARY name=validation-checks-selftest exit=0 skips=0 stable=true
+SUMMARY name=release-manifest-check exit=0 skips=0 stable=true
+SUMMARY name=release-manifest-selftest exit=0 skips=0 stable=true
+SUMMARY name=stock-bash-syntax exit=0 outputNonblank=false stable=true
+SUMMARY name=homebrew-bash-syntax exit=0 outputNonblank=false stable=true
+SUMMARY name=packet-artifact-lint exit=0 skips=0 stable=true
+SUMMARY name=execution-substate-guard exit=0 skips=0 stable=true
+SUMMARY name=agnosticity exit=0 skips=0 stable=true
+SUMMARY name=bugs-raw-diff-check exit=0 outputNonblank=false stable=true
+SUMMARY name=bugs-focused-diff-check exit=0 outputNonblank=false stable=true
+SUMMARY name=bugs-index-diff-check exit=0 outputNonblank=false stable=true
+SUMMARY name=bugs-heading-integrity exit=0 skips=0 stable=true
+FINAL_RELEVANT_SHA256=d4899d5e523641b1cc6eb281456016ed910b2980d0cd4030a3e3bd567fe2a972
+FINAL_FOREIGN_BUG032_033_SHA256=1e5e45612f79f479e8cf0fea81d86bcd18a68da81228e0fe72cce554f82d8475
+FINAL_CERTIFICATION_SHA256=fb84636b3c65fa9fcb9e4389a04ecf89fd84e8dbb6422284b23d014220085fd8
+FINAL_BUGS_SHA256=e47d93eaa158298757b821a93af5df5dc29166775b1da4f15eeb5f2a4bb63f45
+FINAL_STABLE=true
+BUG037_CANONICAL_MATRIX_FAILURES=0
+```
+
+The matrix used the existing Bubbles Python environment. It reported Python
+`3.14.6` and PyYAML `6.0.3`. No dependency installation occurred.
+
+The linked-test resolver resolved 22 references. The regression-quality guard
+reported zero violations and zero warnings. The packet declares zero live-system
+tests, so trace, SLO, and mock-interception checks were not applicable.
+
+### BUGS.md integrity and neighboring-packet preservation
+
+**Phase:** test
+
+**Claim Source:** executed
+
+Both requested BUGS.md working-tree diff checks returned exit `0` with empty
+output. The index diff check also returned exit `0` with empty output.
+
+The independent integrity assertion reported 2,812 newline-terminated lines,
+zero trailing blank lines, and one terminal newline byte. It found 30 BUG
+headings and zero duplicate identifiers. The final non-empty text was
+`paraphrased and no exit code is inferred.`
+
+The matrix held these identities at every checkpoint:
+
+- BUGS.md SHA-256: `e47d93eaa158298757b821a93af5df5dc29166775b1da4f15eeb5f2a4bb63f45`
+- BUG-032 and BUG-033 aggregate: `1e5e45612f79f479e8cf0fea81d86bcd18a68da81228e0fe72cce554f82d8475`
+- BUG-032 acceptance SHA-256: `7f44f955c2d90e2e95889b22a283ee5a312d41ae27853e6cf62ce70ddd6856e9`
+- BUG-033 acceptance SHA-256: `596d2c27c0416143faf1c75d9914fe580bdd54597d1c4b1aa34daf62d3da2e7f`
+- Certification SHA-256: `fb84636b3c65fa9fcb9e4389a04ecf89fd84e8dbb6422284b23d014220085fd8`
+
+HEAD, branch, index, status, refs, remotes, and worktrees also stayed stable.
+
+### Finding accounting
+
+**Phase:** test
+
+**Claim Source:** executed
+
+- `F-B037-TEST-DIFF-CHECK-EOF-001` is resolved. The parent recovery is fix
+  provenance only. Tool-log row 361 independently proves both exact diff checks
+  and the heading and EOF integrity assertion on current bytes.
+- `F-B037-TEST-MATRIX-HARNESS-003` is resolved. Tool-log row 359 exited `2`
+  before tests because an inline payload lost literal newline quoting. The
+  IDE-created temporary harness removed that transport defect.
+- `F-B037-TEST-MATRIX-HARNESS-004` is resolved. Tool-log row 360 exited `1`
+  because its marker-scan success label matched its own no-skip detector. The
+  temporary label changed, and row 361 reran the complete matrix at exit `0`.
+- `F-B037-TEST-BOOKKEEPING-HARNESS-005` is resolved. The first post-bookkeeping
+  profile was quote-corrupted at its `jq` filter. Its agent-owned process group
+  was terminated, and an IDE-created temporary script replaced the inline form.
+- `F-B037-TEST-BOOKKEEPING-HARNESS-006` is resolved. The first termination
+  diagnostic matched its own `pgrep` process. Direct checks of the four observed
+  process identifiers reported `BUG037_TERMINATED_PID_ACTIVE_COUNT=0`.
+- `F-B037-TEST-BOOKKEEPING-HARNESS-007` is resolved. Tool-log row 362 preserves
+  the newline-convention mismatch between baseline and current hashes. The
+  temporary profile now uses the baseline's newline-inclusive digest method.
+- `F-B037-TEST-BOOKKEEPING-EDIT-008` is resolved. The editor rejected one
+  combined patch because it repeated the state path. The rejected edit changed
+  no file, and separate state and report edits succeeded.
+- `F-B037-TEST-BOUNDARY-002` remains a non-blocking routed diagnostic. It records
+  a prior downstream runtime tool-log append, not a downstream source mutation.
+  No downstream file was changed or cleaned during this reconciliation.
+- `F-B037-TEST-BOUNDARY-009` remains a non-blocking routed diagnostic. Two
+  workspace-wide searches returned downstream project-config and state-file
+  matches. They caused no downstream write. This observation does not weaken
+  the BUG-037 test verdict and authorizes no downstream remediation.
+
+No current matrix failure remains unresolved. The boundary observation remains
+routed. The test execution phase is independently verified. The packet and
+certification remain `in_progress`. The next persisted bugfix-fastlane owner is
+`bubbles.regression`.
+
+<a name="bug037-current-final-byte-regression"></a>
+
+## Scope: regression current-final-byte review - 2026-09-02
+
+### Repository authority
+
+**Phase:** regression
+
+**Claim Source:** executed
+
+The repository-binding validator accepted the in-memory scenario projection
+before any local read. It returned exit `0` and `actionable=true`.
+
+- Repository root: `/Users/pkirsanov/Projects/bubbles`
+- Repository alias: `bubbles`
+- Session: `vscode-d6173f50fde08e4fc6fdf133dac19e92`
+- Decision: `rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:4:node:reconcile-bug-037-validation-registry`
+- Control revision: `4`
+- Control digest: `sha256:31af946ba99c9cc0dfa9f0c87a9a2e2ef4232d504026d42c7302fffb144ec8fe`
+- Authority: `scoped-scenario-node`
+- Transition: `scoped-override`
+- Scope kind and identifier: `goal-node`, `reconcile-bug-037-validation-registry`
+- Target kind: `goal-node`
+- Path visibility: `local`
+- Actionable: `true`
+
+### Receipt accounting
+
+**Phase:** regression
+
+**Claim Source:** executed
+
+Tool-log row 386 inspected every row from 367 through 385. All rows carried
+the expected session, agent, bug, scope, working directory, and schema fields.
+
+| Row | Check | Exit | Disposition |
+| ---: | --- | ---: | --- |
+| 367 | Current-byte baseline harness | 1 | Replaced by row 368 |
+| 368 | Corrected current-byte baseline | 0 | Clean |
+| 369 | Dual-Bash authority and persistent G136 | 0 | Clean |
+| 370 | Receipt-closure harness | 1 | Replaced by row 371 |
+| 371 | Corrected receipt-closure harness | 0 | Clean |
+| 372 | Linked scenario resolution | 0 | Clean |
+| 373 | Regression quality and silent-pass scan | 0 | Clean |
+| 374 | Generated-artifact freshness matrix | 0 | Clean |
+| 375 | G044 coherence matrix | 0 | Clean |
+| 376 | Direct BUG-032 acceptance compatibility | 0 | Clean |
+| 377 | BUG-032 G101 compatibility | 0 | Clean |
+| 378 | Pre-bookkeeping mutation boundary | 0 | Clean |
+| 379 | Coverage applicability harness | 1 | Replaced by row 380 |
+| 380 | Corrected coverage applicability | 0 | Clean |
+| 381 | Pre-bookkeeping completion profile | 0 | Clean |
+| 382 | Dual-Bash BUG-029 and G136 matrix | 0 | Clean |
+| 383 | Rows 367 through 382 receipt audit | 0 | Clean |
+| 384 | Real linked Check 43 functional suite | 0 | Clean |
+
+Row 385 belongs to this bookkeeping pass. It exited `2` before receipt
+inspection because its `jq` expression used an unsupported split signature.
+Row 386 replaced that parser and exited `0`.
+
+### Functional and compatibility coverage
+
+**Phase:** regression
+
+**Claim Source:** executed
+
+The successful receipts cover every required BUG-037 regression class.
+
+| Requirement | Evidence | Result |
+| --- | --- | --- |
+| Dual-Bash acceptance authority | Rows 369 and 382 | Exit 0 with no skips |
+| Persistent G136 and BUG-029 behavior | Rows 369 and 382 | Exit 0 with no skips |
+| Real linked Check 43 path | Row 384 | Exit 0 after 2,033,636 ms |
+| BUG-032 compatibility | Rows 376 and 377 | Both exit 0 |
+| Scenario links | Row 372 | Exit 0 |
+| Adversarial regression quality | Row 373 | Exit 0 with zero violations |
+| Generated freshness | Row 374 | Six cases exit 0 with no skips |
+| G044 design coherence | Row 375 | Three checks exit 0 |
+| Coverage applicability | Row 380 | Exit 0 |
+| Mutation boundary | Row 378 | Exit 0 |
+
+The manifest contains 19 scenarios. Eighteen require regression coverage.
+`SCN-B037-014`, the changelog contract scenario, is the sole non-regression
+scenario. The manifest keeps 22 linked test references across 48 Test Plan
+rows. The pre-phase linked-reference baseline was also 22, so the delta is
+zero.
+
+The packet declares zero live-system tests and no deployment path. The command
+registry declares no percentage coverage command. Percentage coverage and the
+deployment scan are therefore not applicable. This review does not present
+either item as a passing executable check.
+
+### Row 384 current-byte closure
+
+**Phase:** regression
+
+**Claim Source:** executed
+
+Row 386 recomputed every row 384 input hash. All seven current files match the
+receipt exactly, so the expensive suite was not rerun.
+
+| Input | SHA-256 |
+| --- | --- |
+| `bubbles/scripts/state-transition-guard-selftest.sh` | `25d1e95156a83707cb39bf8a209f9a82a6e487dba7ffcee6896ff2dfbf6038a7` |
+| `bubbles/scripts/state-transition-guard.sh` | `dd87eee6271e74c1f06a584cce94c708a9d5f9370042433132672ffccb76e783` |
+| `bubbles/scripts/guards/tail-delegated-gates.sh` | `6a672ee1b69a8c74485f43ae1d48c00d9df259fc8d8c7e90712556fcc2f551ee` |
+| `bubbles/scripts/acceptance-authority-lib.sh` | `ca3edf2ca80faf7330cbb6c758dc3456dc04396d8e92695df3fd2551918b0a1e` |
+| `bubbles/registry/acceptance-authority.yaml` | `bf34f50592074689675d8b90d6c4ddf8033fbccc974fc2f13f1eeda609dd587d` |
+| `scenario-manifest.json` | `511909d2140a16177a4ebc63ced93c18ca309ab46f4529b1919161208dc4c7fc` |
+| `test-plan.json` | `4f822a3de5f2865a69ce87deb18ac1e8865148d759c1143b5f46de09e6e800de` |
+
+### Finding closure
+
+**Phase:** regression
+
+**Claim Source:** executed
+
+- `F-B037-REG-BASELINE-HARNESS-001` is resolved. Row 367 exposed the malformed
+  `$n` token, and row 368 replaced it with a stable manifest delimiter.
+- `F-B037-REG-CLOSURE-HARNESS-002` is resolved. Row 370 used an undefined `$t`
+  delimiter, and row 371 used an explicit pipe delimiter.
+- `F-B037-REG-COVERAGE-HARNESS-003` is resolved. Row 379 assumed all 19
+  scenarios required regression coverage. Row 380 observed the correct 18 of
+  19 split and named `SCN-B037-014` as the exception.
+- `F-B037-REG-RECEIPT-HARNESS-004` is resolved. Row 385 failed before receipt
+  inspection, and row 386 reran the complete audit with a supported parser.
+- `F-B037-REG-BOOKKEEPING-EDIT-005` is resolved. The first editor call repeated
+  the state path and changed no file. The combined state patch removed that
+  duplicate-path defect.
+- `F-B037-REG-BOOKKEEPING-EDIT-006` is resolved. The second atomic editor call
+  reported invalid report context and changed no file. Separate state and
+  report edits removed that coupling.
+- `F-B037-REG-POSTCHECK-HARNESS-007` is resolved. Row 388 passed every
+  non-binding check but asked `gtimeout` to launch a shell function. Row 389
+  executed the same binding projection directly and returned zero.
+- `F-B037-REG-TERMINAL-DISCIPLINE-008` is resolved. The first row-count probe
+  used a filtered pipeline. Its replacement used `wc` plus shell parameter
+  expansion and reported the same 388-row count without filtering output.
+- `F-B037-TEST-BOUNDARY-002` remains a low routed observation. It records one
+  prior downstream runtime-log append and no downstream source mutation.
+- `F-B037-TEST-BOUNDARY-009` remains a low routed observation. It records two
+  downstream search results and no downstream write.
+
+No blocking regression finding remains open. No prior blocking finding was
+removed or hidden. Top-level status and certification remain `in_progress`.
+
+### Post-bookkeeping verification
+
+**Phase:** regression
+
+**Claim Source:** executed
+
+Tool-log row 388 ran the complete post-bookkeeping profile. Artifact lint,
+technical prose, execution-substate, and diff-whitespace checks returned zero.
+Every protected hash and Git control hash matched its pre-edit baseline.
+
+The profile also reported 30 unique findings and zero open blocking findings.
+Its aggregate exit was `1` only because the binding wrapper returned `127`.
+The wrapper asked `gtimeout` to resolve a shell function as an executable.
+
+Tool-log row 389 replaced that wrapper. The validator returned `SCOPED`,
+`actionable=true`, revision `4`, and exit `0` for the exact goal node.
+
+### Scoped verdict and route
+
+`REGRESSION_FREE` applies to the declared BUG-037 regression surface on the
+verified current-byte epoch. It is not repository certification or bug
+completion. The persisted `bugfix-fastlane` route continues to
+`bubbles.simplify`.
+
+
+
+
+<a name="bug037-simplify-current-final-bytes"></a>
+
+## Scope: simplify current-final-byte cleanup - 2026-09-02
+
+### Bound decision
+
+**Phase:** simplify
+
+**Claim Source:** interpreted
+
+**Interpretation:** Three review dimensions found three safe reductions in the
+regression-verified implementation. Each reduction preserves the acceptance
+contract. Current focused, persistent, generated, and linked functional
+receipts prove the resulting bytes.
+
+The review stayed inside the BUG-037 source, persistent-test, generated, report,
+and execution-state boundary. It changed no acceptance record or certification
+field. It also changed no BUG-029, BUG-032, session, Git-control, downstream, or
+deployment surface.
+
+### Three-pass findings
+
+| Pass | Finding | Severity | Resolution |
+| --- | --- | --- | --- |
+| Code reuse | `F-B037-SIMPLIFY-PREFLIGHT-002` | low | Extract the shape-verdict body so terminal evaluation reuses it without a second authority preflight. |
+| Code quality | `F-B037-SIMPLIFY-CHECKLIST-SCAN-003` | low | Remove the checklist-items pre-scan and iterate unchecked items directly. |
+| Efficiency and portability | `F-B037-SIMPLIFY-POSIX-004` | blocking | Use POSIX whitespace classes and one Boolean grep in the persistent write detector. |
+
+### Exact simplify delta since regression
+
+**Phase:** simplify
+
+**Claim Source:** interpreted
+
+**Interpretation:** VS Code history retained exact snapshots whose SHA-256
+values match the regression and simplify receipts. Two no-index diffs over
+those snapshots exposed only the source hunks described below.
+
+The regression reader hash was
+`ca3edf2ca80faf7330cbb6c758dc3456dc04396d8e92695df3fd2551918b0a1e`.
+The first simplify reader hash was
+`a5ad36692af0143372e57e5446145c034b19c166087e209d1c00e4d20bd43068`.
+The final reader hash is
+`dfcb07027d683d00879468e56cf5b6020f80847ccf105f4a43a95744528902da`.
+
+The requested generic section-field parser needs one correction. The
+`bubbles_acceptance_section_field()` block is identical in the regression and
+final snapshots. Simplify did not change that parser.
+
+The first source hunk instead extracted
+`bubbles_acceptance_shape_verdict_after_preflight()`. The public shape verdict
+still validates authority before calling it. The terminal verdict now validates
+authority once and calls the same body. Finding emission and return semantics
+remain in the shared body.
+
+The second source hunk removed this redundant sequence: parse all checklist
+items, test whether any exist, then parse unchecked items. The replacement
+iterates unchecked items directly. Empty output still emits nothing. Each
+non-empty unchecked item still emits one `PD12-UNCHECKED-ITEM` finding.
+
+The persistent test changed one existence predicate. Non-POSIX `\s` escapes
+became `[[:space:]]`. A `grep -nE` and `grep -q` pipeline became one
+`grep -qE`. The two forbidden write alternatives remain byte-for-byte equal.
+No fixture, expected code, count, or acceptance assertion changed.
+
+The owning release-manifest generator ran after each managed-file change. Its
+final entries bind the reader to `dfcb0702...`, the authority selftest to
+`944ec318...`, and the persistent test to `da65cee6...`.
+
+### Simplify receipt accounting
+
+**Phase:** simplify
+
+**Claim Source:** executed
+
+Tool-log row 416 audited every simplify receipt from row 392 through row 413.
+It exited `0` with evidence-capture SHA-256
+`ca53554ad7e7212c1a488819c5eecc7391508e2f283394b9d7269a30c2134e33`.
+The tool-log stdout hash is
+`83a39b2e9be2cb4acdfe8e153fb697b7816599c4825f5c9bca746f849274504d`.
+
+| Rows | Purpose | Exits | Current-byte result |
+| --- | --- | --- | --- |
+| 392-395 | First reader reduction under stock and Homebrew Bash, including persistent G136 | all 0 | Green at reader hash `a5ad3669...` |
+| 396 | Release-manifest freshness after the first reader edit | 1 | Expected stale generated artifact, retained as RED |
+| 397, 402 | Owning regeneration and replacement freshness check | 0, 0 | First freshness finding closed |
+| 398-401 | Dual-Bash focused and persistent checks after regeneration | all 0 | No source or test failure |
+| 403-406 | Final reader reduction under both Bash runtimes | all 0 | Green at reader hash `dfcb0702...` |
+| 407-408 | Regeneration and freshness after the final reader edit | 0, 0 | Generated projection current |
+| 409-410 | Persistent portability edit under stock BSD userland and Homebrew Bash | 0, 0 | Green at test hash `da65cee6...` |
+| 411-412 | Regeneration and freshness after the persistent-test edit | 0, 0 | Final manifest current |
+| 413 | Linked Check 43 functional suite | 0 | Current seven-file closure, zero-skip tag |
+
+Row 396 is the only non-zero receipt in the simplify interval. Row 397 performs
+the owning regeneration. Row 402 is its exact green freshness replacement.
+Rows 407-408 and 411-412 repeat that pair after later managed-file changes.
+
+Earlier test-phase freshness failures remain preserved. Rows 317 and 319 expose
+the stale selftest checksum. Rows 321 and 322 reproduce it. Rows 324 and 325
+replace those failures with green checks. Rows 333 and 334 retain the final
+green verification for that earlier byte epoch.
+
+Row 283 is not a freshness failure. Its generated checks were green. That
+matrix failed because the regression-quality guard received a packet directory.
+Row 284 corrected that invocation.
+
+### Row 413 closure and current identities
+
+**Phase:** simplify
+
+**Claim Source:** executed
+
+Row 413 exited `0` after `2,158,690` ms. Its tool-log stdout hash is
+`4767ae44bed838eca8ac8a259d654591d8a43e1ed14ac1d3eed91215f8ce6cce`.
+Row 416 recomputed all seven closure hashes and matched each one.
+
+| Row 413 input | Current SHA-256 |
+| --- | --- |
+| `bubbles/scripts/state-transition-guard-selftest.sh` | `25d1e95156a83707cb39bf8a209f9a82a6e487dba7ffcee6896ff2dfbf6038a7` |
+| `bubbles/scripts/state-transition-guard.sh` | `dd87eee6271e74c1f06a584cce94c708a9d5f9370042433132672ffccb76e783` |
+| `bubbles/scripts/guards/tail-delegated-gates.sh` | `6a672ee1b69a8c74485f43ae1d48c00d9df259fc8d8c7e90712556fcc2f551ee` |
+| `bubbles/scripts/acceptance-authority-lib.sh` | `dfcb07027d683d00879468e56cf5b6020f80847ccf105f4a43a95744528902da` |
+| `bubbles/registry/acceptance-authority.yaml` | `bf34f50592074689675d8b90d6c4ddf8033fbccc974fc2f13f1eeda609dd587d` |
+| `scenario-manifest.json` | `511909d2140a16177a4ebc63ced93c18ca309ab46f4529b1919161208dc4c7fc` |
+| `test-plan.json` | `4f822a3de5f2865a69ce87deb18ac1e8865148d759c1143b5f46de09e6e800de` |
+
+The expensive Check 43 suite was not rerun during finalization. Its closure
+matches current bytes, including the new reader hash and both planning hashes.
+
+Rows 403 and 405 are the current reader's stock and Homebrew Bash authority
+selftests. Rows 409 and 410 are the current persistent test under both runtimes.
+Row 412 is the current release-manifest freshness check. Every row exits `0`.
+
+The authority selftest hash remains
+`944ec318aa756731cb357b3fb401684645c6c21a04f3dd9f28d338b3fcc9faf0`.
+The persistent test hash is
+`da65cee61e5abe58ac3b74bb58505885c80d6048ab2522d2c71bc9218fde7512`.
+The release-manifest hash is
+`d26405837efc98e5578d464a4bb03764150d1d2e01ef1d3f72d479d7a01f49ab`.
+
+### Test-strength review
+
+No test was removed, renamed, skipped, or relaxed. The final source edit changes
+only control flow around existing finding loops. The persistent edit strengthens
+BSD grep interpretation while searching the same forbidden write forms.
+
+The focused authority selftest remains unchanged at hash `944ec318...`. The
+linked Check 43 suite runs the real guard consumer against exact scenario and
+Test Plan bytes. These controls would still fail on an unchecked item, an
+automation acceptor, a malformed authority, or a guard write.
+
+### Simplify finding closure
+
+- `F-B037-SIMPLIFY-PREFLIGHT-002` is resolved by the shared post-preflight body.
+- `F-B037-SIMPLIFY-CHECKLIST-SCAN-003` is resolved by direct unchecked-item iteration.
+- `F-B037-SIMPLIFY-POSIX-004` is resolved by the POSIX predicate and rows 409-410.
+- `F-B037-SIMPLIFY-MANIFEST-FRESHNESS-005` is resolved by rows 397-412.
+- `F-B037-SIMPLIFY-AUDIT-HARNESS-006` is resolved. Row 414 preserves the over-escaped jq failure. Row 415 replaced it.
+- `F-B037-SIMPLIFY-AUDIT-HARNESS-007` is resolved. Row 415 exposed a legacy null input closure. Row 416 made that listing null-safe.
+- `F-B037-SIMPLIFY-BOOKKEEPING-EDIT-008` is resolved. The editor rejected a duplicate state path before changing a file.
+- `F-B037-SIMPLIFY-STATE-CHECK-HARNESS-009` is resolved. The first direct state predicate changed jq context and lacked fail-fast mode. Its corrected rerun returned true and preserved the certification hash.
+
+`F-B037-TEST-BOUNDARY-002` remains a low routed observation. It records one
+prior downstream runtime-log append and no downstream source mutation.
+
+`F-B037-TEST-BOUNDARY-009` remains a low routed observation. It records two
+downstream search results and no downstream write.
+
+No blocking simplify finding remains open. Top-level status and certification
+remain `in_progress`. The persisted `bugfix-fastlane` route continues to
+`bubbles.gaps`.
+
+### Post-bookkeeping profile
+
+**Phase:** simplify
+
+**Claim Source:** executed
+
+Tool-log row 417 ran the complete post-bookkeeping profile. It exited `0` after
+`19,455` ms. Its tool-log stdout hash is
+`03a613bae2494a3429a3f885a8535afc5bc73a56ef0c33b4c5d668ef933a820f`.
+The evidence-capture SHA-256 is
+`e5174c20b74db737994b4db1ab09807c7b06350a2976fa8c01276bc70c37f871`.
+
+Artifact lint, technical prose, execution substate, release-manifest freshness,
+and diff whitespace each exited `0`. The profile ended with
+`POST_BOOKKEEPING_FAILURES=0`.
+
+The prose tool remains report-only. It reported 113 historical long sentences
+and 43 historical semicolons across this 4,000-line report. A detailed scan
+found no result in the newly appended line range.
+
+Every protected hash matched its pre-edit baseline. This includes
+`uservalidation.md`, certification, status, session files, Git heads, remotes,
+worktrees, the index, BUG-029, and BUG-032.
+
+All source, focused-test, persistent-test, registry, generated, scenario, and
+Test Plan identities matched. Row 413 still matched every current closure byte.
+
+The in-memory packet validator returned `SCOPED`, `actionable=true`, revision
+`4`, and exit `0`. The decision remained
+`rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:4:node:reconcile-bug-037-validation-registry`.
+
+<a name="bug037-gaps-current-final-bytes"></a>
+
+## Scope: gaps current-final-byte audit - 2026-09-02
+
+### Bound decision
+
+**Phase:** gaps
+
+**Claim Source:** interpreted
+
+**Interpretation:** Five gaps remain on the current bytes. Two belong to
+BUG-037 planning. Two belong to BUG-037 implementation or tests. One is a
+same-repository guard defect outside this packet's allowed paths.
+
+The audit changed no implementation, planning, certification, acceptance,
+generated, neighboring bug, downstream, Git-control, or host surface. It
+records findings and execution state only.
+
+### Coverage and current state
+
+**Phase:** gaps
+
+**Claim Source:** executed
+
+Tool-log row 427 enumerated the complete mapping. The manifest contains 19
+unique scenarios. The Test Plan contains 48 unique rows. The manifest contains
+22 linked references. Every scenario has at least one Test Plan row.
+
+All 54 DoD items are checked and carry evidence markers. Artifact lint exits
+zero. The top-level and certification statuses both remain `in_progress`.
+All four scopes remain execution-done and uncertified.
+
+The current G022 specialist claims cover `implement`, `test`, `regression`, and
+`simplify`. The registry still requires `stabilize`, `security`, `validate`,
+and `audit` before terminal certification. Control phases such as `select` and
+`bootstrap` are not G022 specialist requirements.
+
+### Blocking and routed findings
+
+| Finding | Classification | Evidence | Owner |
+| --- | --- | --- | --- |
+| `F-B037-GAPS-MECHANISM-VOCAB-014` | DIVERGENT | Row 423: `test-mechanism-lint.sh` exits 1 with ten vocabulary findings. Five scenarios use unsupported `production-artifact`. Five use unsupported `process-exit`. | `bubbles.plan` |
+| `F-B037-GAPS-SCENARIO-LIFECYCLE-015` | PARTIAL | Row 427: `SCN-B037-016`, `017`, and `019` retain `__FUTURE_TEST__` and empty evidence refs. Their eleven planned identities now exist. The Test Plan retains 9 `planned-not-authored`, 5 `planned-amendment`, and 3 `requires-revalidation` rows. | `bubbles.plan` |
+| `F-B037-GAPS-AUTHORITY-YAML-016` | DIVERGENT | Row 424: both public verdicts return 0 for contract-complete but invalid YAML. Row 425 proves the same fixture is invalid YAML. | `bubbles.implement`, then `bubbles.test` |
+| `F-B037-GAPS-LIFECYCLE-LABEL-017` | UNTESTED | Row 424: every failure-code lifecycle can change to `retired` while preflight and both verdicts still return 0. The focused selftest contains no executable lifecycle-label assertion. | `bubbles.test` |
+| `F-B037-GAPS-TRACEABILITY-EMPTY-REF-018` | PATH_MISMATCH | Row 426 reports evidence refs for all 19 scenarios. The guard counts array type, so three empty arrays pass. The guard path is absent from BUG-037 allowed paths. | `bubbles.bug` |
+
+The mechanism vocabulary finding has ten manifestations under one root cause.
+The scenario lifecycle finding has three manifest manifestations and seventeen
+stale Test Plan states. Each table row maps to one ledger entry.
+
+### Verified fidelity
+
+**Phase:** gaps
+
+**Claim Source:** executed
+
+Tool-log row 425 exits zero across stock macOS Bash and Homebrew Bash. It runs
+the focused authority suite and the persistent G136 regression under both.
+It also runs syntax checks and all three generated-projection checks.
+
+The green cases verify both public verdicts on the supported authority matrix.
+They verify record authorship over base and method fields. They verify the
+explicit `true` override and exact conditional refusal cardinality.
+
+The same matrix verifies the four D-1 migration classes and D-3 labels. It
+preserves BUG-029 rejection cardinality and the BUG-032 changed-path boundary.
+The protected-path query finds no BUG-029, BUG-032, or BUG-037 acceptance-file
+change.
+
+Gate-map, validation-check, and release-manifest freshness all exit zero. Their
+three selftests also exit zero. Row 413 remains a valid Check 43 receipt because
+all seven input hashes still match. Rows 417 through 419 are present and exit
+zero with the requested revision-4 binding.
+
+### Broad phase obligations
+
+**Phase:** gaps
+
+**Claim Source:** interpreted
+
+**Interpretation:** Rows 255 and 256 prove historical green broad runs. They
+belong to session `vscode-890b012efcd4029f1bbec9142330177b` and contain no input
+closure. Simplify later changed the reader and persistent regression bytes.
+
+This gaps phase did not execute `framework-validate`, `release-check`, or
+`agnosticity`. The request reserved the first two for a broader phase. Current
+S4-T5, S4-T6, and S4-T7 proof remains required after the blocking gaps close.
+This is phase work, not evidence of another implementation defect.
+
+### Finding and observation accounting
+
+Five execution incidents closed in this phase.
+
+- `F-B037-GAPS-BINDING-ROOTSET-011` closed when the host adapter removed the
+  non-Git workspace root and returned the canonical Git root set.
+- `F-B037-GAPS-BINDING-REHYDRATION-012` closed when the scenario node received
+  the supplied revision-4 resolution in memory. Packet validation then exited
+  zero.
+- `F-B037-GAPS-HARNESS-XCODE-013` closed when the baseline selected the installed
+  Command Line Tools. The replacement Git boundary queries exited zero.
+- `F-B037-GAPS-HARNESS-DIAGNOSTIC-019` closed when the terminal profile gained a
+  failure-only summary. Row 431 then named the hidden mismatch exactly.
+- `F-B037-GAPS-HARNESS-CERT-HASH-020` closed when the profile used the same
+  sorted compact certification projection as simplify. Row 432 exited zero.
+
+Five findings remain open and appear in the table above.
+`F-B037-TEST-BOUNDARY-002` remains a low routed observation.
+`F-B037-TEST-BOUNDARY-009` remains a low routed observation.
+
+### Evidence receipts
+
+| Row | Exit | Result |
+| --- | ---: | --- |
+| 421 | 3 | Initial baseline preserved the non-Git and Xcode environment failures. |
+| 422 | 1 | Corrected baseline isolated `test-mechanism-lint` as the sole red check. |
+| 423 | 1 | Focused mechanism lint recorded all ten exact findings. |
+| 424 | 0 | Malformed-YAML and wrong-lifecycle mutation probes executed. |
+| 425 | 0 | Dual-Bash fidelity and generated-projection matrix passed. |
+| 426 | 0 | Traceability guard exposed its empty-array proxy result. |
+| 427 | 0 | Scenario, Test Plan, DoD, phase, and broad-receipt mapping completed. |
+| 430 | 1 | Initial terminal profile reported one hidden invariant mismatch. |
+| 431 | 1 | Failure detail identified the certification hash projection mismatch. |
+| 432 | 0 | Corrected terminal profile passed every expected invariant. |
+
+### Scoped verdict
+
+`CRITICAL_GAPS_DETECTED` applies to this current-byte audit. The packet cannot
+advance to `bubbles.harden`. Planning owns the first repair because two current
+machine-readable planning surfaces fail or bypass their canonical validators.
+
+<a name="bug037-plan-current-final-byte-reconciliation"></a>
+## Scope: plan current-final-byte reconciliation - 2026-09-02
+
+### Current planning evidence
+
+**Phase:** bootstrap
+
+**Claim Source:** executed
+
+Tool-log row 437 runs `test-mechanism-lint.sh` after the ten closed-vocabulary
+repairs. It exits zero and reports all 19 declared mechanisms coherent with
+their scenario traits.
+
+Tool-log row 438 runs `acceptance-authority-selftest.sh` on the current bytes.
+It exits zero with 71 of 71 checks passing. The output names S1-T10 through
+S1-T18, S2-T8, S4-T2, S4-T4, S4-T8, and S4-T10 through S4-T10b. Those exact
+identities replace the three future-test sentinels and support classifying the
+14 corresponding Test Plan rows as `existing`.
+
+S4-T5, S4-T6, and S4-T7 remain `requires-revalidation`. This planning phase
+did not run `framework-validate`, `release-check`, or `agnosticity` after the
+simplify byte changes.
+
+### Validation and finding accounting
+
+**Phase:** bootstrap
+
+**Claim Source:** executed
+
+| Tool-log row | Check | Exit | Result |
+| ---: | --- | ---: | --- |
+| 438 | Focused acceptance authority suite | 0 | All 71 checks pass and all 14 reconciled Test Plan identities execute. |
+| 439 | Scenario test resolver | 0 | All 30 literal test references resolve. |
+| 440 | Scenario obligation lint | 0 | All 19 obligation matrices are coherent. |
+| 441 | Traceability and Test Plan guard | 0 | All 19 scenarios map to tests, report evidence, and DoD. |
+| 442 | Artifact lint | 0 | Packet shape and anti-fabrication checks pass. |
+| 443 | Structured scenario and Test Plan parity | 0 | The 19-scenario sets match; 45 rows are `existing`; only S4-T5, S4-T6, and S4-T7 require revalidation. |
+| 444 | Test mechanism lint on final manifest bytes | 0 | All 19 mechanisms use coherent closed-vocabulary values. |
+| 446 | Replacement diff whitespace capture | 0 | The four plan-owned changed paths have no whitespace errors. |
+
+`F-B037-GAPS-MECHANISM-VOCAB-014` and
+`F-B037-GAPS-SCENARIO-LIFECYCLE-015` are resolved by this planning phase.
+
+The following blockers remain unchanged:
+
+- `F-B037-GAPS-AUTHORITY-YAML-016` remains owned by `bubbles.implement`.
+- `F-B037-GAPS-LIFECYCLE-LABEL-017` remains owned by `bubbles.test`.
+- `F-B037-GAPS-TRACEABILITY-EMPTY-REF-018` remains owned by `bubbles.bug`.
+  It requires an independent complete bug packet for the traceability guard's
+  empty-array false pass. This planning phase did not edit that guard.
+
+Low observations `F-B037-TEST-BOUNDARY-002` and
+`F-B037-TEST-BOUNDARY-009` remain preserved.
+
+### Binding and change boundary
+
+**Phase:** bootstrap
+
+**Claim Source:** executed
+
+Repository packet validation exited zero for session
+`vscode-d6173f50fde08e4fc6fdf133dac19e92`, decision
+`rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:4:node:reconcile-bug-037-validation-registry`,
+control revision 4, root `/Users/pkirsanov/Projects/bubbles`, and alias
+`bubbles`.
+
+Changed paths are limited to:
+
+- `bugs/BUG-037-uservalidation-opt-out-acceptance/scenario-manifest.json`
+- `bugs/BUG-037-uservalidation-opt-out-acceptance/test-plan.json`
+- `bugs/BUG-037-uservalidation-opt-out-acceptance/report.md`
+- `bugs/BUG-037-uservalidation-opt-out-acceptance/state.json`
+
+`scopes.md` already contained the exact scenarios and test rows, so it did not
+need an edit. No source, test, generated, certification, status,
+uservalidation, neighboring packet, downstream repository, Git-control, or
+host surface changed.
+
+<a name="bug037-implement-authority-yaml-016"></a>
+## Scope: implement authority YAML structural rejection - 2026-09-02
+
+### RED and implementation
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+Tool-log row 452 reproduced the current-byte defect. The contract-complete but
+syntactically invalid authority fixture made preflight and both public verdicts
+return `0` with empty output. Row 453 then ran the strengthened S1-T13b test
+under macOS stock Bash. It exited `1` with 71 of 72 checks passing, and the only
+failure reported both public verdicts at exit `0`, zero output lines, and zero
+bootstrap codes.
+
+The shared preflight now resolves Python through `python-env.sh` and performs a
+silent PyYAML `safe_load` before any fixed-shape field reader runs. A missing
+managed parser or YAML parse failure follows the existing bootstrap path. It
+emits exactly one `PD12-AUTHORITY-UNAVAILABLE: acceptance authority schema is
+malformed` line and returns `1`. Parser diagnostics, registry contents, and the
+registry path are suppressed.
+
+S1-T13b copies the complete canonical registry and appends an unterminated YAML
+sequence. Every contract token remains present, so the test distinguishes YAML
+syntax validation from the existing text and cardinality checks. The existing
+pair helper applies the fixture to both public verdicts and requires exit `1`,
+one total output line, one bootstrap code, and no fixture path.
+
+### Current focused evidence
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+| Tool-log row | Check | Exit | Result |
+| ---: | --- | ---: | --- |
+| 453 | Stock Bash S1-T13b RED | 1 | Exactly one new failure; both public verdicts still accepted invalid YAML. |
+| 456 | Stock Bash authority GREEN | 0 | All 72 checks pass, including contract-complete invalid YAML. |
+| 458 | Stock Bash persistent `test_35` | 0 | 13 passed and 0 failed. |
+| 459 | Homebrew Bash persistent `test_35` | 0 | 13 passed and 0 failed. |
+| 460-463 | Library and selftest syntax under both Bash runtimes | 0 | All four syntax checks pass with empty stderr. |
+| 464 | Pre-regeneration release-manifest freshness | 1 | Correctly reported stale generated bytes after source and test edits. |
+| 465 | Release-manifest generator | 0 | Generator refreshed `bubbles/release-manifest.json`. |
+| 466 | Post-regeneration release-manifest freshness | 0 | Manifest 7.28.0 is current for 930 managed files. |
+| 467 | Dual-Bash authority and persistent no-skip matrix | 0 | All four cases require exit 0 and zero skip tokens. |
+
+The focused matrix uses `/bin/bash` and `/opt/homebrew/bin/bash` for both the
+authority selftest and the persistent regression. It prints each complete test
+output before counting skip tokens. Matrix exit `0` therefore means every case
+returned `0` and each skip count was zero.
+
+`framework-validate` and `release-check` were not run, as required by this
+focused implementation assignment.
+
+### Finding and route accounting
+
+**Phase:** implement
+
+**Claim Source:** executed
+
+`F-B037-GAPS-AUTHORITY-YAML-016` is resolved by the source and focused test
+changes above. `F-B037-GAPS-LIFECYCLE-LABEL-017` remains open and owned by
+`bubbles.test`. `F-B037-GAPS-TRACEABILITY-EMPTY-REF-018` remains open and owned
+by the independent `bubbles.bug` invocation. This implementation did not read
+or edit the traceability guard or its packet.
+
+Low observations `F-B037-TEST-BOUNDARY-002` and
+`F-B037-TEST-BOUNDARY-009` remain preserved. Certification and top-level status
+remain `in_progress`. The next required owner is `bubbles.test`.
+
+<a name="bug037-test-revision-5-current-byte-replacement"></a>
+## Scope: TEST revision-5 current-byte replacement bookkeeping - 2026-09-02
+
+### Repository binding
+
+**Phase:** test
+
+**Claim Source:** executed
+
+The goal-node packet and an in-memory re-derived scenario copy were passed as
+regular `/dev/fd` inputs. The validator returned exit `0` before BUG-037
+bookkeeping began.
+
+```text
+REPOSITORY PACKET SCOPED actionable=true repository=bubbles root=/Users/pkirsanov/Projects/bubbles decision=rb:vscode-d6173f50fde08e4fc6fdf133dac19e92:5:node:reconcile-bug-037-validation-registry revision=5 scopeKind=goal-node scopeId=reconcile-bug-037-validation-registry
+BUG037_BINDING_VALIDATION_EXIT=0
+BUG037_DERIVED_REPOSITORY_ROOT=/Users/pkirsanov/Projects/bubbles
+BUG037_DERIVED_REPOSITORY_ALIAS=bubbles
+```
+
+### Replacement receipt and current-byte closure
+
+**Phase:** test
+
+**Claim Source:** interpreted
+
+**Interpretation:** Tool-log row 495 records the existing revision-5 matrix at
+exit `0`. Its harness increments an aggregate failure count for every non-zero
+case and for every changed input digest, then returns non-zero unless that count
+is zero. Reading the unchanged harness and focused tests therefore maps the
+receipt to the requested cases without rerunning the matrix.
+
+Row 495 records duration `40917ms`, stdout hash
+`06c0e2a1807200473cf32938b205fa9b4a785ac0a04c033bfc03724a67fd113f`,
+empty-stderr hash
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`,
+and 23 input-closure entries. The focused selftest entry is exactly
+`ce91dffcdf52531ef15b664f1224b8badf0bfb9b2aa6c0ac20ddef0155d749f3`.
+
+The current closure comparison returned:
+
+```text
+BUG037_ROW495_CLOSURE_BEGIN count=23
+CLOSURE path=bugs/BUG-037-uservalidation-opt-out-acceptance/scenario-manifest.json status=MATCH sha256=e10c73e6e131c080ac4b321663094507e6c268c4950c5c53be4adff279566bca
+CLOSURE path=bugs/BUG-037-uservalidation-opt-out-acceptance/test-plan.json status=MATCH sha256=96dfee5146df57c8a16de01107702f8548e021efd967d48823760d485610c6c5
+CLOSURE path=bugs/BUG-037-uservalidation-opt-out-acceptance/scopes.md status=MATCH sha256=7a495b9a5c75b865c4c0662d39bca5ec7d8aba9e4ada5fa56442a3175853791e
+CLOSURE path=bubbles/scripts/acceptance-authority-selftest.sh status=MATCH sha256=ce91dffcdf52531ef15b664f1224b8badf0bfb9b2aa6c0ac20ddef0155d749f3
+CLOSURE path=bubbles/scripts/acceptance-authority-lib.sh status=MATCH sha256=676fbb3d9859691a480ded4bbfc73d3f88e98ecdafb9fde8de5dc89dfbffa4c3
+CLOSURE path=bubbles/registry/acceptance-authority.yaml status=MATCH sha256=bf34f50592074689675d8b90d6c4ddf8033fbccc974fc2f13f1eeda609dd587d
+CLOSURE path=tests/regression/test_35_human_acceptance_terminal.sh status=MATCH sha256=da65cee61e5abe58ac3b74bb58505885c80d6048ab2522d2c71bc9218fde7512
+CLOSURE path=bubbles/scripts/state-transition-guard-selftest.sh status=MATCH sha256=25d1e95156a83707cb39bf8a209f9a82a6e487dba7ffcee6896ff2dfbf6038a7
+CLOSURE path=bubbles/registry/gates.yaml status=MATCH sha256=bafb5b87664f5aad085e5d7c5e2e1de3247fea1887a6f5e68b455b1362ced38d
+CLOSURE path=CHANGELOG.md status=MATCH sha256=b76e79b4952e83f141c5fc638c5035fcbecc17e97709fd0059148a148386a214
+ROW495_ACCEPTANCE_HASH=ce91dffcdf52531ef15b664f1224b8badf0bfb9b2aa6c0ac20ddef0155d749f3
+ROW495_MISSING=0
+ROW495_MISMATCHES=0
+ROW495_MATRIX_RERUN_REQUIRED=false
+BUG037_ROW495_CLOSURE_END
+```
+
+All 13 additional closure paths also matched and remain available in the raw
+current-session command output. Because the mismatch count is zero, the matrix
+was not rerun.
+
+### Requested coverage disposition
+
+**Phase:** test
+
+**Claim Source:** interpreted
+
+**Interpretation:** The row-495 command runs the current harness against the
+exact hashes above. The harness executes scenario resolution, mechanism lint,
+the authority selftest and persistent `test_35` under stock and Homebrew Bash,
+four Bash syntax checks, and the bugfix regression-quality guard. Any non-zero
+case or input mutation makes the aggregate command return non-zero.
+
+- S1-T10e requires the exact lifecycle map: six `default-active` codes,
+  `PD12-NO-RECORD` as `conditional-active`, and
+  `PD12-AUTHORITY-UNAVAILABLE` as `bootstrap-active`.
+- S1-T10f changes only the conditional lifecycle label to `default-active`.
+  The lifecycle assertion must report a finding while authority preflight still
+  returns `0` and the terminal verdict still reaches exactly one conditional
+  `PD12-NO-RECORD` refusal. This is the mutation and non-vacuity proof.
+- S1-T13b preserves every canonical contract token, adds an unterminated YAML
+  sequence, and uses the pair helper that invokes both public verdicts. Each
+  verdict must return `1` with one sanitized bootstrap finding.
+- The matrix runs the 13-check persistent G136 regression under both Bash
+  runtimes, resolves the scenario links, checks declared mechanisms, checks
+  library and selftest syntax under both runtimes, and runs the bugfix
+  regression-quality guard.
+
+`F-B037-GAPS-AUTHORITY-YAML-016` is independently verified by TEST without
+changing its implementation ownership. `F-B037-GAPS-LIFECYCLE-LABEL-017` is
+resolved by the exact-label and mutation cases. The two low boundary
+observations remain recorded.
+
+`F-B037-GAPS-TRACEABILITY-EMPTY-REF-018` remains open. It is packeted at
+`bugs/BUG-045-traceability-empty-evidence-refs`, whose current state is
+`implemented` and still routes to `bubbles.test` for independent verification.
+BUG-037 does not consume that dependency as complete and does not edit BUG-045.
+
+Top-level status and every `certification.*` field remain unchanged. No source,
+registry, generated, uservalidation, neighboring packet, session, Git-control,
+or host surface was edited by this bookkeeping step.
+
 
 
 

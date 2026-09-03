@@ -1,0 +1,566 @@
+{
+  "version": 1,
+  "specId": "BUG-037",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-09-01T17:14:45Z",
+  "scopes": [
+    {
+      "scopeId": "01-invert-contract-and-reader",
+      "scopeName": "Invert the acceptance contract and the shared reader",
+      "tests": [
+        {
+          "testId": "S1-T1",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-001",
+          "description": "Fully checked record-less checklist returns zero and emits no PD12-NO-RECORD under the shipped authority.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T2",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-002",
+          "description": "One unchecked item among five checked items returns non-zero and names exactly that item.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T3",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-003",
+          "description": "One checked plus five unchecked items returns non-zero and names all five unchecked items.",
+          "expectedIdentity": "S1-T3 SCN-B037-003 ADVERSARIAL: the BUG-029 shape is refused and all five unchecked items are named",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T4",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-004",
+          "description": "A present record naming bubbles.validate as acceptedBy emits PD12-AUTOMATION-ACCEPTOR.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T5",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-017",
+          "description": "An authored record missing acceptedAt emits PD12-RECORD-INCOMPLETE.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T6",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-017",
+          "description": "The external-record method without a real record pointer emits PD12-METHOD-FIELD-MISSING.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T7",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-005",
+          "description": "A fully checked Automation Readiness section does not discharge an unchecked Checklist item.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T8",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-018",
+          "description": "Exact requiredAtTerminal true activates one declared PD12-NO-RECORD refusal.",
+          "expectedIdentity": "S1-T8 ADVERSARIAL: flipping requiredAtTerminal back in a fixture registry restores the refusal (the value is READ, not hardcoded)",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T9",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-001",
+          "description": "An unchecked bullet under Notes remains outside the acceptance checklist.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T10",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-018",
+          "description": "Source emitters and registry declarations match in both directions across default, conditional, and bootstrap lifecycle fixtures.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T11",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-016",
+          "description": "A missing registry makes both public verdicts return 1 with exactly one PD12-AUTHORITY-UNAVAILABLE line.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T12",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-016",
+          "description": "An unreadable registry makes both public verdicts return 1 with exactly one PD12-AUTHORITY-UNAVAILABLE line.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T13",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-016",
+          "description": "Malformed YAML or malformed authority structure returns 1 with exactly one PD12-AUTHORITY-UNAVAILABLE line.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T14",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-016",
+          "description": "Removing one required field from every authority contract group fails closed with the bootstrap code.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T15",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-016",
+          "description": "Missing, empty, quoted, numeric, yes, and no requiredAtTerminal values fail closed.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T16",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-017",
+          "description": "A real record pointer alone authors the record and exposes every missing base field.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T17",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-017",
+          "description": "Empty values and complete bracket placeholders in every recognized field remain unauthored.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S1-T18",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-017",
+          "description": "Human-interactive requires every base field and external-record also requires a real record pointer.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        }
+      ]
+    },
+    {
+      "scopeId": "02-template-lint-and-agents",
+      "scopeName": "Template, lint, and authoring agents",
+      "tests": [
+        {
+          "testId": "S2-T1",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-006",
+          "description": "A uservalidation artifact materialized from the shipped template reaches terminal without a human act.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T2",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-006",
+          "description": "The uservalidation template and authority registry agree on all section headings and shippedState.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T3",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-007",
+          "description": "Artifact lint accepts a fully unchecked checklist and demands no checked entry.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T4",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-008",
+          "description": "Artifact lint rejects a non-checkbox bullet under Checklist.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T5",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-008",
+          "description": "Artifact lint rejects a Checklist section with zero checkbox entries.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T6",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-006",
+          "description": "No agent instruction asserts that acceptance items ship unchecked.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T7",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/bug-packet-selftest.sh",
+          "scenarioId": "SCN-B037-006",
+          "description": "The bug-packet registry uservalidation purpose agrees with the authority shipped state.",
+          "command": "bash bubbles/scripts/bug-packet-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T8",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-006",
+          "description": "An explicit delivery range contains no changed uservalidation path outside BUG-037, regardless of changed content.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S2-T9",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-006",
+          "description": "A fixture template shipping unchecked fails the template-to-registry agreement assertion.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        }
+      ]
+    },
+    {
+      "scopeId": "03-guard-and-regression",
+      "scopeName": "Guard Check 43 and the regression surfaces",
+      "tests": [
+        {
+          "testId": "S3-T1",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B037-009",
+          "description": "The real Check 43 path passes a fully checked record-less packet at target done.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T2",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B037-010",
+          "description": "The real Check 43 path refuses one unchecked item and names it.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T3",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B037-003",
+          "description": "The real Check 43 path refuses one checked plus five unchecked items and names all five.",
+          "expectedIdentity": "S3-T3 adversarial: the BUG-029 shape is refused end to end through the real guard, all five items named",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T4",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B037-011",
+          "description": "The uservalidation digest is identical before and after a refusing real guard run.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T5",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B037-012",
+          "description": "A non-done target remains exempt from Check 43 acceptance evaluation.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T6",
+          "type": "unit",
+          "category": "unit",
+          "file": "tests/regression/test_35_human_acceptance_terminal.sh",
+          "scenarioId": "SCN-B037-003",
+          "description": "Persistent BUG-029 fixtures detect and name every unchecked item.",
+          "command": "bash tests/regression/test_35_human_acceptance_terminal.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T7",
+          "type": "unit",
+          "category": "unit",
+          "file": "tests/regression/test_35_human_acceptance_terminal.sh",
+          "scenarioId": "SCN-B037-001",
+          "description": "The persistent fully checked record-less fixture emits zero findings under the shipped authority.",
+          "command": "bash tests/regression/test_35_human_acceptance_terminal.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T8",
+          "type": "unit",
+          "category": "unit",
+          "file": "tests/regression/test_35_human_acceptance_terminal.sh",
+          "scenarioId": "SCN-B037-001",
+          "description": "The persistent regression sources the shared reader instead of reimplementing its parser.",
+          "command": "bash tests/regression/test_35_human_acceptance_terminal.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S3-T9",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-010",
+          "description": "Check 43 refusal text contains no stale acceptance-record demand.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        }
+      ]
+    },
+    {
+      "scopeId": "04-governance-and-generated",
+      "scopeName": "Governance documentation and generated artifacts",
+      "tests": [
+        {
+          "testId": "S4-T1",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-013",
+          "description": "No governance surface asserts the deleted checked-entry lint requirement.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T2",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-013",
+          "description": "The isolated G136 description names all three sections, target done, opt-out semantics, and the exact declared code set.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T3a",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/generate-gate-coverage-map-selftest.sh",
+          "scenarioId": "SCN-B037-015",
+          "description": "Gate coverage map regeneration is deterministic and matches its committed target.",
+          "expectedIdentity": "generator --print is deterministic across runs",
+          "command": "bash bubbles/scripts/generate-gate-coverage-map-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T3b",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/generate-validation-checks-selftest.sh",
+          "scenarioId": "SCN-B037-015",
+          "description": "Validation-check regeneration is deterministic and matches its committed target.",
+          "expectedIdentity": "A2 two derivations of an unchanged tree are byte-identical",
+          "command": "bash bubbles/scripts/generate-validation-checks-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T3c",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/release-manifest-selftest.sh",
+          "scenarioId": "SCN-B037-015",
+          "description": "Release-manifest regeneration is current and matches the committed artifact.",
+          "expectedIdentity": "Scenario: release hygiene generates one complete trust manifest for downstream installs.",
+          "command": "bash bubbles/scripts/release-manifest-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T4",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-014",
+          "description": "Section-local changelog assertions require BUG-037, PD-12, corrected BUG-029 text, and four distinct migration classes.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T5",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-B037-013",
+          "description": "Framework validation passes after the amended source, registry, test, changelog, and generated bytes land.",
+          "command": "bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": false,
+          "testState": "requires-revalidation"
+        },
+        {
+          "testId": "S4-T6",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-B037-015",
+          "description": "Release check passes after the amended bytes land.",
+          "command": "bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": false,
+          "testState": "requires-revalidation"
+        },
+        {
+          "testId": "S4-T7",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-B037-013",
+          "description": "Agnosticity lint passes after the amended governance bytes land.",
+          "command": "bash bubbles/scripts/cli.sh agnosticity",
+          "liveSystem": false,
+          "testState": "requires-revalidation"
+        },
+        {
+          "testId": "S4-T8",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-013",
+          "description": "The isolated G057 description contains all three D-3 rules and classifies initial authoring as mechanical and later mutation rules as advisory.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T9",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-013",
+          "description": "The explicit delivery range modifies no path under BUG-032.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        },
+        {
+          "testId": "S4-T10",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "scenarioId": "SCN-B037-019",
+          "description": "The BUG-037 changelog entry distinguishes all four provenance classes, preserves unknown-provenance bytes, and prohibits a bulk migration script.",
+          "command": "bash bubbles/scripts/acceptance-authority-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing"
+        }
+      ]
+    }
+  ]
+}

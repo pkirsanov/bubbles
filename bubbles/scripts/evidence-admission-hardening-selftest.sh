@@ -727,8 +727,12 @@ assert_passes "$receipt_fresh_dir" any \
 assert_blocks_with "$receipt_stale_dir" \
   "Evidence receipt(s) are STALE" \
   "CHECK 43 (stale): receipt whose input changed after capture BLOCKS"
+# BUG-033 retired the free-text "Evidence receipt CLONE" line for a structured
+# reason vocabulary; `command-identity-mismatch` is the reason this fixture
+# (`cargo test` vs `npm run lint` over one stdout hash) must produce, and it
+# excludes the `classification-error` fallback a broken classifier would emit.
 assert_blocks_with "$clone_diffcmd_dir" \
-  "Evidence receipt CLONE" \
+  "reason=command-identity-mismatch" \
   "CHECK 43 (clone): one stdout hash cited by TWO DIFFERENT commands BLOCKS"
 assert_passes "$clone_samecmd_dir" any \
   "CHECK 43 (re-run): same stdout hash from the SAME command is honest, passes"

@@ -297,31 +297,46 @@ when one is configured, and otherwise from explicit repository-relative paths th
 planner records. The resolver matches only against those declared refs — it does
 not guess ownership from a filename resemblance.
 
-## Human Acceptance Is Terminal (IMP-040 SCOPE-10 / EV-8, Gate G136)
+## User Acceptance Is Terminal (IMP-040 SCOPE-10 / EV-8, BUG-037, Gate G136)
 
 A terminal transition fails on **any** unchecked item in `uservalidation.md`.
 
-Artifact lint requires the checklist to carry at least one checked `[x]` and
-never rejects an unchecked one, so one checked plus five unchecked passes lint
-and the spec reaches a terminal status with five behaviors no human accepted.
+Acceptance is **opt-out**. The `## Checklist` ships CHECKED and automation
+authors that initial state. A user who reviews the delivered behavior and
+objects to nothing performs no further act, and that silence is acceptance.
+Unchecking is the user's only required act, and it is how they REJECT a
+behavior — so an item left unchecked at a terminal transition is a
+user-reported regression.
 
-Lint is the wrong place to repair that. Lint also runs during **planning**, where
-a checked-by-default template is legitimate — the template records what *will* be
-accepted, it does not claim a human already ran it. Tightening lint would either
-break planning or force it to fabricate acceptance up front. The terminal
-transition is the moment the claim stops being provisional, so that is where the
-check belongs.
+That is the BUG-029 closure, unchanged: artifact lint never rejected an
+unchecked entry, so one checked plus five unchecked reached a terminal status
+with five behaviors nobody had accepted. Lint is still the wrong place to repair
+it. Lint runs while the user is mid-review, where unchecking every item is a
+legitimate state; refusing it there would refuse the user's own act of rejecting
+the work. The terminal transition is the moment the claim stops being
+provisional, so that is where the check belongs.
+
+**What the gate proves, stated honestly.** Exactly one thing: that no user
+recorded an objection in this file. It cannot distinguish "the user reviewed the
+behavior and was satisfied" from "nobody ever opened the file", because opt-out
+makes those two states byte-identical. It is a rejection channel, not a proof
+that a human acted. That is a deliberate owner trade, not an oversight.
+
+`## Human Acceptance Record` is OPTIONAL and is NOT required at terminal. It
+remains available for external UAT, explicit sign-off, or compliance contexts
+that want a named acceptor, and when it IS authored every shape rule still
+applies — including that `acceptedBy` may never name an agent.
 
 The gate runs only when the target status is `done`. A ceiling-bound mode
-(`validate-only`, `docs-only`, `spec-scope-hardening`, ...) is not claiming human
-acceptance of delivered behavior, and an open checklist is the correct state for
-it. Only the `## Checklist` section is parsed; a `[ ]` under `## Notes` is
-ignored.
+(`validate-only`, `docs-only`, `spec-scope-hardening`, ...) is not claiming
+delivered behavior is accepted, and an open checklist is the correct state for
+it. Only the `## Checklist` section supplies acceptance items; a `[ ]` under
+`## Notes` is ignored.
 
 **The guard prints the item and never changes it.** Checking a box on the
-author's behalf would fabricate exactly the human acceptance the gate exists to
-require. Either a human accepts the behavior and checks it, or the item is a real
-regression and the spec is not done.
+author's behalf would erase the only signal a user has for rejecting delivered
+behavior. After the behavior is fixed, the USER re-checks it — no agent, guard
+or lint may re-check an item a user unchecked.
 
 ## Changed-Spec Verification (IMP-040 SCOPE-11 / COV-12)
 

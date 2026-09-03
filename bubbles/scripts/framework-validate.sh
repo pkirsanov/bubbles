@@ -998,6 +998,15 @@ run_check "Report-section contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/r
 # does not exist in an installed tree. Scheduling it as portable made every
 # downstream install fail a check about a file it can never have.
 run_check_self_only "Bug-packet contract selftest (IMP-047 / S-B)" bash "$SCRIPT_DIR/bug-packet-selftest.sh"
+# Framework-source-only for the same reason, one directory over: check P1 builds
+# every behavioural fixture from a SHIPPED bugs/BUG-*/state.json that declares
+# the compact form. The framework's own bugs/ tree is a source-repo artifact and
+# is never installed, so downstream the selftest refuses at P1 with "no
+# bugs/BUG-*/state.json declares the compact form" -- a verdict about a fixture
+# the installed tree cannot have, not about the guard behaviour under test.
+# Wiring it here also removes it from the discovered sweep, which has only
+# run_check and therefore no way to express this.
+run_check_self_only "Compact-packet obligation basis selftest (BUG-042)" bash "$SCRIPT_DIR/compact-obligation-basis-selftest.sh"
 # IMP-047 S-E. These four cover the apparatus that decides what a run may SKIP:
 # the derived closure map, its consumer, the debt ledger that records every
 # deferral, and the batch executor that settles them. Each one removes work from

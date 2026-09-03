@@ -2,7 +2,8 @@
   "version": 3,
   "bugId": "BUG-033",
   "featureDir": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization",
-  "featureName": "Receipt Target Grouping And Wrapper Normalization",
+  "activeAgent": "bubbles.test",
+  "currentPhase": "test",
   "status": "in_progress",
   "workflowMode": "bugfix-fastlane",
   "packetResolution": "default route resolved by micro-fix-admission.sh: no-new-behavior and no-cross-product-effect both fail, so the compact packet escalates automatically to full",
@@ -30,22 +31,35 @@
       "bubbles/scripts/state-transition-guard.sh",
       "bubbles/scripts/state-transition-guard-selftest.sh",
       "bubbles/scripts/receipt-identity-selftest.sh",
-      "bubbles/scripts/framework-validate.sh"
+      "bubbles/scripts/evidence-admission-hardening-selftest.sh",
+      "bubbles/scripts/framework-validate.sh",
+      "bubbles/release-manifest.json",
+      "docs/generated/framework-stats.json",
+      "docs/generated/framework-stats.md",
+      "docs/guides/FRAMEWORK_CONCEPTS.md",
+      "README.md",
+      "docs/CHEATSHEET.md",
+      "docs/its-not-rocket-appliances.html"
     ]
   },
   "certifiedAt": null,
   "requiresRevalidation": false,
   "execution": {
-    "substate": "implemented",
-    "activeAgent": "bubbles.implement",
-    "currentPhase": "implement",
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
     "currentScope": 1,
+    "substate": "needs_reverification",
+    "runStartedAt": "2026-08-24T06:10:40Z",
     "completedPhaseClaims": [
-      "implement"
+      "analyze",
+      "bootstrap",
+      "implement",
+      "test",
+      "docs"
     ],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.validate",
-    "nextRequiredAction": "Run validate-owned certification over this packet. Implementation and its red/green evidence are recorded in report.md; certification is not claimed here.",
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Regenerate the derived validation closure map in its owning packet after concurrent source changes stabilize. Then bubbles.retro must publish the missing IMP-054 and IMP-055 index rows. Keep F-B033-DIAG-EMPTY-OUTPUT-CAPTURE routed to bubbles.bug. Return both focused checks to bubbles.test. T23 remains unchecked.",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
@@ -68,31 +82,196 @@
     "lockdownState": "unlocked"
   },
   "policySnapshot": {
+    "workflowMode": "bugfix-fastlane",
     "grill": {
-      "mode": "standard",
-      "provenance": "framework-default"
+      "mode": "off",
+      "source": "repo-default",
+      "provenance": ".specify/memory/bubbles.config.json#defaults.grill"
     },
     "tdd": {
       "mode": "scenario-first",
-      "provenance": "framework-default"
+      "source": "workflow-forced",
+      "provenance": "bubbles/workflows/modes.yaml#bugfix-fastlane.constraints.forceTddMode"
     },
     "autoCommit": {
       "mode": "off",
-      "provenance": "operator-directive"
+      "source": "repo-default",
+      "provenance": ".specify/memory/bubbles.config.json#defaults.autoCommit"
     },
     "lockdown": {
-      "mode": "unlocked",
-      "provenance": "framework-default"
+      "mode": "off",
+      "source": "repo-default",
+      "provenance": ".specify/memory/bubbles.config.json#defaults.lockdown"
     },
     "regression": {
       "mode": "required",
-      "provenance": "framework-default"
+      "immutability": "protected-scenarios",
+      "source": "workflow-forced",
+      "provenance": "bubbles/workflows/modes.yaml#bugfix-fastlane.constraints.requireProtectedRegressionContracts"
     },
     "validation": {
       "mode": "required",
-      "provenance": "framework-default"
+      "certificationRequired": true,
+      "source": "repo-default",
+      "provenance": ".specify/memory/bubbles.config.json#defaults.validation"
     }
   },
   "transitionRequests": [],
-  "reworkQueue": []
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.design",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 facet-3 design reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-23T17:41:27Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/design.md",
+      "summary": "Reconciled one active Check 43 design for facets 1-3, exact launcher grammar, fail-closed normalization, structured diagnostics, rollback boundaries, and SCN-B033-001 through SCN-B033-011 test mapping."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 three-facet planning reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-23T17:57:05Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/scopes.md",
+      "summary": "Reopened Scope 1 for facet 3, mapped SCN-B033-001 through SCN-B033-011 to focused and whole-guard proof, preserved historical facet-1 and facet-2 evidence, and routed implementation to bubbles.implement."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 RG-003 change-boundary ratification and RG-002 consumer-enumeration hardening",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "completed_owned",
+      "completedAt": "2026-08-24T01:27:10Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/scopes.md",
+      "summary": "RATIFIED the RG-003 widening. Decision grounded by command, not by assertion: (a) the retired literal is genuinely retired - grep of the working guard for 'Evidence receipt CLONE' returns nothing while git show HEAD:bubbles/scripts/state-transition-guard.sh carries it at line 4741, and the replacement 'Check 43 receipt collision classification refused' is present at line 4993 with the closed reason set at lines 4901-4986; (b) evidence-admission-hardening-selftest.sh is a genuine consumer of THAT contract, not an unrelated selftest - its only diff is one assertion string plus a rationale comment; (c) the pre-state was confirmed as disposition=route-same-repo exit 0 before any edit. The DECIDING argument is stronger than 'a contract change should not leave consumers broken': this packet's own DoD already carries 'The consumer impact sweep confirms no stale first-party diagnostic consumer after any field change', so consumer migration was ALREADY owned by BUG-033 and allowedPaths simply under-specified relative to an obligation the packet already held. This is a boundary DEFECT being corrected into consistency, not a widening into new work. The routing alternative was rejected because it would force BUG-033 to land in violation of its own DoD and leave framework-validate red repo-wide for every other packet meanwhile. EDITS: state.json allowedPaths gained the one path; design.md Change Boundary gained a 'Ratified Widening' subsection with rationale and an explicit statement that no other selftest joins by analogy; scopes.md Allowed Behavior Files gained the bounded entry and Excluded Surfaces now says membership is decided by the derived scan, never by resemblance. RG-002 CLOSED by replacing the hand-maintained four-category list with a derived scan recorded in scopes.md: it reads the Check 43 literal vocabulary out of the guard itself (so a new reason= value extends the scanned set automatically) and greps the PRE-change revision via git grep HEAD for literals the change retires - the property the old list lacked, since a retired string cannot be found by grepping the post-change tree. Executed against HEAD it returns bubbles/scripts/evidence-admission-hardening-selftest.sh, which is the exact file the authorship-based list missed, so the fix is proven non-vacuous rather than merely asserted. The scan output is classified into exactly two dispositions, live executable consumer (migrate and prove non-vacuous) and historical record (leave byte-identical, because rewriting captured evidence is fabrication). RE-VERIFICATION: disposition=in-boundary, exit 0; negative control on bubbles/scripts/artifact-lint.sh still returns route-same-repo, proving the widening admitted exactly one path. REFUSED: did not check the DoD item 'The final diff stays inside the declared change boundary' (bubbles.regression owns it), did not touch bugs/BUG-037- or bugs/BUG-032-, did not modify state-transition-guard.sh or any selftest content, did not run framework-validate or release-check, and did not start a second state-transition-guard-selftest run."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 transition-diagnostic planning reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "blocked",
+      "completedAt": "2026-08-24T06:17:59Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/scopes.md",
+      "summary": "Reconciled G055 policy provenance and workflow mode, G057 dual-ID scenario manifest coverage and linked mechanisms, G060 RED-before-GREEN report ordering, Check 8A regression E2E planning, Check 8B affected-consumer enumeration, Check 8D change-boundary wording, G068 semantic DoD mappings, structured test handoff, and an append-only current Code Diff Evidence location. Artifact lint, traceability, phase-name enum lint, scenario linked-test resolution, scenario-state diagnostics, reference lint, and G060 ordering passed. The transition guard failure set reduced to execution-owned G022/G053/G027, human-owned G136, scenario-state and incomplete-scope checks. The remaining plan-owned blocker is git diff --check reporting one trailing blank line at report.md line 607 after three targeted IDE edits. No source, test, certification, scope status, DoD checkbox, or uservalidation checkbox was changed by this run."
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 Scope 1 implementation and evidence reconciliation",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-24T14:11:55Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#current-implement-focused-proof",
+      "summary": "Re-executed the focused 39/0 receipt suite, BUG-033-only real-guard canary, migrated evidence-admission consumer, derived consumer scan, work-boundary checks, implementation-reality scan, and an isolated HEAD-pinned rollback/restore proof. Added current code-diff evidence, checked nine individually proven implementation and containment DoD items, and left T23 through T26 plus cross-host portability unchecked for bubbles.test. Scope, bug, and certification status remain in_progress; human acceptance was not modified."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 current-tree verification through canonical framework validation",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "blocked",
+      "completedAt": "2026-08-26T15:34:37Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#current-tree-test-verification-2026-08-26",
+      "summary": "Focused receipt identity passed 39/0, the BUG-033-only real-guard suite passed with zero failures, the evidence-admission consumer passed 16/0, and packet integrity checks passed. The only canonical full framework-validate attempt exited 1 before suite execution because another validator held the machine-wide lock. No second run or release-check was started. Certification and human acceptance remained unchanged; the registry-derived next owner remains bubbles.test."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 T23 framework-stats freshness diagnosis",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-30T06:46:50Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#resumed-t23-framework-stats-ownership-route-2026-08-30",
+      "summary": "The current framework-stats check failed because the source declares 32 phases while generated statistics declare 30. All six generator write targets are outside BUG-033. Four would change bytes and two would remain byte-stable. The same mismatch exists at HEAD, so an isolated candidate at this source revision cannot avoid it. The repair is routed to bubbles.docs under a newly authorized packet. No generated document, certification field, scope checkbox, or human acceptance field changed."
+    },
+    {
+      "agent": "bubbles.docs",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 F-B033-T23-STATS-FRESHNESS canonical framework-stats refresh",
+      "phasesExecuted": [
+        "docs"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-30T07:06:02Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#canonical-framework-stats-refresh-2026-08-30",
+      "summary": "Ran the committed framework-stats generator exactly once. The two generated statistics files, the Markdown cheatsheet, and the HTML document changed from 30 to 32 phases. FRAMEWORK_CONCEPTS.md and README.md remained byte-identical, the exact boundary held, and the canonical freshness check passed. Returned T23 to bubbles.test without changing scope status, bug status, certification, or human acceptance."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 completed canonical framework validation failure diagnosis",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-30T09:12:26Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#completed-canonical-validation-failure-diagnostic-2026-08-30",
+      "summary": "Confirmed no validator remained active. The framework-stats, cheatsheet, and direct registry checks passed. Release-manifest freshness failed against the receipt's exact managed-tree digest, with four stats-refresh output hashes mismatching their manifest entries. The manifest path resolved route-same-repo, so the blocking repair is routed to bubbles.plan and then bubbles.docs. The original full-run label set remains unavailable. T23, status, certification, and human acceptance remain unchanged."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 release-manifest boundary correction",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-30T09:21:09Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#planning-owner-boundary-correction-2026-08-30",
+      "summary": "Authorized only bubbles/release-manifest.json and recorded the four-checksum rationale. The generator and evidence-capture implementation remain excluded. Canonical regeneration is routed to bubbles.docs. Artifact lint and bounded diff, state, prose, and work-boundary checks completed. T23, status, certification, and human acceptance remain unchanged."
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-033 focused TEST-phase diagnostic retry",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "blocked",
+      "completedAt": "2026-08-31T16:40:17Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/report.md#focused-test-phase-diagnostic-retry-2026-08-31",
+      "summary": "The exact repository packet validated. The validation-checks generator reported derived-registry drift, and the live G125 lint reported missing IMP-054 and IMP-055 index rows. All repair paths resolve route-same-repo. The retained empty-output capture finding remains routed to bubbles.bug. T23, certification, terminal status, planning content, and user acceptance remain unchanged."
+    }
+  ]
 }

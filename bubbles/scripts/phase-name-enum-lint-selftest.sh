@@ -81,6 +81,21 @@ T6="$WORK/t6"; mkdir -p "$T6/specs/001-x"
 printf '{"execution":{"completedPhaseClaims":["implement","phantom-claim"]}}\n' >"$T6/specs/001-x/state.json"
 assert_exit "S6 completedPhaseClaims[] is scanned" 1 "$(run_lint "$T6" "$EMPTY_BASELINE" "$REG")"
 
+# S6a: a claim entry may be a DICT record, not a bare string. Its KEYS (agent,
+# claim, dodChecked, evidenceSections) and its nested evidence refs (E-I1) are
+# not phase names. Reading every quoted token inside the array reported all of
+# them as unregistered phases, so the first packet carrying a populated dict
+# claim list failed on values that name no phase at all.
+T6A="$WORK/t6a"; mkdir -p "$T6A/specs/001-x"
+printf '{"execution":{"completedPhaseClaims":[{"phase":"implement","agent":"bubbles.implement","claim":"completed_owned","dodChecked":true,"scope":"SCOPE-1","evidenceSections":["E-I1","E-I9"]},"test"]}}\n' >"$T6A/specs/001-x/state.json"
+assert_exit "S6a dict-shaped claim record: keys and evidence refs are not phases" 0 "$(run_lint "$T6A" "$EMPTY_BASELINE" "$REG")"
+
+# S6b: adversarial counterpart to S6a — the dict form must not become a blind
+# spot. An unregistered phase inside a dict record still fails.
+T6B="$WORK/t6b"; mkdir -p "$T6B/specs/001-x"
+printf '{"execution":{"completedPhaseClaims":[{"phase":"phantom-dict-phase","agent":"bubbles.implement","evidenceSections":["E-I1"]}]}}\n' >"$T6B/specs/001-x/state.json"
+assert_exit "S6b unregistered phase inside a dict claim record still fails" 1 "$(run_lint "$T6B" "$EMPTY_BASELINE" "$REG")"
+
 # S7: declared non-phase values are contract, not debt.
 T7="$WORK/t7"; make_tree "$T7" "none"
 assert_exit "S7 declared non-phase value tolerated" 0 "$(run_lint "$T7" "$EMPTY_BASELINE" "$REG")"

@@ -7,13 +7,103 @@ own adversarial bound.
 Every DoD item ships **unchecked**. An item is checked only when the executed
 evidence backing it exists in [report.md](report.md).
 
+The four scope statuses and checked DoD items record execution against the
+pre-remediation contract. They remain historical execution receipts. They do
+not certify the amended requirements below. The packet stays `in_progress`.
+Every scope stays uncertified. Capture focused and broad evidence again after
+the planned source, registry, test, changelog, and generated changes.
+
+## Execution Outline
+
+### Phase Order
+
+1. **Scope 1 — authority and reader contract.** Declare the three failure-code
+      lifecycles. Fail closed when the authority cannot resolve. Validate every
+      authored-record field.
+2. **Scope 2 — template and migration contract.** Keep lint shape-only. Retain
+      the checked current template. Classify all four provenance classes without
+      bulk mutation.
+3. **Scope 3 — terminal guard and persistent regressions.** Exercise the shared
+      reader through Check 43. Preserve every named BUG-029 rejection. Prove that
+      the guard cannot alter the acceptance artifact.
+4. **Scope 4 — registry, release notes, and generated projections.** Publish
+      the four-class migration contract. Align gate descriptions. Regenerate each
+      derived artifact through its owning generator.
+
+### New Types and Signatures
+
+- `failureCodes`: closed registry set containing default-active codes,
+      conditional-active `PD12-NO-RECORD`, and bootstrap-active
+      `PD12-AUTHORITY-UNAVAILABLE`.
+- `acceptance-record.requiredAtTerminal: true | false`: exact boolean contract.
+      Absence, malformed input, and any other value are authority failures.
+- Authored-record predicate: a record is present when any canonical field or
+      method-conditional field contains non-default input. A present record must
+      satisfy the complete base and method-specific schema.
+- Migration classification: `current-opt-out`, `legacy-pre-pd12-checked`,
+      `legacy-pd12-unchecked`, or `legacy-provenance-unknown`.
+
+### Validation Checkpoints
+
+- Scope 1 stops before Scope 2 unless default, conditional, bootstrap, and
+      authored-record adversarial fixtures all have exact planned test identities.
+- Scope 2 stops before Scope 3 unless all four migration classes are covered
+      and a changed-path assertion proves that no foreign acceptance artifact was
+      mutated.
+- Scope 3 stops before Scope 4 unless the real Check 43 path names all five
+      BUG-029 unchecked items and the before/after digest remains equal.
+- Scope 4 closes execution only after all focused checks run against one
+      contract revision. These checks cover generators, scenario links, references,
+      and the permitted broad validation.
+
+### Change Boundary
+
+- **Allowed implementation families:** acceptance authority registry and shared
+      reader, plus their focused selftests.
+- **Allowed guard families:** Check 43 and its focused regression tests.
+- **Allowed contract families:** packet-named templates, gate descriptions,
+      `CHANGELOG.md`, and Scope 4 generated projections.
+- **Allowed planning families in this remediation:** `spec.md`, `scopes.md`,
+      `test-plan.json`, `scenario-manifest.json`, append-only `report.md`, and
+      execution routing or finding ownership in `state.json`.
+- **Excluded from this remediation:** `design.md`, `uservalidation.md`, every
+      BUG-029 or BUG-032 packet, downstream repositories, product source, staging,
+      commits, pushes, and broad framework validation.
+- Collateral cleanup is prohibited. A discovered obligation remains in the
+      finding chain with a named owner instead of being changed outside this
+      boundary.
+
+### Scenario Obligation Matrix
+
+| Scenario | Behavior traits | Derived proof obligations | Implementation refs |
+| --- | --- | --- | --- |
+| SCN-B037-001 | pure calculation, runtime config | transformed verdict, shipped `false` registry path, persistent regression | `acceptance-authority-lib.sh`, `acceptance-authority.yaml` |
+| SCN-B037-002 | pure calculation, degraded state | named negative result, exact one-item cardinality, persistent regression | `acceptance-authority-lib.sh` |
+| SCN-B037-003 | pure calculation, degraded state, shared consumer | exact five-item library proof, exact five-item Check 43 proof, persistent regression | shared reader, Check 43 |
+| SCN-B037-004 | pure calculation, degraded state | present-record validation and automation-acceptor refusal | shared reader, authority registry |
+| SCN-B037-005 | pure calculation, degraded state | readiness cannot discharge checklist rejection | shared reader |
+| SCN-B037-006 | shared consumer, runtime config | template-to-registry parity and terminal consumer result | feature template, authority registry, shared reader |
+| SCN-B037-007 | pure calculation | shape-only lint accepts a valid all-unchecked checklist | `artifact-lint.sh` |
+| SCN-B037-008 | pure calculation, degraded state | malformed checklist refusal | `artifact-lint.sh` |
+| SCN-B037-009 | shared consumer | reader-to-Check 43 parity and real guard result | shared reader, Check 43 |
+| SCN-B037-010 | degraded state, shared consumer | named guard refusal and opt-out explanation | shared reader, Check 43 |
+| SCN-B037-011 | mutable state, shared consumer | refusing guard run plus unchanged persisted bytes | Check 43, acceptance artifact |
+| SCN-B037-012 | shared consumer | non-`done` consumer path bypasses acceptance evaluation | Check 43 |
+| SCN-B037-013 | static metadata | exact G136 prose-to-enforcer agreement | gate registry, authority registry, Check 43 |
+| SCN-B037-014 | static metadata | section-local changelog contract assertions | `CHANGELOG.md` |
+| SCN-B037-015 | pure calculation, static metadata | deterministic regeneration and committed freshness for all three projections | three generators and generated targets |
+| SCN-B037-016 | degraded state, runtime config | one fail-closed code and non-zero result for each authority failure class | shared reader, authority registry |
+| SCN-B037-017 | pure calculation, degraded state | union-field authorship detection and complete present-record validation | shared reader, authority registry |
+| SCN-B037-018 | degraded state, runtime config | explicit `true` override activates declared conditional refusal | shared reader, authority registry |
+| SCN-B037-019 | static metadata | four-class migration guidance and no bulk mutation mechanism | `CHANGELOG.md`, focused conformance test |
+
 ---
 
 ## Scope 1 — Invert the acceptance contract and the shared reader
 
 **Status:** [x] Done
 **Depends on:** nothing
-**Delivers:** AC-1, AC-3, AC-4, AC-5, AC-7, AC-8, AC-9
+**Delivers:** AC-1, AC-3, AC-4, AC-5, AC-7 through AC-13
 
 ### Gherkin Scenarios
 
@@ -51,6 +141,36 @@ Scenario: SCN-B037-005 Checked automation readiness grants no acceptance
     And whose "## Checklist" carries one unchecked item
   When bubbles_acceptance_terminal_verdict is evaluated
   Then it returns non-zero on the unchecked checklist item
+
+Scenario Outline: SCN-B037-016 Authority resolution failures refuse acceptance
+      Given the acceptance authority is <authority-state>
+      When either public acceptance verdict evaluates a valid checked checklist
+      Then it returns non-zero
+            And it emits exactly one PD12-AUTHORITY-UNAVAILABLE finding
+            And it emits no acceptance success result
+
+      Examples:
+            | authority-state |
+            | missing registry |
+            | unreadable registry |
+            | malformed registry |
+            | registry missing a required contract field |
+            | registry whose requiredAtTerminal is not the exact boolean true or false |
+
+Scenario: SCN-B037-017 A method-conditional value authors the record
+      Given a Human Acceptance Record whose base fields retain template defaults
+            And whose record field contains a real external acceptance pointer
+      When the acceptance shape verdict is evaluated
+      Then the record is treated as authored
+            And each missing base field emits PD12-RECORD-INCOMPLETE
+            And the pointer is not ignored as an untouched template
+
+Scenario: SCN-B037-018 A supported record requirement activates conditionally
+      Given a valid authority whose requiredAtTerminal is the exact boolean true
+            And a fully checked checklist with no authored Human Acceptance Record
+      When the terminal acceptance verdict is evaluated
+      Then it returns non-zero
+            And it emits declared code PD12-NO-RECORD exactly once
 ```
 
 ### Implementation Plan
@@ -61,19 +181,41 @@ Scenario: SCN-B037-005 Checked automation readiness grants no acceptance
    - Rewrite the file-header rationale. It currently argues the opt-in position
      at length; leaving it in place would make the registry disagree with its
      own data.
-   - Apply **D-5** concretely: remove `PD12-NO-RECORD` from `failureCodes`
-     (nothing can emit it any more), RETAIN the other six codes with their
-     names and meanings unchanged, and add a header note recording that the
-     `PD12-*` prefix is historical and that `PD12-NO-RECORD` is retired — so a
-     reader who greps that code in an archived evidence block can find out what
-     happened to it.
+       - Apply **D-5** concretely. Declare the six default-active codes,
+             conditional-active `PD12-NO-RECORD`, and bootstrap-active
+             `PD12-AUTHORITY-UNAVAILABLE` in one closed `failureCodes` set.
+       - State that shipped `requiredAtTerminal: false` leaves
+             `PD12-NO-RECORD` dormant. State that an explicit supported `true` value
+             activates it.
+       - State that authority failures activate
+             `PD12-AUTHORITY-UNAVAILABLE` without relying on a successful registry read.
 2. `bubbles/scripts/acceptance-authority-lib.sh`
-   - `bubbles_acceptance_terminal_verdict` no longer emits `PD12-NO-RECORD`.
-   - Everything else is unchanged. `bubbles_acceptance_shape_verdict` already
-     validates the record only when authored, so AC-8 needs no code change —
-     confirm this by test rather than by reading.
+       - Preserve `PD12-NO-RECORD` for an explicit supported `true` override.
+             Emit nothing for this condition under the shipped `false` value.
+       - Add one authority preflight used by both public verdicts. It must validate
+             the registry before any acceptance result can succeed.
+       - Treat a missing path, unreadable file, malformed contract, missing required
+             field, or invalid boolean as one authority failure. Each public verdict
+             prints exactly one `PD12-AUTHORITY-UNAVAILABLE: <reason>` line and returns
+             `1`. It prints no other acceptance finding after this bootstrap failure.
+       - Require `schemaVersion` and all three section IDs and headings.
+       - Require checklist `shippedState` and record `requiredAtTerminal`.
+       - Require non-empty base fields, methods, and method-specific requirements.
+       - Require the forbidden acceptor pattern and closed `failureCodes` set.
+       - Accept only lowercase scalar `true` or `false` for
+             `requiredAtTerminal`. Missing, empty, quoted-string, numeric, and alternate
+             YAML boolean spellings fail closed.
+       - Define record authorship over the union of base required fields and every
+             declared method-conditional field. Any real value in that union triggers
+             complete present-record validation.
+       - Treat only a trimmed empty value or one complete bracket-delimited template
+             token as a default. Values such as `TBD`, `none`, partial brackets, and
+             non-empty external pointers count as authored input.
+       - For `human-interactive`, require all base fields. For `external-record`,
+             require all base fields and a real `record` pointer.
 3. `bubbles/scripts/acceptance-authority-selftest.sh`
-   - Add the five scenarios above plus the adversarial bounds.
+       - Add the eight scenarios above plus the authority, authorship, and lifecycle
+             adversarial bounds.
 
 ### Test Plan
 
@@ -86,17 +228,32 @@ Scenario: SCN-B037-005 Checked automation readiness grants no acceptance
 | S1-T5 | Present record missing `acceptedAt` → `PD12-RECORD-INCOMPLETE` | unit | `bubbles/scripts/acceptance-authority-selftest.sh` |
 | S1-T6 | Present record with `method: external-record` and no `record` → `PD12-METHOD-FIELD-MISSING` | unit | `bubbles/scripts/acceptance-authority-selftest.sh` |
 | S1-T7 | Readiness all checked + one checklist unchecked → refused | unit | `bubbles/scripts/acceptance-authority-selftest.sh` |
-| S1-T8 | Registry values are READ, not hardcoded: flipping `requiredAtTerminal` back in a fixture registry restores the refusal | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T8 | `SCN-B037-018`: exact `requiredAtTerminal: true` activates one declared `PD12-NO-RECORD` refusal | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
 | S1-T9 | `[ ]` under `## Notes` is still ignored | unit | `bubbles/scripts/acceptance-authority-selftest.sh` |
-| S1-T10 | **D-5 code-set closure:** the set of `PD12-*` codes the library can emit equals the set `failureCodes` declares — `PD12-NO-RECORD` appears in neither | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T10 | **D-5 code-set closure:** source emitters equal declarations in both directions, including default, conditional, and bootstrap lifecycle fixtures | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T11 | `SCN-B037-016`: a missing registry emits exactly one `PD12-AUTHORITY-UNAVAILABLE` line and both public verdicts return `1` | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T12 | `SCN-B037-016`: an unreadable registry emits the same closed code and both public verdicts return `1` | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T13 | `SCN-B037-016`: malformed YAML or malformed registry structure emits the same closed code and returns `1` | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T14 | `SCN-B037-016`: removal of each required contract field fails closed; at minimum, exercise one field from every contract group | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T15 | `SCN-B037-016`: missing, empty, quoted, numeric, `yes`, and `no` values for `requiredAtTerminal` fail closed | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T16 | `SCN-B037-017`: a real `record` pointer alone marks the record authored and exposes all missing base fields | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T17 | An empty value or complete bracket placeholder in every recognized field remains an untouched record and emits no record-shape finding | unit | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S1-T18 | `human-interactive` accepts only real base fields; `external-record` also requires a real `record` pointer | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
 
 **S1-T8 is the load-bearing adversarial case.** Without it, the implementation
 could satisfy every other test by deleting the record check outright while
 claiming to read the registry.
 
-**S1-T10 exists because D-5 removes exactly one code from a closed set.** It
-catches both halves of the likely mistake: deleting the emission but leaving the
-code declared, and deleting the declaration while an emitter survives.
+**S1-T10 has no exception list.** It catches an undeclared source literal, an
+unreachable declaration, and a lifecycle class without an executed fixture.
+
+**S1-T11 through S1-T15 are fail-closed proofs.** A successful verdict, empty
+output, a different code, duplicate bootstrap lines, or additional acceptance
+findings fail each case.
+
+**S1-T16 through S1-T18 define authorship.** They prevent a method-conditional
+field from bypassing validation and prevent untouched template defaults from
+becoming a false authored record.
 
 ### Definition of Done
 
@@ -116,15 +273,45 @@ code declared, and deleting the declaration while an emitter survives.
       → Evidence: [report.md](report.md#bounds-scope-1)
 - [x] S1-T8 adversarial case fails when the registry value is reverted
       → Evidence: [report.md](report.md#bounds-scope-1)
-- [x] D-5 applied: `PD12-NO-RECORD` removed from `failureCodes`, six codes
-      retained verbatim, retirement recorded in the header note
-      → Evidence: [design.md](design.md), [report.md](report.md#scope-1)
-- [x] S1-T10 proves the emittable code set equals the declared code set
+- [x] Historical pre-remediation D-5 receipt: `PD12-NO-RECORD` was removed from
+      `failureCodes`, six codes were retained, and retirement was recorded
+      → Evidence: [report.md](report.md#scope-1)
+      This receipt does not satisfy current D-5. The current contract declares
+      conditional `PD12-NO-RECORD` and bootstrap
+      `PD12-AUTHORITY-UNAVAILABLE`.
+- [x] Historical pre-remediation S1-T10 code-set check executed
       → Evidence: [report.md](report.md#bounds-scope-1)
+      The amended S1-T10 removes its exception and requires default,
+      conditional, and bootstrap reachability before certification.
+      → Independent TEST evidence: [revision-5 current-byte replacement](report.md#bug037-test-revision-5-current-byte-replacement)
+      (**Phase:** test; tool-log row 495, S1-T10e exact lifecycle labels and
+      S1-T10f mutation/non-vacuity under stock and Homebrew Bash)
 - [x] `acceptance-authority-selftest.sh` passes end to end, zero skipped
       → Evidence: [report.md](report.md#green-scope-1)
+      → Current TEST evidence: [revision-5 current-byte replacement](report.md#bug037-test-revision-5-current-byte-replacement)
+      (**Phase:** test; tool-log row 495)
 - [x] No regression test contains a conditional early-return that silently passes
       → Evidence: [report.md](report.md#scope-1)
+- [x] SCN-B037-016 Authority resolution failures refuse acceptance with one
+      `PD12-AUTHORITY-UNAVAILABLE` line and return code `1`.
+      → Evidence: [implementation remediation](report.md#bug037-implementation-remediation)
+      (**Phase:** implement; tool-log row 308, S1-T11 through S1-T15 under
+      stock and Homebrew Bash)
+      → Independent TEST evidence: [revision-5 current-byte replacement](report.md#bug037-test-revision-5-current-byte-replacement)
+      (**Phase:** test; tool-log row 495, including contract-complete malformed
+      YAML through both public verdicts under both Bash runtimes)
+- [x] SCN-B037-017 A method-conditional value authors the record and exposes
+      every missing base field.
+      → Evidence: [implementation remediation](report.md#bug037-implementation-remediation)
+      (**Phase:** implement; tool-log row 308, S1-T16 through S1-T18 under
+      stock and Homebrew Bash)
+- [x] SCN-B037-018 A supported record requirement activates conditionally and
+      emits declared `PD12-NO-RECORD` exactly once.
+      → Evidence: [implementation remediation](report.md#bug037-implementation-remediation)
+      (**Phase:** implement; tool-log row 308, S1-T8 plus S1-T10 through
+      S1-T10d under stock and Homebrew Bash)
+      → Independent TEST evidence: [revision-5 current-byte replacement](report.md#bug037-test-revision-5-current-byte-replacement)
+      (**Phase:** test; tool-log row 495, S1-T10e and S1-T10f)
 
 ---
 
@@ -189,13 +376,18 @@ Scenario: SCN-B037-008 Lint still rejects a malformed checklist
    rule D-3 keeps). **No agent file requires a change, and no `allowedPaths`
    expansion is needed.** Re-run the sweep at the delivering commit to confirm
    the result is unchanged.
-5. Apply **D-1**: dated grandfather, documented not automated. Concretely —
-   author **no** migration script, perform **no** bulk auto-check, and modify
-   **no** `uservalidation.md` outside this packet. The cutover note ships as
-   `CHANGELOG.md` content in Scope 4. The four legacy PD-12-shaped files
-   (`BUG-033`, `BUG-035`, `BUG-036`, and this packet's own) are re-authored into
-   the checked shape by each packet's own owner as ordinary work on that packet,
-   before that packet's own terminal transition — not here.
+5. Apply **D-1** without a migration script, bulk checkbox mutation, or foreign
+       `uservalidation.md` change.
+       - Current opt-out artifacts use checked template state. An uncheck is a user
+             rejection.
+       - Legacy pre-PD-12 checked artifacts require checklist re-authoring before
+             review. Inherited checks do not prove a human act.
+       - Legacy PD-12 unchecked artifacts require re-authoring before review only
+             when history proves no user interaction. Inherited unchecks are not
+             automatically user rejection.
+       - Unknown provenance fails closed. Keep the packet `in_progress` and leave
+             checkbox bytes unchanged until the owner resolves provenance with the user.
+       - Scope 4 publishes these four classes in `CHANGELOG.md`.
 
 ### Test Plan
 
@@ -208,7 +400,7 @@ Scenario: SCN-B037-008 Lint still rejects a malformed checklist
 | S2-T5 | Lint still fails on a checklist with zero checkbox entries | unit (adversarial) | `bubbles/scripts/artifact-lint.sh` over a fixture packet |
 | S2-T6 | No `agents/**` file asserts acceptance items ship unchecked | unit | grep-based conformance check |
 | S2-T7 | `bug-packet.yaml` uservalidation purpose agrees with `acceptance-authority.yaml` | unit | `bubbles/scripts/bug-packet-selftest.sh` |
-| S2-T8 | **D-1 bound:** the delivering commit modifies no `uservalidation.md` outside `bugs/BUG-037-*` | unit (adversarial) | conformance check over the commit's changed-file set |
+| S2-T8 | **D-1 bound:** compare an explicit delivery base and candidate revision; fail when any changed `*uservalidation.md` path lies outside this packet, regardless of changed content | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
 | S2-T9 | **S2-T2's adversarial partner:** a fixture template block shipping `- [ ]` FAILS the agreement check | unit (adversarial) | same surface as S2-T2 |
 
 **S2-T4 and S2-T5 are the lint-relaxation bounds.** They prove the D-2 ruling
@@ -219,9 +411,12 @@ did not widen into "lint no longer reads the checklist at all".
 authored in the wrong shipped state. S2-T2 replaces exactly that assurance and
 nothing more, and S2-T9 proves S2-T2 can actually fail.
 
-**S2-T8 is the D-1 bound.** It proves the migration posture was documented
-rather than executed — a bulk auto-check would pass every other test in this
-table.
+**S2-T8 is an exact changed-path assertion.** A fixture that changes foreign
+prose, headings, checked items, unchecked items, or record fields must fail it.
+The test cannot satisfy this row by detecting only `[ ]` to `[x]` transitions.
+
+**S4-T10 covers all migration classes.** Scope 2 establishes the no-mutation
+boundary. Scope 4 validates the release guidance that applies each class.
 
 ### Definition of Done
 
@@ -251,8 +446,20 @@ table.
 - [x] D-1 applied: no migration script authored, no bulk auto-check performed,
       and S2-T8 proves no foreign `uservalidation.md` was modified
       → Evidence: [report.md](report.md#bounds-scope-2) — narrowed: S2-T8 proves no `[ ]`→`[x]` flip (the AC-6 invariant), not untouched-ness; the disclosure names the unrelated in-flight `BUG-033` edit
+      This historical receipt does not satisfy amended S2-T8. The replacement
+      must reject every foreign acceptance-file change, regardless of content.
 - [x] `artifact-lint.sh` passes on this bug packet itself
       → Evidence: [report.md](report.md#scope-2-closeout-re-lint) (exit 0, re-run after the boxes were checked)
+- [x] SCN-B037-007 Lint accepts a fully unchecked checklist without demanding a
+      checked entry after the amended contract lands.
+      → Evidence: [implementation remediation](report.md#bug037-implementation-remediation)
+      (**Phase:** implement; tool-log row 308, S2-T3 under stock and
+      Homebrew Bash)
+- [x] SCN-B037-008 Lint still rejects malformed checklist content after the
+      amended contract lands.
+      → Evidence: [implementation remediation](report.md#bug037-implementation-remediation)
+      (**Phase:** implement; tool-log row 308, S2-T4 and S2-T5 under stock
+      and Homebrew Bash)
 
 ---
 
@@ -371,28 +578,13 @@ every other test in this table.
 
 ## Scope 4 — Governance documentation and generated artifacts
 
-**Status:** [ ] Blocked — 11 of 13 DoD items met; S4-T5 `framework-validate` and
-S4-T6 `release-check` are unmet. Their original blocker, the pre-existing OW-009
-`guard-lib-timeout-selftest.sh` failure, is RESOLVED by
-`bugs/BUG-038-progress-timeout-bsd-wc-padding/` (selftest now exit 0, sha256
-`06054735b7d1ade85254102451e6ef7406693818baeb32d1b3c972efd6c7f102`).
+**Status:** [x] Done — all 13 DoD items are evidence-backed.
+S4-T5 and S4-T6 have durable current-session receipts.
 
-The earlier bounded attempts recorded below did return exit 142 with no verdict,
-and those records stay accurate for the attempts they describe. They are no
-longer the operative blocker. A `framework-validate` run has since COMPLETED
-with a real verdict: **exit 1, 5107 PASS / 31 FAIL**. That run was executed by a
-CONCURRENT SESSION, not by this packet's session — **Claim Source: interpreted
-(diagnostic input, not this packet's own execution evidence)**; see
-[report.md](report.md) → "a run COMPLETED; the blocker is a repo-wide red".
-
-The operative blocker is therefore a repository-wide RED verdict, not an
-unobtainable one. NONE of the 31 failures is a BUG-037 defect and none lies in
-this packet's `workBoundary.allowedPaths`; the failing surfaces
-`v5.3-selftest.sh`, `mode-family-inventory-selftest.sh` and
-`guard-lib-timeout-selftest.sh` are all clean at HEAD, i.e. pre-existing.
-BUG-037's own behavior is GREEN in that completed run: 9 × `PASS: Check 43` with
-zero failures matching Check 43 / acceptance / uservalidation / G136. S4-T5 and
-S4-T6 stay unchecked because their DoD wording requires a **passing** run.
+The earlier timeouts and repository-wide red run remain recorded in
+[report.md](report.md). They remain historical facts. The current green runs
+supersede them only as operative routing evidence. Scope completion is not
+certification, and the packet remains `in_progress`.
 **Depends on:** Scopes 1, 2, 3
 **Delivers:** GC-1 through GC-5
 
@@ -415,13 +607,27 @@ Scenario: SCN-B037-015 Generated artifacts were regenerated, not hand-edited
   Given the repository at the delivering commit
   When each generator is re-run
   Then its output is byte-identical to the committed artifact
+
+Scenario Outline: SCN-B037-019 Legacy acceptance artifacts receive safe guidance
+      Given a uservalidation.md has <provenance-class>
+      When the BUG-037 upgrade contract is applied
+      Then the documented handling is <required-handling>
+            And no bulk migration script changes checkbox state
+
+      Examples:
+            | provenance-class | required-handling |
+            | current opt-out provenance | apply the current contract without migration |
+            | legacy pre-PD-12 checked provenance | re-author before review and do not treat inherited checks as a human act |
+            | legacy PD-12 unchecked provenance with proven no interaction | re-author before review and do not treat inherited unchecks as rejection |
+            | unknown provenance | keep in progress, preserve bytes, and obtain owner plus user resolution |
 ```
 
 ### Implementation Plan
 
-1. `bubbles/registry/gates.yaml` `G136.description` — rewrite to describe the
-   codes Check 43 actually emits, the sections it reads, and the opt-out
-   terminal condition. Remove both false assertions.
+1. `bubbles/registry/gates.yaml` `G136.description` — name all three authority
+      sections. State that Check 43 evaluates acceptance only for target `done`.
+      Describe every default, conditional, and bootstrap code the shared reader can
+      emit. Remove both false assertions.
 2. `bubbles/registry/gates.yaml` `G057.description` — **amend; D-3 ruled this
    REQUIRED, not conditional.** Replace the single clause "uservalidation.md
    remains a human acceptance surface and MUST NOT be toggled to mirror
@@ -440,13 +646,11 @@ Scenario: SCN-B037-015 Generated artifacts were regenerated, not hand-edited
    originally reported set.**
 6. `CHANGELOG.md` — add the BUG-037 entry; add the missing PD-12 entry; correct
    the BUG-029 entry at line ~1320, which states the pre-PD-12 contract as
-   current. The BUG-037 entry MUST carry the **D-1 upgrade note**: it names the
-   delivering commit as the cutover, warns that `uservalidation.md` files
-   authored before it ship unchecked and will now read as user rejections,
-   instructs each packet owner to re-author their checklist into the checked
-   shape **before** the user reviews it, and states that once a user has
-   unchecked an item nothing may re-check it. It also states that no migration
-   script exists or will be shipped.
+      current. The BUG-037 entry MUST carry the **D-1 upgrade note**. Name current
+      opt-out, legacy pre-PD-12 checked, legacy PD-12 unchecked, and unknown
+      provenance as four separate classes. State each class's handling from
+      SCN-B037-019. State that current bytes and dates alone do not establish user
+      intent. State that no bulk migration script exists.
 7. `BUGS.md` — index entry for BUG-037.
 8. `improvements/INDEX.md` — **D-4 ruled: correct the sentence, touch nothing
    under `bugs/BUG-032-*`.** In the IMP-047 row, replace the sentence beginning
@@ -471,20 +675,29 @@ Scenario: SCN-B037-015 Generated artifacts were regenerated, not hand-edited
 | ID | Test | Type | Surface |
 |----|------|------|---------|
 | S4-T1 | No repository surface asserts the deleted lint requirement | unit | grep-based conformance check |
-| S4-T2 | `G136.description` names only refusal codes the guard emits | unit | conformance check against `acceptance-authority.yaml` `failureCodes` |
-| S4-T3 | Each generator re-run produces byte-identical committed output | unit (adversarial) | `generate-gate-coverage-map-selftest.sh`, `generate-validation-checks-selftest.sh`, `generate-release-manifest.sh` |
-| S4-T4 | `CHANGELOG.md` carries both new entries and the corrected BUG-029 entry | unit | grep-based conformance check |
+| S4-T2 | Parse only the `G136.description` block. Require the Automation Readiness, Checklist, and Human Acceptance Record sections, target-`done` scope, opt-out condition, and exact declared code set | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
+| S4-T3 | Each generator's committed-freshness selftest passes. Release-manifest coverage resolves to exact title `Committed release manifest is current` | unit (adversarial) | `generate-gate-coverage-map-selftest.sh`, `generate-validation-checks-selftest.sh`, `release-manifest-selftest.sh` |
+| S4-T4 | Parse section-local changelog entries. Require BUG-037, PD-12, the corrected BUG-029 entry, and all four D-1 classes with distinct handling | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
 | S4-T5 | `framework-validate.sh` passes end to end | functional | `bubbles/scripts/cli.sh framework-validate` |
 | S4-T6 | `release-check` passes | functional | `bubbles/scripts/cli.sh release-check` |
 | S4-T7 | `agnosticity` lint passes | functional | `bubbles/scripts/cli.sh agnosticity` |
-| S4-T8 | **D-3 bound:** `G057.description` declares which of its three rules are mechanical and which are advisory, and asserts no enforcement its enforcer does not perform | unit | conformance check against `guards/control-plane-checks.sh` |
+| S4-T8 | Parse only `G057.description`. Require all three D-3 rules, classify initial authoring as mechanical, classify re-check and outcome mirroring as advisory, and prove the enforcer does not read `uservalidation.md` | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` plus `guards/control-plane-checks.sh` |
 | S4-T9 | **D-4 bound:** the delivering commit modifies no path under `bugs/BUG-032-` | unit (adversarial) | conformance check over the commit's changed-file set |
+| S4-T10 | `SCN-B037-019`: the changelog distinguishes all four migration classes, preserves unknown-provenance bytes, and states that no bulk migration script ships | unit (adversarial) | `bubbles/scripts/acceptance-authority-selftest.sh` |
 
 **S4-T3 is the GC-5 proof.** A hand-edited generated file passes a text grep and
 fails a regeneration diff.
 
 **S4-T9 is the D-4 bound.** It proves BUG-032 was not closed, advanced, or
 otherwise touched as a side effect of removing its stated blocker.
+
+**S4-T2, S4-T4, and S4-T8 require structural assertions.** Removing any named
+section, condition, class, rule, or mechanical or advisory label must make the
+focused test fail. A repository-wide keyword match cannot satisfy these rows.
+
+**S4-T3 closes the generated-surface set.** It covers the gate map, validation
+checks, and release manifest through resolvable test identities rather than a
+raw generator command.
 
 ### Definition of Done
 
@@ -495,7 +708,8 @@ otherwise touched as a side effect of removing its stated blocker.
 - [x] `quality-gates.md` stale text replaced
       → Evidence: [report.md](report.md#scope-4) (**Phase:** implement — line 272
       now carries the OPT-OUT contract, the honest "what it proves" clause, and
-      `PD12-NO-RECORD` recorded as retired)
+      the then-active retired wording for `PD12-NO-RECORD`). Current D-5 requires
+      this surface to describe the code as conditional-active.
 - [x] `test-core.md` stale text replaced
       → Evidence: [report.md](report.md#scope-4) (**Phase:** implement — the
       section is now "User Acceptance Is Terminal (… BUG-037, Gate G136)";
@@ -508,13 +722,15 @@ otherwise touched as a side effect of removing its stated blocker.
       → Evidence: [report.md](report.md#scope-4) (**Phase:** implement — line 34
       "User Acceptance Is Opt-Out Again (BUG-037)"; the backfilled entry "The
       Acceptance-Authority Change Had No Changelog Entry (IMP-047 PD-12)")
-- [x] The BUG-037 changelog entry carries the D-1 upgrade note: cutover commit,
-      legacy-file warning, re-author-before-review instruction, and the
+- [x] Historical pre-remediation BUG-037 changelog receipt: cutover commit,
+      one-bucket legacy warning, re-author-before-review instruction, and the
       statement that no migration script ships
       → Evidence: [design.md](design.md), [report.md](report.md#scope-4)
       (**Phase:** implement — all four elements quoted from the UPGRADE NOTE,
       including "No migration script exists and none will be shipped" with its
       reason)
+      This receipt does not satisfy current D-1. The amended entry must name
+      all four provenance classes and each class's distinct handling.
 - [x] `CHANGELOG.md` BUG-029 entry corrected; it no longer states a superseded contract as current
       → Evidence: [report.md](report.md#scope-4) (**Phase:** implement — line
       1396 now reads "Superseded in part by BUG-037" and states the lint rule as
@@ -538,25 +754,33 @@ otherwise touched as a side effect of removing its stated blocker.
       `generate-validation-checks-selftest.sh` 10 checks / 0 failures;
       `generate-gate-coverage-map-selftest.sh` SKIPPED for absent PyYAML and
       declared as a skip, not counted as a pass)
-- [ ] `framework-validate` passes end to end with a real exit code
-      → Evidence: [report.md](report.md#green-scope-4) — **BLOCKED, NOT MET.**
-      The run was cut at 1500s by SIGALRM and returned **exit 142** (9021 lines,
-      sha256 8f506c77…8621ae). It neither passed nor failed; it produced no
-      verdict. Blocked on the pre-existing OW-009 failure in
-      `bubbles/scripts/guard-lib-timeout-selftest.sh` (4 failures, exit 1) — a
-      file `git status`/`git diff HEAD` prove is unmodified from HEAD and that is
-      absent from this packet's `workBoundary.allowedPaths`. Routed as finding
-      OW-009; deliberately NOT fixed here. Also needs a wall-clock bound above
-      1500s on this host.
-- [ ] `release-check` passes with a real exit code
-      → Evidence: [report.md](report.md#green-scope-4) — **BLOCKED, NOT MET.**
-      Cut at 1500s by SIGALRM, **exit 142** (9021 lines, sha256 e21fb3d5…19b975).
-      No verdict. Same OW-009 blocker and same wall-clock bound as the item
-      above. The `Installer manifest check (v6.0 / B9)` failure in that run is a
-      stripped-working-directory artifact, not a finding, and is not routed.
+- [x] `framework-validate` passes end to end with a real exit code
+      → Evidence: [current canonical framework validation](report.md#s4-t5-current-canonical-framework-validation)
+- [x] `release-check` passes with a real exit code
+      → Evidence: [current canonical release check](report.md#s4-t6-current-canonical-release-check)
 - [x] The design.md § 2.5 sweep re-run at the delivering commit returns the
       recorded result: 16 of 16 entries need no change
       → Evidence: [report.md](report.md#scope-4) (**Phase:** implement — 13
       ruled-out entries re-checked individually, all still `matches=0`; the 5
       claim-carrying/neutral entries quoted verbatim and unchanged; the
       repository-wide stale-text sweep returned grep exit 1, zero hits)
+- [x] SCN-B037-013 No surface describes a lint rule that does not exist, and
+      G136 states all sections, codes, and its target-`done` condition.
+      → Evidence: [test assertion-fidelity remediation](report.md#bug037-test-assertion-fidelity-remediation)
+      (**Phase:** test; tool-log row 316, description-only S4-T2 and S4-T8
+      assertions with exact clause controls under stock and Homebrew Bash)
+- [x] SCN-B037-014 The changelog records BUG-037, PD-12, corrected BUG-029 text,
+      and all four D-1 migration classes.
+      → Evidence: [test assertion-fidelity remediation](report.md#bug037-test-assertion-fidelity-remediation)
+      (**Phase:** test; tool-log row 316, named section-local S4-T4 and S4-T10
+      assertions with BUG-029 and per-class deletion controls under both Bash runtimes)
+- [x] SCN-B037-015 Generated artifacts were regenerated and every committed
+      target passes its exact freshness identity.
+      → Evidence: [implementation remediation](report.md#bug037-implementation-remediation)
+      (**Phase:** implement; tool-log rows 307 and 309, all three generators,
+      freshness checks, and focused selftests)
+- [x] SCN-B037-019 Legacy acceptance artifacts receive provenance-safe guidance
+      for all four classes without bulk checkbox mutation.
+      → Evidence: [implementation remediation](report.md#bug037-implementation-remediation)
+      (**Phase:** implement; tool-log row 308, S4-T10 through S4-T10c under
+      stock and Homebrew Bash)

@@ -176,6 +176,14 @@ family_of() {
   printf '%s' "$1" | jq -Rr "$DEFS"' command_family' 2>&1
 }
 
+identity_of() {
+  printf '%s' "$1" | jq -Rr "$DEFS"' cmd_identity' 2>&1
+}
+
+parts_of() {
+  printf '%s' "$1" | jq -Rr "$DEFS"' cmd_parts | join(" ")' 2>&1
+}
+
 for probe in \
   "node scripts/check-page.mjs alpha" \
   "env PAGE=alpha node scripts/check-page.mjs alpha" \
@@ -227,6 +235,116 @@ if printf '%s' "$wrapper_adv_out" | grep -qF 'family=cargo' &&
 else
   fail "facet 2 bound: the diagnostic did not name both unwrapped identities"
   printf '  analysis: %s\n' "$wrapper_adv_out"
+fi
+
+# ---------------------------------------------------------------------------
+# BUG-033 facet 3 — bounded launchers expose the evidence-producing command.
+# ---------------------------------------------------------------------------
+facet3_direct="artifact-lint.sh bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization"
+facet3_direct_identity="$(identity_of "$facet3_direct")"
+
+for launcher in timeout gtimeout; do
+  observed="$(identity_of "$launcher 120 $facet3_direct")"
+  if [[ "$observed" == "$facet3_direct_identity" ]]; then
+    pass "SCN-B033-005: $launcher exposes the direct artifact-lint identity"
+  else
+    fail "SCN-B033-005: $launcher identity '$observed' differs from direct identity '$facet3_direct_identity'"
+  fi
+done
+
+facet3_alarm="/usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 120 $facet3_direct"
+facet3_alarm_identity="$(identity_of "$facet3_alarm")"
+if [[ "$facet3_alarm_identity" == "$facet3_direct_identity" ]]; then
+  pass "SCN-B033-006: the exact portable Perl alarm launcher exposes the direct artifact-lint identity"
+else
+  fail "SCN-B033-006: portable alarm identity '$facet3_alarm_identity' differs from direct identity '$facet3_direct_identity'"
+fi
+
+for probe in \
+  "timeout 120 env PAGE=alpha zsh -c node scripts/check-page.mjs alpha" \
+  "env PAGE=alpha gtimeout 120 bash -c node scripts/check-page.mjs alpha" \
+  "zsh -c /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 120 env PAGE=alpha node scripts/check-page.mjs alpha" \
+  "PAGE=alpha timeout 120 sh -c node scripts/check-page.mjs alpha"; do
+  observed_family="$(family_of "$probe")"
+  observed_identity="$(identity_of "$probe")"
+  if [[ "$observed_family" == "node" ]] && [[ "$observed_identity" == "node scripts/check-page.mjs" ]]; then
+    pass "SCN-B033-007: composed spelling '$probe' exposes node scripts/check-page.mjs"
+  else
+    fail "SCN-B033-007: composed spelling '$probe' produced family='$observed_family' identity='$observed_identity'"
+  fi
+done
+
+facet3_arbitrary_perl="/usr/bin/perl -e 'print 1' 120 artifact-lint.sh TARGET"
+if [[ "$(parts_of "$facet3_arbitrary_perl")" == "$facet3_arbitrary_perl" ]] &&
+  [[ "$(identity_of "$facet3_arbitrary_perl")" != "$(identity_of "artifact-lint.sh TARGET")" ]]; then
+  pass "SCN-B033-008: arbitrary Perl remains unchanged and distinct from the direct command"
+else
+  fail "SCN-B033-008: arbitrary Perl was stripped or collapsed into the direct command"
+fi
+
+for malformed in \
+  "timeout" \
+  "timeout 120" \
+  "gtimeout 120" \
+  "timeout --preserve-status 120 artifact-lint.sh TARGET" \
+  "/usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 120" \
+  "/usr/bin/perl -e 'alarm shift @ARGV; print @ARGV' 120 artifact-lint.sh TARGET"; do
+  observed="$(parts_of "$malformed")"
+  if [[ "$observed" == "$malformed" ]]; then
+    pass "SCN-B033-009: malformed spelling '$malformed' remains unchanged"
+  else
+    fail "SCN-B033-009: malformed spelling '$malformed' normalized to '$observed'"
+  fi
+done
+
+for launcher_kind in timeout gtimeout portable-perl-alarm; do
+  case "$launcher_kind" in
+    timeout)
+      launcher_prefix="timeout 120"
+      ;;
+    gtimeout)
+      launcher_prefix="gtimeout 120"
+      ;;
+    portable-perl-alarm)
+      launcher_prefix="/usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 120"
+      ;;
+  esac
+  identity_a="$(identity_of "$launcher_prefix artifact-lint.sh TARGET")"
+  identity_b="$(identity_of "$launcher_prefix state-transition-guard.sh TARGET")"
+  if [[ "$identity_a" == "artifact-lint.sh TARGET" ]] &&
+    [[ "$identity_b" == "state-transition-guard.sh TARGET" ]]; then
+    pass "SCN-B033-010: $launcher_kind preserves both distinct underlying command identities"
+  else
+    fail "SCN-B033-010: $launcher_kind produced identity_a='$identity_a' identity_b='$identity_b'"
+  fi
+done
+
+facet3_exit_log="$TMP_DIR/facet3-exit-mismatch.jsonl"
+write_log "$facet3_exit_log" \
+  "{\"ts\":\"2026-08-23T12:00:01Z\",\"sessionId\":\"exit-a\",\"spec\":\"specs/alpha\",\"cmd\":\"timeout 120 artifact-lint.sh specs/alpha\",\"exitCode\":0,\"durationMs\":901,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"lint\"]}" \
+  "{\"ts\":\"2026-08-23T12:00:03Z\",\"sessionId\":\"exit-b\",\"spec\":\"specs/beta\",\"cmd\":\"gtimeout 120 artifact-lint.sh specs/beta\",\"exitCode\":1,\"durationMs\":903,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"lint\"]}"
+facet3_exit_out="$(analyze "$facet3_exit_log")"
+if [[ "$(identity_of "timeout 120 artifact-lint.sh specs/alpha")" == "artifact-lint.sh specs/alpha" ]] &&
+  [[ "$(identity_of "gtimeout 120 artifact-lint.sh specs/beta")" == "artifact-lint.sh specs/beta" ]] &&
+  [[ "$(clone_count "$facet3_exit_out")" == "1" ]] &&
+  [[ "$(sibling_count "$facet3_exit_out")" == "0" ]]; then
+  pass "SCN-B033-011: normalized commands with different exits remain incompatible"
+else
+  fail "SCN-B033-011: launcher identity or independent exit incompatibility was not preserved"
+  printf '  analysis: %s\n' "$facet3_exit_out"
+fi
+
+facet3_equal_exit_log="$TMP_DIR/facet3-equal-exit.jsonl"
+write_log "$facet3_equal_exit_log" \
+  "{\"ts\":\"2026-08-23T12:10:01Z\",\"sessionId\":\"equal-a\",\"spec\":\"specs/alpha\",\"cmd\":\"timeout 120 artifact-lint.sh specs/alpha\",\"exitCode\":0,\"durationMs\":911,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"lint\"]}" \
+  "{\"ts\":\"2026-08-23T12:10:03Z\",\"sessionId\":\"equal-b\",\"spec\":\"specs/beta\",\"cmd\":\"gtimeout 120 artifact-lint.sh specs/beta\",\"exitCode\":0,\"durationMs\":913,\"stdoutHash\":\"$NONEMPTY\",\"stdoutBytes\":128,\"tags\":[\"lint\"]}"
+facet3_equal_exit_out="$(analyze "$facet3_equal_exit_log")"
+if [[ "$(clone_count "$facet3_equal_exit_out")" == "0" ]] &&
+  [[ "$(sibling_count "$facet3_equal_exit_out")" == "1" ]]; then
+  pass "SCN-B033-011 negative control: equal exits remove the exit-result incompatibility"
+else
+  fail "SCN-B033-011 negative control: equal exits did not produce deterministic siblings"
+  printf '  analysis: %s\n' "$facet3_equal_exit_out"
 fi
 
 # ---------------------------------------------------------------------------

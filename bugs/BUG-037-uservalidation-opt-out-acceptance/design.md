@@ -1,28 +1,24 @@
 # Design: BUG-037 — Opt-Out User Acceptance
 
-> **Status of this document.** Design phase COMPLETE. `bubbles.design` confirmed
-> the root cause against the files, completed the § 2.5 affected-surface sweep,
-> and closed decisions D-1 through D-5 in § 3. Nothing here is implemented.
-> Implementation is dispatched to `bubbles.implement` starting at Scope 1.
+> **Status of this document.** The design was reconciled on 2026-09-01 after
+> the gaps phase found contradictions in D-1 and D-5. This revision defines the
+> current failure-code lifecycle and legacy migration classes. It changes no
+> source, registry, test, generated, acceptance, or certification surface.
 
 ---
 
 ## 0. Design Brief
 
-**Current state.** `uservalidation.md` implements opt-in acceptance. The
-template ships every `## Checklist` item unchecked, and Gate G136 (Check 43 in
-`guards/tail-delegated-gates.sh`) refuses a `done` transition unless every item
-is checked AND a separately authored `## Human Acceptance Record` is present.
-The contract lives in `bubbles/registry/acceptance-authority.yaml` and is read
-by the shared `bubbles/scripts/acceptance-authority-lib.sh`, which both
-`artifact-lint.sh` and the guard source. Four prose surfaces still describe the
-pre-`9e41da4` contract and are false at HEAD.
+**Current state.** The shipped registry implements opt-out acceptance. The
+checklist ships checked, unchecked items still block, and the acceptance record
+is optional. The library also retains the downstream required-at-terminal
+override. Its conditional code is undeclared, registry-read failures can accept,
+and the upgrade note collapses two legacy template epochs into one.
 
-**Target state.** Opt-out acceptance, per the owner's standing requirement. The
-checklist ships CHECKED; an unchecked item at terminal still blocks as a
-user-reported regression; the acceptance record becomes OPTIONAL and is no
-longer required at terminal. Every governance surface is brought into agreement
-with what actually executes.
+**Target state.** Keep opt-out behavior and user rejection authority unchanged.
+Declare every supported failure code, fail closed when authority cannot resolve,
+and classify legacy files by scaffold provenance. Planning, source, registry,
+documentation, and tests must then adopt one contract before certification.
 
 **Patterns to follow.**
 - Single-authority-plus-shared-reader, already in place:
@@ -42,17 +38,17 @@ with what actually executes.
 - Fixing a prose surface by text substitution without re-reading the script it
   describes. That is exactly how the four stale surfaces were produced.
 - Treating `[ ]` authored by a template as equivalent to `[ ]` a user typed.
-  They are indistinguishable in the file and must be separated by policy and
-  date, not by inspection. See D-1.
+  They are indistinguishable in the file. Separate them through scaffold
+  provenance and review history, not bytes or a cutover date alone. See D-1.
 
-**Resolved decisions.** All five are closed in § 3: D-1 dated grandfather,
-documented not automated; D-2 lint stays shape-only; D-3 three-way split with
-the permission and the prohibition assigned to different agents; D-4 BUG-032
-out of scope with an exact routed note; D-5 keep the `PD12-*` prefix, retire
-only `PD12-NO-RECORD`.
+**Resolved decisions.** All five are closed in § 3. D-1 classifies legacy files
+by their authoring-contract epoch and forbids bulk migration. D-2 keeps lint
+shape-only. D-3 assigns initial authoring and later mutation to different
+agents. D-4 keeps BUG-032 out of scope. D-5 keeps the `PD12-*` prefix and
+classifies `PD12-NO-RECORD` as conditionally active.
 
-**Open questions.** None blocking implementation. Two items are routed to the
-owner for awareness, not for a decision that gates this work — see § 8.
+**Open questions.** None at the design layer. Eight non-design findings remain
+open and are routed in [report.md](report.md#bug037-design-remediation).
 
 ---
 
@@ -160,8 +156,8 @@ exhaustive proof.**
 
 | Surface | Owner | Change required |
 |---|---|---|
-| `bubbles/registry/acceptance-authority.yaml` | framework registry | `acceptance-checklist.shippedState` → `checked`; `acceptance-record.requiredAtTerminal` → `false`; rewrite the file-header rationale, which currently argues the opposite position at length |
-| `bubbles/scripts/acceptance-authority-lib.sh` | framework scripts | `bubbles_acceptance_terminal_verdict` drops the `PD12-NO-RECORD` emission; retains `PD12-UNCHECKED-ITEM`; `bubbles_acceptance_shape_verdict` unchanged (it already validates the record only when authored) |
+| `bubbles/registry/acceptance-authority.yaml` | framework registry | Keep `acceptance-checklist.shippedState` at `checked` and `acceptance-record.requiredAtTerminal` at `false`. Declare every code the library can emit under a supported registry state. Classify `PD12-NO-RECORD` as conditional rather than retired. Declare the bootstrap authority-failure code required by fail-closed reads. |
+| `bubbles/scripts/acceptance-authority-lib.sh` | framework scripts | Retain `PD12-NO-RECORD` for an explicit `requiredAtTerminal: true` override. Emit nothing for that condition under the shipped `false` value. Fail closed when the registry or a required registry field cannot be resolved. Retain all checklist and present-record checks. |
 | `bubbles/scripts/acceptance-authority-selftest.sh` | framework scripts | Cases covering the new terminal contract plus adversarial bounds |
 | `bubbles/scripts/artifact-lint.sh` | framework scripts | **D-2 CLOSED: no rule change.** The checklist rules are retained exactly. Only the stale comment block at lines ~555-563 is rewritten, because it explains a PD-12 rationale that no longer holds |
 | `bubbles/scripts/guards/tail-delegated-gates.sh` (Check 43) | framework guards | Refusal text and `info` lines currently explain the acceptance-record requirement; must state the opt-out contract instead |
@@ -183,7 +179,7 @@ exhaustive proof.**
 | Surface | Owner | Change required |
 |---|---|---|
 | `bubbles/scripts/state-transition-guard-selftest.sh` (Check 43 cases, ~line 5104) | framework scripts | Cases updated to the new terminal contract; the BUG-029 case must be **kept**, not relaxed |
-| `tests/regression/test_35_human_acceptance_terminal.sh` | framework tests | The BUG-029 fixtures stay; the PD-12 `PD12-NO-RECORD` assertion (line ~122) inverts to assert a fully checked list with no record now **passes**; a new adversarial case asserts an unchecked item still fails |
+| `tests/regression/test_35_human_acceptance_terminal.sh` | framework tests | Keep the BUG-029 fixtures. Assert that the shipped registry accepts a checked record-less list. Assert that an explicit required-at-terminal override refuses it with the declared conditional code. Keep the unchecked-item adversarial case. |
 
 ### 2.4 Documentation and generated surfaces
 
@@ -238,24 +234,35 @@ result is unchanged, which is S4-T1.
 
 ## 3. Design decisions — CLOSED
 
-All five are closed by `bubbles.design`. Each records its ruling, the evidence
-behind it, and its consequence for the scope list. Where a ruling changed a
-scope's Test Plan or DoD, [scopes.md](scopes.md) was updated to match.
+All five decisions are closed by `bubbles.design`. D-1 and D-5 were reconciled
+after implementation exposed contradictions. Their new planning consequences
+are not yet reflected in [scopes.md](scopes.md). `bubbles.plan` owns that next
+step.
 
-### D-1 — Migration posture for existing artifacts — **CLOSED: (b), dated grandfather, documented not automated**
+### D-1 — Migration posture for existing artifacts — **CLOSED: classify by authoring-contract epoch, never by cutover alone**
 
-**Ruling.** The framework ships the new template, the inverted contract and the
-new reader, plus a `CHANGELOG.md` **upgrade note** that states a cutover date.
-It ships **no migration script**, performs **no bulk auto-check** in this
-repository, and BUG-037 modifies **no `uservalidation.md` outside its own
-packet**. Files whose checklist predates the delivering commit are legacy-shaped
-and are re-authored into the new shape by their own packet's owner, as ordinary
-work on that packet, before that packet's own terminal transition.
+**Ruling.** The framework ships no migration script and performs no bulk
+checkbox mutation. Legacy handling depends on the contract that scaffolded the
+checklist. The delivering commit alone cannot classify every older file as
+unchecked.
 
-**Evidence.** The in-repository population is exactly five files, all
-`in_progress`, none at a terminal transition:
+### D-1.1 Legacy classification contract
 
-| File | checked | unchecked | first added | shape |
+| Class | Provenance | Meaning of baseline bytes | Required handling |
+|---|---|---|---|
+| Current opt-out | The checklist was scaffolded from the BUG-037 template at or after the delivering commit. | Checked items are the current initial state. An unchecked item is a user rejection. | Apply AC-1 through AC-9 without migration. |
+| Legacy pre-PD-12 checked | The checklist was scaffolded before `9e41da4` on 2026-08-17. | Checked items may be template-authored. They do not prove fresh human review. | Re-author the current checklist before review. Do not cite inherited checks as a human act. |
+| Legacy PD-12 unchecked | The checklist was scaffolded at or after `9e41da4` and before the BUG-037 delivering commit. | Unchecked items may be template-authored. They are not automatically user rejections. | Re-author the current checklist before review only when history proves no user interaction occurred. |
+| Legacy provenance unknown | History cannot establish the scaffold epoch or whether a user already interacted with the checklist. | Current checkbox bytes are ambiguous. | Fail closed. Keep the packet `in_progress` and do not mutate checkbox state until the artifact owner resolves provenance with the user. |
+
+Current bytes never override provenance. A user may have changed either legacy
+baseline after scaffolding. An unchecked row becomes protected user rejection
+state as soon as user interaction may have occurred.
+
+**Recorded population.** The design-time inventory contained both legacy
+baseline shapes. This is the evidence that invalidates one pre-cutover bucket:
+
+| File | checked | unchecked | first added | recorded shape |
 |---|---|---|---|---|
 | `bugs/BUG-032-…/uservalidation.md` | 7 | 0 | 2026-08-16 | pre-PD-12, checked |
 | `bugs/BUG-033-…/uservalidation.md` | 0 | 4 | 2026-08-17 | PD-12, unchecked |
@@ -263,48 +270,44 @@ work on that packet, before that packet's own terminal transition.
 | `bugs/BUG-036-…/uservalidation.md` | 0 | 5 | 2026-08-18 | PD-12, unchecked |
 | `bugs/BUG-037-…/uservalidation.md` | 0 | 6 | this packet | PD-12, unchecked |
 
-`9e41da4` landed 2026-08-17. There are no `specs/` packets in this repository —
-Gate G085 forbids them here — so the population is the `bugs/` tree only.
+`9e41da4` separates the two historical template contracts. The later BUG-037
+delivering commit separates both legacy classes from the current opt-out
+contract. A file date alone does not prove which contract last scaffolded its
+checklist, so history must establish that fact.
 
-**Rationale.**
+### D-1.2 Migration safety rules
 
-The load-bearing distinction is this: **an unchecked box authored by a template
-is not a user's uncheck.** AC-6 forbids re-checking an item *a user unchecked*.
-It does not forbid authoring a fresh checklist in the shipped state. A blanket
-rule "automation may never turn `[ ]` into `[x]`" would be strictly stricter
-than AC-6 and would strand the four PD-12-shaped files permanently, because
-nobody ever rejected anything in them.
+1. The packet's artifact owner re-authors a current checklist before human
+  review when provenance makes that operation safe.
+2. Automation never re-authors after a user may have reviewed the checklist.
+3. Automation never re-checks a known user rejection.
+4. Ambiguous provenance blocks migration instead of selecting a convenient
+  checkbox meaning.
+5. The framework never scans downstream repositories or rewrites their files.
 
-That distinction is **not decidable from the file**. Both cases produce an
-identical `- [ ]`, and the file carries no history. So it must be bounded by a
-fact outside the file, and the only such fact available to every reader,
-including a downstream operator, is a **date**. Hence (b).
+These rules preserve opt-out semantics for current files. They also preserve
+the user's authority over every rejection. Legacy uncertainty cannot silently
+become either acceptance or rejection.
 
-Option (a), pure leave-as-is, was rejected because it converts four live packets
-into apparent all-rejections and gives downstream operators no instruction at
-all — the four files would each read as "the user rejected every behavior",
-which is false and unrecoverable without guidance.
+### D-1.3 Upgrade-note contract
 
-Option (c), an operator-run migration script, was rejected outright. A script
-that checks boxes across files a user may already have seen cannot distinguish a
-template-authored `[ ]` from a user's deliberate uncheck. Running it would
-perform exactly the act AC-6 forbids, and being operator-invoked does not change
-what it does to the file. The `bugs/` population is five files; the cost of
-hand-authoring is trivial and the risk of the script is not.
+The corrected upgrade note must name both legacy classes. It must explain that
+pre-PD-12 files may carry template-authored checks. It must explain that PD-12
+files may carry template-authored unchecks. It must forbid inferring review or
+rejection from either baseline.
 
-**What the framework source repo can and cannot do.** It cannot rewrite
-downstream repositories — it ships files, it does not reach into consumers. So
-the migration posture splits cleanly:
+The note must require provenance review before re-authoring. It must keep an
+ambiguous packet `in_progress`. It must also state that no bulk migration
+script exists or will ship.
 
-| Shipped | Documented only |
-|---|---|
-| the checked template, `shippedState: checked`, the new reader, the amended gate | the cutover date, the "legacy files ship unchecked and will now read as rejections" warning, and the instruction that the packet owner re-authors before the user reviews, never after |
+**Rejected alternative.** A migration script cannot distinguish a
+template-authored uncheck from a user's deliberate uncheck. Operator invocation
+does not change that limitation. A script could erase the only rejection signal
+the contract preserves.
 
-**Consequence for the scope list.** Scope 2 step 5 changes from "apply D-1's
-migration posture" to two concrete obligations: author no migration script, and
-touch no foreign `uservalidation.md`. Scope 4 gains the upgrade note as
-changelog content. Added: Scope 2 DoD item and test **S2-T8** asserting the
-delivering commit modified no `uservalidation.md` outside this packet.
+**Planning consequence.** `bubbles.plan` must reconcile the D-1 scope text and
+tests with these four classes. The plan must require `bubbles.docs` to replace
+the current one-bucket upgrade note without editing any legacy acceptance file.
 
 ---
 
@@ -447,16 +450,16 @@ PD12-NO-RECORD: no authored "## Human Acceptance Record"; checked boxes alone ar
 EXIT=1
 ```
 
-BUG-032's checklist is 7 checked, 0 unchecked. Its **only** G136 finding today is
-`PD12-NO-RECORD` — the exact code this fix deletes. Its `state.json` reports
-`status: in_progress`, `nextRequiredOwner: bubbles.docs`, with outstanding
-G043/G101 documentation surfaces.
+This evidence records the pre-inversion result. BUG-032's checklist had seven
+checked items and no unchecked item. Its only G136 finding was
+`PD12-NO-RECORD`. BUG-037 disables that condition in the shipped registry but
+retains it for an explicit downstream required-at-terminal override.
 
 **The INDEX.md sentence is wrong in two ways after this fix**, which is why it
 must be corrected rather than left:
 
-1. The G136 acceptance-record requirement it names as the blocker no longer
-   exists.
+1. The shipped G136 acceptance-record requirement it names as the blocker no
+  longer exists. An explicit downstream override remains supported.
 2. It was never BUG-032's sole blocker. Independent `bubbles.docs` work is
    outstanding and is unrelated to acceptance.
 
@@ -472,7 +475,8 @@ acceptance record, operator-only by the same design PD-12 delivered" with:
 > is the operator-approved G043/G101 documentation surfaces owned by
 > `bubbles.docs` (`nextRequiredOwner: bubbles.docs`). The G136 acceptance-record
 > requirement that PD-12 added, and that this row previously named as the
-> blocker, was removed by BUG-037 when opt-out acceptance was restored.
+> blocker, was disabled in the shipped registry by BUG-037. A downstream
+> registry may still require the record explicitly.
 > BUG-032's checklist was authored 2026-08-16 under the pre-PD-12
 > checked-by-default template, so its checked state is legacy-shaped and MUST
 > NOT be read as a fresh human acceptance.
@@ -485,57 +489,82 @@ commit modified no path under `bugs/BUG-032-`.
 
 ---
 
-### D-5 — Failure-code naming — **CLOSED: KEEP the `PD12-*` prefix unrenamed; retire only `PD12-NO-RECORD`; record the prefix as historical**
+### D-5 — Failure-code naming and lifecycle — **CLOSED: keep the `PD12-*` prefix and declare every supported emission**
 
-**Ruling.** No rename, full or partial. `PD12-NO-RECORD` is removed from
-`failureCodes` because no code path can emit it any more, and its retirement is
-recorded in the `acceptance-authority.yaml` header so a reader who greps it in
-an archived evidence block can find out what happened to it. The remaining six
-codes keep their names and meanings unchanged.
+**Ruling.** No code is retired while a supported registry state can emit it.
+The canonical `failureCodes` set declares every code the library can emit under
+any supported configuration. The set is not limited to codes reachable under
+the shipped default values.
 
-**Evidence — complete reader inventory, executed.** `PD12-` occurs in exactly
-six files outside this packet, all inside the acceptance surface:
+`PD12-NO-RECORD` is conditionally active. The shipped
+`requiredAtTerminal: false` value leaves it dormant. An explicit downstream
+`requiredAtTerminal: true` value activates it and preserves the compliance
+override without a library fork.
 
-| Reader | Occurrences | Effect of this fix |
+### D-5.1 Failure-code lifecycle
+
+| Lifecycle | Contract | BUG-037 classification |
 |---|---|---|
-| `bubbles/registry/acceptance-authority.yaml` | 7 | `PD12-NO-RECORD` removed from `failureCodes`; header note added; 6 retained verbatim |
-| `bubbles/scripts/acceptance-authority-lib.sh` | 7 | the `PD12-NO-RECORD` emission is deleted; the 6 other emitters are untouched |
-| `bubbles/scripts/acceptance-authority-selftest.sh` | 9 | the NO-RECORD case inverts; the rest unchanged |
-| `bubbles/scripts/state-transition-guard-selftest.sh` | 1 | updated to the new terminal contract |
-| `tests/regression/test_35_human_acceptance_terminal.sh` | 2 | the NO-RECORD assertion inverts |
-| `bugs/BUG-037-…/` (6 artifacts) | 35 | narrative only |
+| Default-active | Declared in `failureCodes` and reachable for an invalid artifact under the shipped registry. | The six existing checklist, readiness, and present-record shape codes. |
+| Conditional-active | Declared in `failureCodes` and reachable only when an explicit supported registry value enables its condition. | `PD12-NO-RECORD`, activated only by `acceptance-record.requiredAtTerminal: true`. |
+| Bootstrap-active | Declared in the canonical registry but emitted without depending on a successful registry read. | `PD12-AUTHORITY-UNAVAILABLE`, required when the registry or a required contract field cannot be resolved. |
+| Retired | Unreachable under every supported registry state and absent from production emitters and active declarations. Historical prose may still name it. | None in this remediation. |
 
-Distinct codes at HEAD: `PD12-UNCHECKED-ITEM`, `PD12-NO-RECORD`,
-`PD12-AUTOMATION-ACCEPTOR`, `PD12-METHOD-FIELD-MISSING`,
-`PD12-RECORD-INCOMPLETE`, `PD12-METHOD-UNKNOWN`, `PD12-READINESS-NOT-CHECKBOX`.
+A lifecycle transition is a contract change. Retirement requires removal of
+the source emitter and every supported activation path in the same change.
+Changing only the shipped default never retires a conditional code.
 
-**Rationale.**
+### D-5.2 Fail-closed authority reads
 
-- **Renaming is cheap in this repo and expensive outside it.** Every in-repo
-  reader is a file this bug already edits, so a rename would cost almost
-  nothing here. But `acceptance-authority-lib.sh` and `acceptance-authority.yaml`
-  both ship downstream — confirmed at `bubbles/release-manifest.json` lines 14,
-  15 and 558 — and Check 43 prints these codes into guard output that downstream
-  `report.md` evidence blocks capture verbatim. A rename silently invalidates
-  every downstream matcher and orphans every archived evidence block, for a
-  purely cosmetic gain.
-- **The prefix is not actually misnamed for what remains.** The one code most
-  tightly bound to the reversed finding — `PD12-NO-RECORD`, the demand for a
-  separately authored record — is the one this fix deletes. The surviving six
-  all enforce rules PD-12 *introduced and this fix keeps*: unchecked items still
-  block, the record is still validated when present, an agent still cannot be
-  the acceptor, readiness bullets must still be checkboxes. Those six are
-  PD-12's durable contribution, and naming them after it is accurate.
-- **Partial rename rejected.** A mixed prefix set is worse than either pure
-  option: a reader who greps `PD12-` would get an incomplete set and reasonably
-  conclude the renamed codes do not exist.
+The reader must resolve the registry path and every required field before it
+can return acceptance. A missing, unreadable, or malformed authority produces
+`PD12-AUTHORITY-UNAVAILABLE` and a non-zero verdict. The bootstrap code must not
+depend on parsing the unavailable authority before it can be emitted.
 
-**Consequence for the scope list.** Scope 1 step 1's "record the D-5 decision"
-becomes concrete: remove one code, add the header note, retain six. Added:
-Scope 1 test **S1-T10**, an adversarial closure check that the set of codes the
-library can emit equals the set `failureCodes` declares. That catches both
-halves of the likely mistake — deleting the emission but leaving the code
-declared, and deleting the declaration while an emitter survives.
+`requiredAtTerminal` accepts only the exact values `true` and `false`. A missing
+or different value is an authority failure. It must never degrade to the
+shipped `false` posture.
+
+This failure path does not change the opt-out default. A valid shipped registry
+still accepts a fully checked record-less checklist. A valid downstream
+registry may still require an authored record explicitly.
+
+### D-5.3 Closure checks
+
+The closure check must compare source emitters with canonical declarations in
+both directions. It must not exempt an undeclared source literal. Every
+declared code must also have an executed fixture that reaches its lifecycle
+class.
+
+The required matrix includes these cases:
+
+1. The shipped `false` value emits no `PD12-NO-RECORD` finding.
+2. A fixture `true` override emits declared `PD12-NO-RECORD`.
+3. Missing and malformed authorities emit declared
+   `PD12-AUTHORITY-UNAVAILABLE` and return non-zero.
+4. Every source-emittable code appears in `failureCodes`.
+5. Every code in `failureCodes` is reachable by a default, conditional, or
+   bootstrap fixture.
+
+**Current discrepancy.** The library retains the conditional
+`PD12-NO-RECORD` emitter. S1-T8 executes it under a `true` override. The registry
+does not declare it, and S1-T10c treats that mismatch as a special case. This
+design rejects that special case. Source, registry, documentation, and tests
+must adopt the lifecycle contract together.
+
+**Rationale.** Removing the emitter would break the documented downstream
+override. Keeping an undeclared emitter would break the registry's closed-set
+claim. Declaring the conditional code preserves both contracts without
+weakening user rejection authority.
+
+The `PD12-*` prefix remains historical and stable. The library and registry
+ship downstream, and guard output enters archived evidence. Renaming the prefix
+would orphan consumers without changing behavior.
+
+**Planning consequence.** `bubbles.plan` must reconcile Scope 1, S1-T8,
+S1-T10, and every retirement assertion. It must add fail-closed authority cases
+for `F-B037-GAPS-FAILCLOSED`. Later owners must update source, registry,
+documentation, and persistent tests as one contract change.
 
 ---
 
@@ -607,7 +636,7 @@ source the library that Scope 1 changes.
 | Keep the acceptance record required but auto-populate it | Forbidden. An agent naming itself acceptor is exactly `PD12-AUTOMATION-ACCEPTOR`, and naming a human it never spoke to is fabrication. |
 | Ship checked AND keep the record required at terminal | Strictly worse than either pure model: the user must still act, and the checked default reintroduces the fabrication vector without buying back the convenience. |
 | Delete Gate G136 entirely | Reopens BUG-029. AC-4 is the load-bearing half and must survive. |
-| Make the acceptance record required only for specific modes or risk tiers | Adds a conditional the owner did not ask for. If it is wanted later, it is a separate improvement with its own evidence. |
+| Make the framework's shipped record requirement depend on a mode or risk tier | Adds a default policy the owner did not ask for. A downstream registry may still set `requiredAtTerminal: true` explicitly. |
 | Restore the ≥1-checked lint rule as a mechanical backstop for AC-1 | D-2. It rebuilds the coupling leg of the fabrication composition and refuses a user who legitimately unchecks everything. S2-T2 buys the only assurance it offered, without either cost. |
 | Ship an operator-run migration script for legacy `uservalidation.md` files | D-1. It cannot distinguish a template-authored `[ ]` from a user's uncheck, so running it performs the act AC-6 forbids. Operator invocation does not change what it does to the file. |
 | Rename `PD12-*` to a neutral prefix | D-5. The library and registry ship downstream and the codes appear verbatim in captured guard output; a rename orphans downstream matchers and archived evidence for a cosmetic gain. |
@@ -630,7 +659,9 @@ with the fix and fails if the fix is reverted or over-applied.
 | A doc surface is fixed by text substitution without matching the code | Compare each G136-describing surface against `artifact-lint.sh` at the delivering commit |
 | Lint relaxation widens into "lint no longer reads the checklist" | S2-T4 and S2-T5: a non-checkbox bullet and a zero-checkbox checklist both still FAIL lint |
 | The template is authored in the wrong shipped state, with no lint rule left to catch it | S2-T2 plus its adversarial partner S2-T9: a fixture template block shipping `- [ ]` must fail the template↔registry agreement check |
-| A failure code is declared but unemittable, or emitted but undeclared | S1-T10: the set the library can emit equals the set `failureCodes` declares |
+| A failure code is declared but unreachable, or source-emittable but undeclared | S1-T10 must cover default, conditional, and bootstrap lifecycle classes in both directions. |
+| A registry read fails and acceptance succeeds | Missing and malformed registry fixtures must emit `PD12-AUTHORITY-UNAVAILABLE` and return non-zero. |
+| A pre-cutover checklist is assigned the wrong meaning | Migration tests must cover legacy checked, legacy unchecked, current, and unknown provenance classes. |
 | A foreign `uservalidation.md` is silently rewritten during the fix | S2-T8: the delivering commit modifies no `uservalidation.md` outside this packet |
 | BUG-032 is closed as a side effect | S4-T9: the delivering commit modifies no path under `bugs/BUG-032-` |
 | G057's description keeps claiming enforcement its enforcer does not perform | S4-T8: G057's description declares which of its three rules are mechanical and which are advisory |
@@ -641,7 +672,7 @@ with the fix and fails if the fix is reverted or over-applied.
 
 | Deviation from the simplest viable approach | Simpler alternative considered | Why rejected |
 |---|---|---|
-| Four scopes rather than one commit | Invert `shippedState`, delete the `PD12-NO-RECORD` emission, fix the prose, done | The change crosses a registry contract, a shared reader, a downstream-shipped template, a blocking guard, two selftests, a persistent regression test and three generated artifacts. A single scope would put the BUG-029 pin, the lint retention and the generated-artifact regeneration in one undifferentiated evidence block, and a partial revert could not be reasoned about. Scope 1 lands the authority first so every later scope verifies against an already-correct source. |
+| Four scopes rather than one commit | Invert `shippedState`, keep the conditional record demand, and fix the prose in one change | The change crosses a registry contract, a shared reader, a downstream-shipped template, a blocking guard, two selftests, a persistent regression test, and three generated artifacts. Separate scopes preserve the dependency order. |
 | Keeping `## Human Acceptance Record` and `## Automation Readiness` after removing the terminal requirement | Delete both sections; opt-out makes neither load-bearing | Explicitly forbidden by AC-7 and AC-9. The record still serves external UAT and compliance sign-off, and the readiness block still records that automation verified the behavior before a human's time was spent. Deleting them would discard capability to simplify a diff. |
 | Adding S2-T2 as a load-bearing template↔registry check | Rely on the template being authored correctly | D-2 removes the only mechanical backstop for AC-1. Leaving no replacement would mean a wrongly-authored template ships silently — which is the failure mode `9e41da4` itself demonstrates, since it changed the template and left the owning agent's instruction contradicting it. |
 | Correcting a sentence in `improvements/INDEX.md` about a different bug | Leave BUG-032's row untouched | D-4. The sentence names a blocker that this fix removes. Leaving it states a non-existent requirement as current, which is precisely the Half-2 defect class. Correcting the sentence is strictly narrower than touching BUG-032's packet, which this fix does not do. |
@@ -655,17 +686,15 @@ by executing against the files and would otherwise surface later as surprises.
 
 ### 8.1 A legacy-checked artifact becomes terminal-eligible with no human act
 
-`bugs/BUG-032-…/uservalidation.md` carries seven checked items authored
-2026-08-16 by the pre-PD-12 checked-by-default template. Its only G136 finding
-today is `PD12-NO-RECORD` (executed; exit 1). After this fix it satisfies the
-terminal gate outright.
+`bugs/BUG-032-…/uservalidation.md` carries seven checked items from the
+pre-PD-12 checked baseline. Before BUG-037, its only G136 finding was
+`PD12-NO-RECORD`. The shipped BUG-037 registry now makes the same bytes
+terminal-eligible.
 
-This is the § 3.6 trade made concrete rather than a defect in the fix — the
-owner's model accepts exactly this. It is routed because **if the owner wants
-BUG-032's acceptance re-confirmed by a human before it closes, that has to be an
-explicit instruction inside BUG-032's own packet.** BUG-037 will not do it, and
-after this fix nothing will refuse it automatically. D-4's note states the
-legacy-shaped status in `improvements/INDEX.md` so the fact survives in writing.
+D-1 classifies this file as legacy pre-PD-12 checked. Its inherited checks do
+not prove fresh review. The packet owner must re-author the current checklist
+before review when provenance makes that safe. Ambiguous review history keeps
+the packet `in_progress` and leaves checkbox state untouched.
 
 ### 8.2 HEAD is internally contradictory in the authoring direction, and the owner requirement was never the loser
 

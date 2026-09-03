@@ -1,0 +1,279 @@
+{
+  "version": 1,
+  "specId": "BUG-033",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-08-24T06:10:40Z",
+  "scopes": [
+    {
+      "scopeId": "01-receipt-target-grouping-and-wrapper-normalization",
+      "scopeName": "Receipt Target Grouping And Wrapper Normalization",
+      "tests": [
+        {
+          "id": "T01",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-001",
+          "description": "Nine re-runs over two targets form one sibling group and zero clones.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T02",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-002",
+          "description": "Two identities over one target produce one clone.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T03",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-003",
+          "description": "Six direct and wrapped spellings derive family node.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T04",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-003",
+          "description": "Wrapper spelling alone produces no clone.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T05",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-004",
+          "description": "Wrapped cargo and npm remain distinct.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T06",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-001",
+          "scenarioIds": ["SCN-B033-001", "SCN-B033-002"],
+          "description": "BUG-007 empty stdout and BUG-032 provenance bounds remain unchanged.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T07",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-001",
+          "scenarioIds": ["SCN-B033-001", "SCN-B033-002", "SCN-B033-003", "SCN-B033-004"],
+          "description": "The real guard accepts honest facet-1 and facet-2 cases and refuses both adversarial cases.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T08",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-005",
+          "description": "Direct, timeout, and gtimeout derive one identity.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T09",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-005",
+          "description": "The real guard emits accepted deterministic siblings for timeout and gtimeout.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T10",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-006",
+          "description": "Only the exact portable alarm spelling matches the direct identity.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T11",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-006",
+          "description": "The real guard accepts the exact portable launcher without clone wording.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T12",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-007",
+          "description": "Every supported wrapper order exposes node scripts/check-page.mjs.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T13",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-007",
+          "description": "One composition per launcher kind is accepted by the real guard.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T14",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-008",
+          "description": "Arbitrary Perl remains visible and differs from direct invocation.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T15",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-008",
+          "description": "Refusal reports recorded identity and unchanged normalization.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T16",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-009",
+          "description": "Every listed incomplete, option-bearing, and near-match form remains unchanged.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T17",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-009",
+          "description": "Timeout and Perl malformed collisions retain their launcher prefixes.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T18",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-010",
+          "description": "Every launcher exposes distinct artifact-lint and guard identities.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T19",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-010",
+          "description": "Every launcher kind refuses and emits both complete identities.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T20",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/receipt-identity-selftest.sh",
+          "scenarioId": "SCN-B033-011",
+          "description": "Equal normalized commands with exits 0 and 1 fail sibling compatibility.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 focused receipt identity\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 300 bash bubbles/scripts/receipt-identity-selftest.sh",
+          "liveSystem": false
+        },
+        {
+          "id": "T21",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-011",
+          "description": "The real guard refuses with the exit reason and both exit values.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T22",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-008",
+          "scenarioIds": ["SCN-B033-001", "SCN-B033-008", "SCN-B033-010", "SCN-B033-011"],
+          "description": "Ordered fields, effect, complete identities, escaping, narrow wrapping, and ANSI-free semantics match design.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T23",
+          "type": "regression",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-B033-001",
+          "scenarioIds": ["SCN-B033-001", "SCN-B033-002", "SCN-B033-003", "SCN-B033-004", "SCN-B033-005", "SCN-B033-006", "SCN-B033-007", "SCN-B033-008", "SCN-B033-009", "SCN-B033-010", "SCN-B033-011"],
+          "description": "The complete source-repository guard and selftest suite passes.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 framework validate\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 1200 bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": true
+        },
+        {
+          "id": "T24",
+          "type": "e2e-api",
+          "category": "e2e-api",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-002",
+          "description": "Regression: the real state-transition guard process refuses two command identities over one target with both identities and effect=TRANSITION_BLOCKED.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 targeted whole guard\" -- env BUBBLES_STATE_TRANSITION_GUARD_BUG033_ONLY=1 /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T25",
+          "type": "e2e-api",
+          "category": "e2e-api",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-003",
+          "description": "Regression: the real state-transition guard process resolves direct, shell, env, and assignment spellings to node without a wrapper-only clone allegation.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 targeted whole guard\" -- env BUBBLES_STATE_TRANSITION_GUARD_BUG033_ONLY=1 /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "T26",
+          "type": "e2e-api",
+          "category": "e2e-api",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B033-001",
+          "scenarioIds": ["SCN-B033-001", "SCN-B033-002", "SCN-B033-003", "SCN-B033-004", "SCN-B033-005", "SCN-B033-006", "SCN-B033-007", "SCN-B033-008", "SCN-B033-009", "SCN-B033-010", "SCN-B033-011"],
+          "description": "Broader E2E regression: the complete real-process Check 43 scenario family passes with no internal mocks.",
+          "command": "bash bubbles/scripts/evidence-capture.sh --label \"BUG-033 whole guard\" -- /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 600 bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        }
+      ]
+    }
+  ]
+}

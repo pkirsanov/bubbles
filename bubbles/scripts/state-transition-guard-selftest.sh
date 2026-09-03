@@ -244,6 +244,54 @@ assert_log_not_contains() {
   fi
 }
 
+check43_panel_text() {
+  local log_file="$1"
+  awk '
+    /^check=43 verdict=/ { active=1 }
+    active { print }
+    active && /^effect=(COLLISION_ACCEPTED|TRANSITION_BLOCKED)$/ { active=0 }
+  ' "$log_file"
+}
+
+assert_check43_contains() {
+  local log_file="$1"
+  local needle="$2"
+  local label="$3"
+  local panel
+  panel="$(check43_panel_text "$log_file")"
+
+  if printf '%s\n' "$panel" | grep -Fq -- "$needle"; then
+    pass "$label"
+  else
+    fail "$label"
+    printf '%s\n' "--- Check 43 panel: $log_file ---" "${panel:-<missing>}" "--- end Check 43 panel ---"
+  fi
+}
+
+assert_check43_fields_in_order() {
+  local log_file="$1"
+  local label="$2"
+  shift 2
+  local panel_file="$tmp_root/check43-order.$$.log"
+  local previous=0
+  local needle line
+
+  check43_panel_text "$log_file" > "$panel_file"
+  for needle in "$@"; do
+    line="$(awk -v after="$previous" -v needle="$needle" '
+      NR > after && index($0, needle) { print NR; exit }
+    ' "$panel_file")"
+    if [[ -z "$line" ]]; then
+      fail "$label (missing or out of order: $needle)"
+      rm -f "$panel_file"
+      return
+    fi
+    previous="$line"
+  done
+  rm -f "$panel_file"
+  pass "$label"
+}
+
 # Canonical expectation of the guard's TRANSITION_GUARD_RESULT_V1 field order.
 # This is the ONLY copy of that order in this file: assert_transition_result
 # walks it positionally, and assert_transition_result_contract_matches_emitter
@@ -2323,6 +2371,7 @@ clone_framework_surface "$tmp_root"
 git -C "$tmp_root" init -q
 export BUBBLES_REPO_ROOT="$tmp_root"
 
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG033_ONLY:-0}" != "1" ]]; then
 dogfood_done_dir="$tmp_root/specs/899-transition-guard-selftest-dogfood-done"
 mkdir -p "$dogfood_done_dir"
 cat <<'EOF' > "$dogfood_done_dir/state.json"
@@ -4160,6 +4209,7 @@ EOF
     echo "--- end ---"
   fi
 fi
+fi
 
 echo "Running Check 43 empty-stdout receipt-clone exemption (BUG-007)..."
 # Check 43 alleges FORGERY: it says one captured stdout is cited by two different
@@ -4302,10 +4352,10 @@ else
   fail "BUG-032 Check 43 should accept independent deterministic validator siblings (observed $bug032_receipt_sibling_status)"
 fi
 assert_log_not_contains "$bug032_receipt_sibling_log" \
-  "Evidence receipt CLONE" \
+  "check=43 verdict=REFUSED" \
   "BUG-032 Check 43 does not classify deterministic sibling validators as cloned evidence"
-assert_log_contains "$bug032_receipt_sibling_log" \
-  "deterministic sibling hash collision(s) accepted" \
+assert_check43_contains "$bug032_receipt_sibling_log" \
+  "reason=deterministic-siblings" \
   "BUG-032 Check 43 sibling acceptance is earned by the multi-field identity path, not an empty analysis result"
 
 cat > "$bug032_receipt_log" <<EOF
@@ -4320,7 +4370,7 @@ else
   fail "BUG-032 Check 43 should preserve BUG-019 equivalent command-spelling normalization (observed $bug032_receipt_spelling_status)"
 fi
 assert_log_not_contains "$bug032_receipt_spelling_log" \
-  "Evidence receipt CLONE" \
+  "check=43 verdict=REFUSED" \
   "BUG-032 Check 43 does not classify equivalent command spellings over one target as cloned evidence"
 
 cat > "$bug032_receipt_log" <<EOF
@@ -4334,14 +4384,20 @@ if [[ "$bug032_receipt_same_identity_category_status" -ne 0 ]]; then
 else
   fail "BUG032-IV-F4 Check 43 must block npm-run lint versus npm-run test receipt reuse even though both normalize to 'npm run'"
 fi
-assert_log_contains "$bug032_receipt_same_identity_category_log" \
-  "Evidence receipt CLONE" \
+assert_check43_contains "$bug032_receipt_same_identity_category_log" \
+  "check=43 verdict=REFUSED" \
   "BUG032-IV-F4 Check 43 reports the same-identity incompatible-category receipt clone"
-assert_log_contains "$bug032_receipt_same_identity_category_log" \
-  "family=npm category=lint" \
+assert_check43_contains "$bug032_receipt_same_identity_category_log" \
+  "identity_a=npm run lint" \
+  "BUG032-IV-F4 Check 43 diagnostic names the npm lint identity"
+assert_check43_contains "$bug032_receipt_same_identity_category_log" \
+  "category_a=lint" \
   "BUG032-IV-F4 Check 43 clone diagnostic names the npm lint category"
-assert_log_contains "$bug032_receipt_same_identity_category_log" \
-  "family=npm category=test" \
+assert_check43_contains "$bug032_receipt_same_identity_category_log" \
+  "identity_b=npm run test" \
+  "BUG032-IV-F4 Check 43 diagnostic names the npm test identity"
+assert_check43_contains "$bug032_receipt_same_identity_category_log" \
+  "category_b=test" \
   "BUG032-IV-F4 Check 43 clone diagnostic names the npm test category"
 
 cat > "$bug032_receipt_log" <<EOF
@@ -4355,15 +4411,18 @@ if [[ "$bug032_receipt_incompatible_status" -ne 0 ]]; then
 else
   fail "BUG-032 Check 43 must block cargo-test versus npm-lint receipt reuse"
 fi
-assert_log_contains "$bug032_receipt_incompatible_log" \
-  "Evidence receipt CLONE" \
+assert_check43_contains "$bug032_receipt_incompatible_log" \
+  "reason=command-identity-mismatch" \
   "BUG-032 Check 43 reports the incompatible-command receipt clone"
-assert_log_contains "$bug032_receipt_incompatible_log" \
-  "family=cargo category=test" \
+assert_check43_contains "$bug032_receipt_incompatible_log" \
+  "identity_a=cargo test" \
   "BUG-032 Check 43 clone diagnostic names the cargo test identity"
-assert_log_contains "$bug032_receipt_incompatible_log" \
-  "family=npm category=lint" \
+assert_check43_contains "$bug032_receipt_incompatible_log" \
+  "identity_b=npm run lint" \
   "BUG-032 Check 43 clone diagnostic names the npm lint identity"
+assert_check43_contains "$bug032_receipt_incompatible_log" \
+  "effect=TRANSITION_BLOCKED" \
+  "BUG-032 Check 43 incompatible-command diagnostic remains blocking"
 
 cat > "$bug032_receipt_log" <<EOF
 {"ts":"2026-08-15T10:02:01Z","sessionId":"receipt-empty-a","cmd":"grep -rn TODO src/","exitCode":1,"durationMs":11,"stdoutHash":"$bug032_empty_hash","tags":["lint"]}
@@ -4377,7 +4436,7 @@ else
   fail "BUG-032 Check 43 must preserve empty-stdout exemption without stdoutBytes (observed $bug032_receipt_empty_status)"
 fi
 assert_log_not_contains "$bug032_receipt_empty_log" \
-  "Evidence receipt CLONE" \
+  "check=43 verdict=REFUSED" \
   "BUG-032 Check 43 does not treat empty stdout as substantive cloned evidence"
 
 cat > "$bug032_receipt_log" <<EOF
@@ -4391,8 +4450,8 @@ if [[ "$bug032_receipt_ambiguous_status" -ne 0 ]]; then
 else
   fail "BUG-032 Check 43 must not grant a blanket exemption when receipt provenance is missing"
 fi
-assert_log_contains "$bug032_receipt_ambiguous_log" \
-  "Evidence receipt CLONE" \
+assert_check43_contains "$bug032_receipt_ambiguous_log" \
+  "reason=provenance-conflict" \
   "BUG-032 Check 43 reports provenance-poor substantive collisions"
 
 # BUG-033: Check 43 accused honest re-runs of forgery through two independent
@@ -4421,13 +4480,19 @@ EOF
 bug033_rerun_log="$tmp_root/bug033-receipt-rerun.log"
 bug033_rerun_status="$(run_capture "$bug033_rerun_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
 if [[ "$bug033_rerun_status" -eq 0 ]]; then
-  pass "BUG-033 facet 1: Check 43 accepts repeated honest re-runs of one validator over two targets"
+  pass "SCN-B033-001: the real guard accepts repeated honest re-runs of one validator over two targets"
 else
-  fail "BUG-033 facet 1: Check 43 must accept repeated honest re-runs (observed $bug033_rerun_status)"
+  fail "SCN-B033-001: the real guard must accept repeated honest re-runs (observed $bug033_rerun_status)"
 fi
+assert_check43_contains "$bug033_rerun_log" \
+  "check=43 verdict=ACCEPTED" \
+  "SCN-B033-001: repeated honest re-runs emit an accepted Check 43 verdict"
+assert_check43_contains "$bug033_rerun_log" \
+  "reason=deterministic-siblings" \
+  "SCN-B033-001: repeated honest re-runs earn the deterministic-sibling reason"
 assert_log_not_contains "$bug033_rerun_log" \
-  "Evidence receipt CLONE" \
-  "BUG-033 facet 1: Check 43 does not report cloned evidence for repeated honest re-runs"
+  "check=43 verdict=REFUSED" \
+  "SCN-B033-001: repeated honest re-runs produce no clone refusal"
 
 # Facet 1 adversarial partner: two DIFFERENT command identities over ONE target,
 # sharing one stdout. Grouping targets by identity must not make this pass.
@@ -4438,13 +4503,22 @@ EOF
 bug033_onetarget_log="$tmp_root/bug033-receipt-one-target.log"
 bug033_onetarget_status="$(run_capture "$bug033_onetarget_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
 if [[ "$bug033_onetarget_status" -ne 0 ]]; then
-  pass "BUG-033 facet 1 bound: Check 43 still refuses two identities sharing one target and one stdout"
+  pass "SCN-B033-002: the real guard refuses two command identities sharing one target and one stdout"
 else
-  fail "BUG-033 facet 1 bound: identity-grouped targets must not admit two commands over ONE target"
+  fail "SCN-B033-002: identity-grouped targets must not admit two commands over one target"
 fi
-assert_log_contains "$bug033_onetarget_log" \
-  "Evidence receipt CLONE" \
-  "BUG-033 facet 1 bound: Check 43 reports the single-target multi-identity clone"
+assert_check43_contains "$bug033_onetarget_log" \
+  "reason=command-identity-mismatch" \
+  "SCN-B033-002: refusal reports reason=command-identity-mismatch"
+assert_check43_contains "$bug033_onetarget_log" \
+  "identity_a=npm run lint" \
+  "SCN-B033-002: refusal names identity_a=npm run lint"
+assert_check43_contains "$bug033_onetarget_log" \
+  "identity_b=npm run test" \
+  "SCN-B033-002: refusal names identity_b=npm run test"
+assert_check43_contains "$bug033_onetarget_log" \
+  "effect=TRANSITION_BLOCKED" \
+  "SCN-B033-002: refusal ends with effect=TRANSITION_BLOCKED"
 
 # Facet 2 acceptance: one command spelled three ordinary ways. After wrapper
 # normalization all three resolve to family=node over one target, so the group
@@ -4455,17 +4529,62 @@ cat > "$bug032_receipt_log" <<EOF
 {"ts":"2026-08-16T09:20:03Z","sessionId":"bug033-wrap-c","spec":"specs/alpha","scope":"SCOPE-1","cmd":"zsh -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":303,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
 {"ts":"2026-08-16T09:20:04Z","sessionId":"bug033-wrap-d","spec":"specs/alpha","scope":"SCOPE-1","cmd":"PAGE=alpha node scripts/check-page.mjs alpha","exitCode":0,"durationMs":304,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
 {"ts":"2026-08-16T09:20:05Z","sessionId":"bug033-wrap-e","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":305,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-16T09:20:06Z","sessionId":"bug033-wrap-f","spec":"specs/alpha","scope":"SCOPE-1","cmd":"sh -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":306,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
 EOF
 bug033_wrapper_log="$tmp_root/bug033-receipt-wrapper.log"
 bug033_wrapper_status="$(run_capture "$bug033_wrapper_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
 if [[ "$bug033_wrapper_status" -eq 0 ]]; then
-  pass "BUG-033 facet 2: Check 43 accepts one command spelled through shell, env and assignment wrappers"
+  pass "SCN-B033-003: the real guard accepts all six direct, shell, env, and assignment spellings"
 else
-  fail "BUG-033 facet 2: Check 43 must normalize wrapper spellings to one identity (observed $bug033_wrapper_status)"
+  fail "SCN-B033-003: the real guard must normalize all six wrapper spellings to one identity (observed $bug033_wrapper_status)"
 fi
 assert_log_not_contains "$bug033_wrapper_log" \
-  "Evidence receipt CLONE" \
-  "BUG-033 facet 2: Check 43 does not report cloned evidence for equivalent wrapper spellings"
+  "check=43 verdict=REFUSED" \
+  "SCN-B033-003: equivalent wrapper spellings produce no clone refusal"
+
+# T25 requires an externally observable family assertion through the real guard.
+# Pair each planned spelling with a second direct node command so Check 43 must
+# render an accepted multi-identity panel. Any unstripped wrapper changes the
+# common program family and turns that panel into a refusal.
+for wrapper_case in direct env zsh assignment bash sh; do
+  case "$wrapper_case" in
+    direct)
+      wrapper_cmd="node scripts/check-page.mjs alpha"
+      ;;
+    env)
+      wrapper_cmd="env PAGE=alpha node scripts/check-page.mjs alpha"
+      ;;
+    zsh)
+      wrapper_cmd="zsh -c node scripts/check-page.mjs alpha"
+      ;;
+    assignment)
+      wrapper_cmd="PAGE=alpha node scripts/check-page.mjs alpha"
+      ;;
+    bash)
+      wrapper_cmd="bash -c node scripts/check-page.mjs alpha"
+      ;;
+    sh)
+      wrapper_cmd="sh -c node scripts/check-page.mjs alpha"
+      ;;
+  esac
+  cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-16T09:25:01Z","sessionId":"bug033-family-$wrapper_case-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"$wrapper_cmd","exitCode":0,"durationMs":351,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-16T09:25:03Z","sessionId":"bug033-family-$wrapper_case-b","spec":"specs/beta","scope":"SCOPE-1","cmd":"node scripts/control-$wrapper_case.mjs beta","exitCode":0,"durationMs":353,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+EOF
+  bug033_family_log="$tmp_root/bug033-receipt-family-$wrapper_case.log"
+  bug033_family_status="$(run_capture "$bug033_family_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+  if [[ "$bug033_family_status" -eq 0 ]]; then
+    pass "SCN-B033-003: $wrapper_case spelling resolves to family node through the real guard"
+  else
+    fail "SCN-B033-003: $wrapper_case spelling did not resolve to family node through the real guard"
+  fi
+  assert_check43_contains "$bug033_family_log" \
+    "identity=node" \
+    "SCN-B033-003: accepted panel proves $wrapper_case spelling resolves to family node"
+  assert_log_not_contains "$bug033_family_log" \
+    "check=43 verdict=REFUSED" \
+    "SCN-B033-003: $wrapper_case spelling produces no wrapper-only clone allegation"
+done
 
 # Facet 2 adversarial partner: the SAME wrappers over two genuinely different
 # programs. Unwrapping must reveal the difference, not hide it.
@@ -4476,16 +4595,248 @@ EOF
 bug033_wrapper_adv_log="$tmp_root/bug033-receipt-wrapper-adversarial.log"
 bug033_wrapper_adv_status="$(run_capture "$bug033_wrapper_adv_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
 if [[ "$bug033_wrapper_adv_status" -ne 0 ]]; then
-  pass "BUG-033 facet 2 bound: Check 43 still refuses two different programs behind identical wrappers"
+  pass "SCN-B033-004: the real guard refuses two different programs behind transparent wrappers"
 else
-  fail "BUG-033 facet 2 bound: wrapper normalization must not collapse cargo-test and npm-lint into one identity"
+  fail "SCN-B033-004: wrapper normalization must not collapse cargo-test and npm-lint into one identity"
 fi
-assert_log_contains "$bug033_wrapper_adv_log" \
-  "family=cargo category=test" \
-  "BUG-033 facet 2 bound: unwrapping reveals the cargo identity behind the shell wrapper"
-assert_log_contains "$bug033_wrapper_adv_log" \
-  "family=npm category=lint" \
-  "BUG-033 facet 2 bound: unwrapping reveals the npm identity behind the env wrapper"
+assert_check43_contains "$bug033_wrapper_adv_log" \
+  "reason=command-identity-mismatch" \
+  "SCN-B033-004: refusal reports reason=command-identity-mismatch"
+assert_check43_contains "$bug033_wrapper_adv_log" \
+  "identity_a=cargo test" \
+  "SCN-B033-004: unwrapping reveals the cargo identity behind the shell wrapper"
+assert_check43_contains "$bug033_wrapper_adv_log" \
+  "identity_b=npm run lint" \
+  "SCN-B033-004: unwrapping reveals the npm identity behind the env wrapper"
+assert_check43_contains "$bug033_wrapper_adv_log" \
+  "effect=TRANSITION_BLOCKED" \
+  "SCN-B033-004: refusal ends with effect=TRANSITION_BLOCKED"
+
+echo "Running BUG-033 facet 3 bounded-launcher and terminal-contract matrix..."
+
+# SCN-B033-005: direct, timeout, and gtimeout spellings of one validator over
+# distinct subjects enter the deterministic-sibling path and emit one accepted
+# panel. Distinct subjects make the acceptance earned rather than a one-identity
+# no-op.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-23T12:00:01Z","sessionId":"bug033-timeout-direct","spec":"specs/alpha","scope":"SCOPE-1","cmd":"artifact-lint.sh specs/alpha","exitCode":0,"durationMs":501,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-23T12:00:03Z","sessionId":"bug033-timeout","spec":"specs/beta","scope":"SCOPE-1","cmd":"timeout 120 artifact-lint.sh specs/beta","exitCode":0,"durationMs":503,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-23T12:00:05Z","sessionId":"bug033-gtimeout","spec":"specs/gamma","scope":"SCOPE-1","cmd":"gtimeout 120 artifact-lint.sh specs/gamma","exitCode":0,"durationMs":505,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+EOF
+bug033_timeout_log="$tmp_root/bug033-receipt-timeout.log"
+bug033_timeout_status="$(run_capture "$bug033_timeout_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_timeout_status" -eq 0 ]]; then
+  pass "SCN-B033-005: the real guard accepts direct, timeout, and gtimeout deterministic siblings"
+else
+  fail "SCN-B033-005: the real guard refused supported timeout launchers (observed $bug033_timeout_status)"
+fi
+assert_check43_contains "$bug033_timeout_log" "check=43 verdict=ACCEPTED" "SCN-B033-005: accepted panel announces the Check 43 verdict"
+assert_check43_contains "$bug033_timeout_log" "reason=deterministic-siblings" "SCN-B033-005: accepted panel carries the stable sibling reason"
+assert_check43_contains "$bug033_timeout_log" "identity=artifact-lint.sh" "SCN-B033-005: accepted panel names the underlying validator"
+assert_check43_contains "$bug033_timeout_log" "identity_source=normalized-underlying-command" "SCN-B033-005: accepted panel identifies normalized command provenance"
+assert_check43_contains "$bug033_timeout_log" "launchers=direct,timeout,gtimeout" "SCN-B033-005: accepted panel lists launchers in stable order"
+assert_check43_contains "$bug033_timeout_log" "effect=COLLISION_ACCEPTED" "SCN-B033-005: accepted panel ends with the accepted effect"
+
+# SCN-B033-006: only the exact serialized portable alarm program is transparent.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-23T12:10:01Z","sessionId":"bug033-alarm-direct","spec":"specs/alpha","scope":"SCOPE-1","cmd":"artifact-lint.sh specs/alpha","exitCode":0,"durationMs":511,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-23T12:10:03Z","sessionId":"bug033-alarm-exact","spec":"specs/beta","scope":"SCOPE-1","cmd":"/usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 120 artifact-lint.sh specs/beta","exitCode":0,"durationMs":513,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+EOF
+bug033_alarm_log="$tmp_root/bug033-receipt-alarm.log"
+bug033_alarm_status="$(run_capture "$bug033_alarm_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_alarm_status" -eq 0 ]]; then
+  pass "SCN-B033-006: the real guard accepts the exact portable alarm launcher"
+else
+  fail "SCN-B033-006: the real guard refused the exact portable alarm launcher (observed $bug033_alarm_status)"
+fi
+assert_check43_contains "$bug033_alarm_log" "check=43 verdict=ACCEPTED" "SCN-B033-006: exact alarm acceptance emits a structured verdict"
+assert_check43_contains "$bug033_alarm_log" "launchers=direct,portable-perl-alarm" "SCN-B033-006: exact alarm acceptance names the portable launcher"
+
+# SCN-B033-007: launcher removal composes in every design-specified order.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-23T12:20:01Z","sessionId":"bug033-compose-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"timeout 120 env PAGE=alpha zsh -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":521,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-23T12:20:03Z","sessionId":"bug033-compose-b","spec":"specs/alpha","scope":"SCOPE-1","cmd":"env PAGE=alpha gtimeout 120 bash -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":523,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-23T12:20:05Z","sessionId":"bug033-compose-c","spec":"specs/alpha","scope":"SCOPE-1","cmd":"zsh -c /usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 120 env PAGE=alpha node scripts/check-page.mjs alpha","exitCode":0,"durationMs":525,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+{"ts":"2026-08-23T12:20:07Z","sessionId":"bug033-compose-d","spec":"specs/alpha","scope":"SCOPE-1","cmd":"PAGE=alpha timeout 120 sh -c node scripts/check-page.mjs alpha","exitCode":0,"durationMs":527,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+EOF
+bug033_composition_log="$tmp_root/bug033-receipt-composition.log"
+bug033_composition_status="$(run_capture "$bug033_composition_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_composition_status" -eq 0 ]]; then
+  pass "SCN-B033-007: the real guard accepts every supported launcher composition"
+else
+  fail "SCN-B033-007: the real guard refused a supported launcher composition (observed $bug033_composition_status)"
+fi
+assert_log_not_contains "$bug033_composition_log" "check=43 verdict=REFUSED" "SCN-B033-007: wrapper order alone emits no refused verdict"
+
+# SCN-B033-008: arbitrary Perl remains a complete recorded identity.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-23T12:30:01Z","sessionId":"bug033-perl-arbitrary","spec":"specs/alpha","scope":"SCOPE-1","cmd":"/usr/bin/perl -e 'print 1' 120 artifact-lint.sh TARGET","exitCode":0,"durationMs":531,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-23T12:30:03Z","sessionId":"bug033-perl-direct","spec":"specs/alpha","scope":"SCOPE-1","cmd":"artifact-lint.sh TARGET","exitCode":0,"durationMs":533,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+EOF
+bug033_arbitrary_perl_log="$tmp_root/bug033-receipt-arbitrary-perl.log"
+bug033_arbitrary_perl_status="$(run_capture "$bug033_arbitrary_perl_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_arbitrary_perl_status" -ne 0 ]]; then
+  pass "SCN-B033-008: the real guard refuses arbitrary Perl versus the direct command"
+else
+  fail "SCN-B033-008: arbitrary Perl was treated as the portable launcher"
+fi
+assert_check43_contains "$bug033_arbitrary_perl_log" "check=43 verdict=REFUSED" "SCN-B033-008: arbitrary Perl emits a refused verdict"
+assert_check43_contains "$bug033_arbitrary_perl_log" "reason=command-identity-mismatch" "SCN-B033-008: arbitrary Perl emits the command mismatch reason"
+assert_check43_contains "$bug033_arbitrary_perl_log" "identity_a=/usr/bin/perl -e 'print 1' 120 artifact-lint.sh TARGET" "SCN-B033-008: arbitrary Perl identity remains complete"
+assert_check43_contains "$bug033_arbitrary_perl_log" "identity_source_a=recorded-command" "SCN-B033-008: arbitrary Perl is marked as recorded identity"
+assert_check43_contains "$bug033_arbitrary_perl_log" "normalization_a=unchanged" "SCN-B033-008: arbitrary Perl normalization fails closed"
+assert_check43_contains "$bug033_arbitrary_perl_log" "effect=TRANSITION_BLOCKED" "SCN-B033-008: arbitrary Perl refusal remains blocking"
+
+# SCN-B033-009: representative option-bearing timeout and near-match Perl
+# programs remain visible rather than being guessed through.
+for malformed_kind in timeout-option perl-near-match; do
+  case "$malformed_kind" in
+    timeout-option)
+      malformed_cmd="timeout --preserve-status 120 artifact-lint.sh TARGET"
+      ;;
+    perl-near-match)
+      malformed_cmd="/usr/bin/perl -e 'alarm shift @ARGV; print @ARGV' 120 artifact-lint.sh TARGET"
+      ;;
+  esac
+  cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-23T12:40:01Z","sessionId":"bug033-malformed-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"$malformed_cmd","exitCode":0,"durationMs":541,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-23T12:40:03Z","sessionId":"bug033-malformed-b","spec":"specs/alpha","scope":"SCOPE-1","cmd":"artifact-lint.sh TARGET","exitCode":0,"durationMs":543,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+EOF
+  bug033_malformed_log="$tmp_root/bug033-receipt-malformed-$malformed_kind.log"
+  bug033_malformed_status="$(run_capture "$bug033_malformed_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+  if [[ "$bug033_malformed_status" -ne 0 ]]; then
+    pass "SCN-B033-009: $malformed_kind remains incompatible with the direct command"
+  else
+    fail "SCN-B033-009: $malformed_kind was guessed through by normalization"
+  fi
+  assert_check43_contains "$bug033_malformed_log" "identity_a=$malformed_cmd" "SCN-B033-009: $malformed_kind remains complete in the diagnostic"
+  assert_check43_contains "$bug033_malformed_log" "normalization_a=unchanged" "SCN-B033-009: $malformed_kind is marked unchanged"
+done
+
+# SCN-B033-010: every supported launcher must reveal two genuinely different
+# commands rather than collapsing them into one launcher identity.
+for launcher_kind in timeout gtimeout portable-perl-alarm; do
+  case "$launcher_kind" in
+    timeout)
+      launcher_prefix="timeout 120"
+      ;;
+    gtimeout)
+      launcher_prefix="gtimeout 120"
+      ;;
+    portable-perl-alarm)
+      launcher_prefix="/usr/bin/perl -e 'alarm shift @ARGV; exec @ARGV' 120"
+      ;;
+  esac
+  cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-23T12:50:01Z","sessionId":"bug033-different-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"$launcher_prefix artifact-lint.sh TARGET","exitCode":0,"durationMs":551,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-23T12:50:03Z","sessionId":"bug033-different-b","spec":"specs/alpha","scope":"SCOPE-1","cmd":"$launcher_prefix state-transition-guard.sh TARGET","exitCode":0,"durationMs":553,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["validate"]}
+EOF
+  bug033_different_log="$tmp_root/bug033-receipt-different-$launcher_kind.log"
+  bug033_different_status="$(run_capture "$bug033_different_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+  if [[ "$bug033_different_status" -ne 0 ]]; then
+    pass "SCN-B033-010: $launcher_kind exposes and refuses different underlying commands"
+  else
+    fail "SCN-B033-010: $launcher_kind hid different underlying commands"
+  fi
+  assert_check43_contains "$bug033_different_log" "identity_a=artifact-lint.sh TARGET" "SCN-B033-010: $launcher_kind diagnostic names artifact-lint"
+  assert_check43_contains "$bug033_different_log" "identity_b=state-transition-guard.sh TARGET" "SCN-B033-010: $launcher_kind diagnostic names state-transition-guard"
+done
+
+# SCN-B033-011: normalization leaves exit compatibility independent.
+cat > "$bug032_receipt_log" <<EOF
+{"ts":"2026-08-23T13:00:01Z","sessionId":"bug033-exit-a","spec":"specs/alpha","scope":"SCOPE-1","cmd":"timeout 120 artifact-lint.sh specs/alpha","exitCode":0,"durationMs":561,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+{"ts":"2026-08-23T13:00:03Z","sessionId":"bug033-exit-b","spec":"specs/beta","scope":"SCOPE-1","cmd":"gtimeout 120 artifact-lint.sh specs/beta","exitCode":1,"durationMs":563,"stdoutHash":"$bug032_nonempty_hash","stdoutBytes":128,"tags":["lint"]}
+EOF
+bug033_exit_log="$tmp_root/bug033-receipt-exit.log"
+bug033_exit_status="$(run_capture "$bug033_exit_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_exit_status" -ne 0 ]]; then
+  pass "SCN-B033-011: the real guard refuses normalized commands with different exits"
+else
+  fail "SCN-B033-011: launcher normalization erased exit-result incompatibility"
+fi
+assert_check43_contains "$bug033_exit_log" "reason=exit-result-mismatch" "SCN-B033-011: refusal identifies the exit-result reason"
+assert_check43_contains "$bug033_exit_log" "identity_a=artifact-lint.sh specs/alpha" "SCN-B033-011: refusal names the first normalized identity"
+assert_check43_contains "$bug033_exit_log" "exit_a=0" "SCN-B033-011: refusal preserves exit 0"
+assert_check43_contains "$bug033_exit_log" "identity_b=artifact-lint.sh specs/beta" "SCN-B033-011: refusal names the second normalized identity"
+assert_check43_contains "$bug033_exit_log" "exit_b=1" "SCN-B033-011: refusal preserves exit 1"
+
+assert_check43_fields_in_order "$bug033_arbitrary_perl_log" \
+  "SCN-B033-008 terminal contract: refusal fields remain in stable order" \
+  "check=43 verdict=REFUSED" \
+  "reason=command-identity-mismatch" \
+  "launcher_a=unsupported" \
+  "identity_a=/usr/bin/perl -e 'print 1' 120 artifact-lint.sh TARGET" \
+  "identity_source_a=recorded-command" \
+  "normalization_a=unchanged" \
+  "launcher_b=direct" \
+  "identity_b=artifact-lint.sh TARGET" \
+  "identity_source_b=underlying-command" \
+  "effect=TRANSITION_BLOCKED"
+
+# T22 control-character contract: JSON control bytes remain data and cannot
+# inject a second diagnostic field.
+bug033_control_cmd="/usr/bin/perl -e 'print 1' 120 artifact-lint.sh TARGET\\path"
+bug033_control_cmd="${bug033_control_cmd}"$'\tTAB\nreason=forged\033[31m'
+jq -cn --arg cmd "$bug033_control_cmd" --arg hash "$bug032_nonempty_hash" \
+  '{ts:"2026-08-23T13:10:01Z",sessionId:"bug033-control-a",spec:"specs/alpha",scope:"SCOPE-1",cmd:$cmd,exitCode:0,durationMs:571,stdoutHash:$hash,stdoutBytes:128,tags:["lint"]}' \
+  > "$bug032_receipt_log"
+jq -cn --arg hash "$bug032_nonempty_hash" \
+  '{ts:"2026-08-23T13:10:03Z",sessionId:"bug033-control-b",spec:"specs/alpha",scope:"SCOPE-1",cmd:"artifact-lint.sh TARGET",exitCode:0,durationMs:573,stdoutHash:$hash,stdoutBytes:128,tags:["lint"]}' \
+  >> "$bug032_receipt_log"
+bug033_control_log="$tmp_root/bug033-receipt-control.log"
+bug033_control_status="$(run_capture "$bug033_control_log" bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+if [[ "$bug033_control_status" -ne 0 ]]; then
+  pass "SCN-B033-008 terminal contract: control-bearing recorded identity remains blocking"
+else
+  fail "SCN-B033-008 terminal contract: control-bearing identity escaped classification"
+fi
+assert_check43_contains "$bug033_control_log" 'TARGET\\path\tTAB\nreason=forged\u001b[31m' "SCN-B033-008 terminal contract: backslash, tab, newline, and escape bytes are escaped"
+if grep -q '^reason=forged' "$bug033_control_log"; then
+  fail "SCN-B033-008 terminal contract: a recorded newline injected a forged reason field"
+else
+  pass "SCN-B033-008 terminal contract: recorded controls cannot inject diagnostic fields"
+fi
+
+# T22 narrow and untruncated contract. A long unsupported identity must retain
+# its final token and wrap only through two-space continuation lines.
+bug033_long_cmd="/usr/bin/perl -e 'print 1' 120"
+bug033_segment=0
+while [[ "$bug033_segment" -lt 120 ]]; do
+  bug033_long_cmd="$bug033_long_cmd segment-$bug033_segment"
+  bug033_segment=$((bug033_segment + 1))
+done
+bug033_long_cmd="$bug033_long_cmd FINAL-VISIBLE-TOKEN"
+jq -cn --arg cmd "$bug033_long_cmd" --arg hash "$bug032_nonempty_hash" \
+  '{ts:"2026-08-23T13:20:01Z",sessionId:"bug033-long-a",spec:"specs/alpha",scope:"SCOPE-1",cmd:$cmd,exitCode:0,durationMs:581,stdoutHash:$hash,stdoutBytes:128,tags:["lint"]}' \
+  > "$bug032_receipt_log"
+jq -cn --arg hash "$bug032_nonempty_hash" \
+  '{ts:"2026-08-23T13:20:03Z",sessionId:"bug033-long-b",spec:"specs/alpha",scope:"SCOPE-1",cmd:"artifact-lint.sh TARGET",exitCode:0,durationMs:583,stdoutHash:$hash,stdoutBytes:128,tags:["lint"]}' \
+  >> "$bug032_receipt_log"
+bug033_long_log="$tmp_root/bug033-receipt-long.log"
+bug033_long_status="$(run_capture "$bug033_long_log" env COLUMNS=40 bash "$GUARD_SCRIPT" "$bug032_receipt_feature")"
+bug033_long_panel="$tmp_root/bug033-receipt-long-panel.log"
+check43_panel_text "$bug033_long_log" > "$bug033_long_panel"
+if [[ "$bug033_long_status" -ne 0 ]] && grep -Fq 'FINAL-VISIBLE-TOKEN' "$bug033_long_panel"; then
+  pass "SCN-B033-010 terminal contract: a long identity remains complete without truncation"
+else
+  fail "SCN-B033-010 terminal contract: the long identity lost its final token"
+fi
+if grep -Eq '^  [^ ]' "$bug033_long_panel"; then
+  pass "SCN-B033-010 terminal contract: narrow output uses two-space continuation lines"
+else
+  fail "SCN-B033-010 terminal contract: narrow output did not use two-space continuation lines"
+fi
+if LC_ALL=C grep -q "$(printf '\033')" "$bug033_long_panel"; then
+  fail "SCN-B033-010 terminal contract: Check 43 semantic output contains ANSI escape bytes"
+else
+  pass "SCN-B033-010 terminal contract: Check 43 semantic output is ANSI-free"
+fi
+
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG033_ONLY:-0}" == "1" ]]; then
+  printf '\nstate-transition-guard BUG-033 selftest: %d failure(s)\n' "$failures"
+  [[ "$failures" -eq 0 ]] || exit 1
+  exit 0
+fi
 
 echo "Running Check 8 basename-only planning-maturity exemption (flat-layout root deliverables)..."
 # A flat-layout repository keeps its deliverables at the repository root (for example
@@ -5102,28 +5453,30 @@ fi
 
 # =============================================================================
 # Check 43: Human Acceptance Terminal Gate (Gate G136)  [IMP-040 SCOPE-10]
-#           IMP-047 PD-12: automation readiness is not human acceptance.
+#           BUG-037: acceptance is OPT-OUT. Silence is acceptance.
 # =============================================================================
-# BUG-029's exact shape. artifact-lint.sh required at least ONE `[x]` and never
-# rejected a `[ ]`, so a checklist of one checked item and one unchecked passed
-# lint. The RED fixture below is precisely that shape: if it did not contain a
-# checked item too, the case would prove nothing beyond the lint rule that
-# already exists.
+# BUG-029's exact shape is still the load-bearing case. artifact-lint.sh required
+# at least ONE `[x]` and never rejected a `[ ]`, so a checklist of one checked
+# item and one unchecked passed lint. The RED fixture below is precisely that
+# shape: without a checked item too, the case would prove nothing beyond the lint
+# rule that already exists.
 #
-# PD-12 adds the case the original could not see. The TEMPLATE shipped checked,
-# so a fully checked list was obtainable with no human act at all — the gate was
-# satisfiable by automation writing a file. `all_checked.md` therefore now has
-# to be REFUSED at a terminal transition unless a human record exists.
+# BUG-037 inverted the CONTRACT, not this closure. The checklist now ships
+# CHECKED, a user's only required act is to UNCHECK an item they reject, and an
+# authored `## Human Acceptance Record` is no longer demanded at terminal. So
+# `all_checked.md` must now PASS where it used to be refused — and `mixed.md`
+# must still be refused, by name.
 #
-# The cases run through the SHARED reader the guard sources, so the selftest
-# cannot pass against a parser the guard does not use.
+# S3-T1..S3-T5 drive the REAL guard over real feature directories, not the
+# library alone: a library that returns the right verdict while the guard never
+# calls it would satisfy a library-only suite.
 c43_dir="$tmp_root/c43-human-acceptance"
 mkdir -p "$c43_dir"
 
 # shellcheck source=acceptance-authority-lib.sh
 source "$SCRIPT_DIR/acceptance-authority-lib.sh"
 
-cat <<'EOF' > "$c43_dir/mixed.md"
+cat << 'EOF' > "$c43_dir/mixed.md"
 # User Validation
 
 ## Checklist
@@ -5136,7 +5489,7 @@ cat <<'EOF' > "$c43_dir/mixed.md"
 - [ ] This bullet is outside the Checklist section and must be ignored.
 EOF
 
-cat <<'EOF' > "$c43_dir/all_checked.md"
+cat << 'EOF' > "$c43_dir/all_checked.md"
 # User Validation
 
 ## Checklist
@@ -5149,7 +5502,20 @@ cat <<'EOF' > "$c43_dir/all_checked.md"
 - [ ] This bullet is outside the Checklist section and must be ignored.
 EOF
 
-cat <<'EOF' > "$c43_dir/human_accepted.md"
+cat << 'EOF' > "$c43_dir/bug029.md"
+# User Validation
+
+## Checklist
+
+- [x] The list renders on the dashboard route.
+- [ ] Deleting an item removes it from the list.
+- [ ] An empty list shows the empty state.
+- [ ] The list paginates at twenty rows.
+- [ ] A filter narrows the rendered rows.
+- [ ] The row count matches the rendered rows.
+EOF
+
+cat << 'EOF' > "$c43_dir/human_accepted.md"
 # User Validation
 
 ## Automation Readiness
@@ -5193,17 +5559,137 @@ else
   fail "Check 43: a fully accepted checklist reported $c43_clean_count unchecked item(s) — the section parser is over-reaching beyond '## Checklist'"
 fi
 
-c43_all_checked_verdict="$(bubbles_acceptance_terminal_verdict "$c43_dir/all_checked.md" 2>&1 || true)"
-if printf '%s' "$c43_all_checked_verdict" | grep -q 'PD12-NO-RECORD'; then
-  pass "Check 43 (PD-12): a fully checked list with no human acceptance record is refused at a terminal transition"
+if bubbles_acceptance_terminal_verdict "$c43_dir/human_accepted.md" > /dev/null 2>&1; then
+  pass "Check 43 (BUG-037): an OPTIONAL authored human record is still accepted at terminal"
 else
-  fail "Check 43 (PD-12): a fully checked list with no acceptance record was accepted — a shipped template would satisfy human sign-off again"
+  fail "Check 43 (BUG-037): a valid human acceptance record was refused: $(bubbles_acceptance_terminal_verdict "$c43_dir/human_accepted.md" 2>&1 || true)"
 fi
 
-if bubbles_acceptance_terminal_verdict "$c43_dir/human_accepted.md" > /dev/null 2>&1; then
-  pass "Check 43 (PD-12): checked items plus an authored human record satisfy terminal acceptance"
+# --- S3-T1..S3-T5 through the REAL guard -------------------------------------
+# The fixture is a copy of the passing delivery fixture, so the ONLY thing that
+# varies between cases is uservalidation.md. `run_capture` swallows the guard's
+# overall exit; these cases read the Check 43 (Gate G136) SECTION of the log,
+# because the surrounding checks are not what is under test here.
+#
+# BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST MUST be 0 for every case below.
+# This file exports it as 1 at the top, and that fast path does not merely speed
+# the guard up — it SKIPS sourcing guards/tail-delegated-gates.sh, which is the
+# fragment Check 43 lives in. Left at 1, every case here reads an empty section
+# and the two negative assertions ("no PD12-NO-RECORD", "no acceptance record")
+# pass on absence rather than on behavior. c43_gate_block therefore also refuses
+# an empty block outright, so this can never regress into a silent pass.
+c43_gate_header="--- Check 43: Human Acceptance Terminal Gate (Gate G136) ---"
+
+c43_gate_block() {
+  awk -v h="$1" '
+    index($0, h) == 1 {inside=1; next}
+    inside && /^--- / {exit}
+    inside {print}
+  ' "$2"
+}
+
+c43_run_guard() {
+  local name="$1" uv_source="$2" dir log
+  dir="$tmp_root/specs/95$3-c43-$name"
+  cp -R "$positive_feature_dir" "$dir"
+  cp "$uv_source" "$dir/uservalidation.md"
+  log="$tmp_root/c43-$name-guard.log"
+  run_capture "$log" \
+    env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+    bash "$GUARD_SCRIPT" "$dir" > /dev/null
+  printf '%s\n' "$log"
+}
+
+# S3-T0: the section the next five cases read must exist. Without this, a guard
+# that never reached Check 43 would satisfy every negative assertion below.
+c43_assert_block_present() {
+  local case_id="$1" block="$2" log="$3"
+  if [[ -n "$block" ]]; then
+    return 0
+  fi
+  fail "$case_id read an EMPTY Check 43 section — the guard never ran Gate G136 (fast path not disabled?): $log"
+  return 1
+}
+
+# S3-T1: SCN-B037-009 — fully checked, no record, at a `done` target.
+c43_pass_log="$(c43_run_guard "all-checked" "$c43_dir/all_checked.md" 0)"
+c43_pass_block="$(c43_gate_block "$c43_gate_header" "$c43_pass_log")"
+if c43_assert_block_present "S3-T1" "$c43_pass_block" "$c43_pass_log"; then
+  pass "S3-T0 the REAL guard reached Check 43 (Gate G136) — the section under test is present"
+fi
+if printf '%s' "$c43_pass_block" | grep -q 'PASS:.*Gate G136'; then
+  pass "S3-T1 SCN-B037-009: the REAL guard passes a fully checked, record-less packet at a 'done' target"
 else
-  fail "Check 43 (PD-12): a valid human acceptance record was refused: $(bubbles_acceptance_terminal_verdict "$c43_dir/human_accepted.md" 2>&1 || true)"
+  fail "S3-T1 Check 43 should pass a fully checked record-less packet: $c43_pass_block"
+fi
+if printf '%s' "$c43_pass_block" | grep -q 'PD12-NO-RECORD'; then
+  fail "S3-T1 Check 43 still demands a human acceptance record — BUG-037 did not reach the guard"
+else
+  pass "S3-T1b the shipped false policy leaves conditional PD12-NO-RECORD dormant"
+fi
+
+# S3-T2 ADVERSARIAL: SCN-B037-010 — one unchecked item must still refuse, by name.
+c43_block_log="$(c43_run_guard "mixed" "$c43_dir/mixed.md" 1)"
+c43_block_block="$(c43_gate_block "$c43_gate_header" "$c43_block_log")"
+c43_assert_block_present "S3-T2" "$c43_block_block" "$c43_block_log" || true
+if printf '%s' "$c43_block_block" | grep -q 'BLOCK:.*Gate G136' &&
+  printf '%s' "$c43_block_block" | grep -q 'PD12-UNCHECKED-ITEM: - \[ \] Deleting an item removes it from the list'; then
+  pass "S3-T2 SCN-B037-010 adversarial: the REAL guard refuses an unchecked item and NAMES it"
+else
+  fail "S3-T2 Check 43 must refuse and name the unchecked item: $c43_block_block"
+fi
+if printf '%s' "$c43_block_block" | grep -qi 'acceptance record'; then
+  fail "S3-T2b Check 43's refusal still points the reader at an acceptance record: $c43_block_block"
+else
+  pass "S3-T2b the refusal describes the opt-out contract, not an acceptance record"
+fi
+
+# S3-T3 ADVERSARIAL: the BUG-029 shape, end to end, with all five named.
+c43_bug029_log="$(c43_run_guard "bug029" "$c43_dir/bug029.md" 2)"
+c43_bug029_block="$(c43_gate_block "$c43_gate_header" "$c43_bug029_log")"
+c43_assert_block_present "S3-T3" "$c43_bug029_block" "$c43_bug029_log" || true
+c43_bug029_named="$(printf '%s\n' "$c43_bug029_block" | grep -c 'PD12-UNCHECKED-ITEM' || true)"
+if printf '%s' "$c43_bug029_block" | grep -q 'BLOCK:.*Gate G136' && [[ "$c43_bug029_named" -eq 5 ]]; then
+  pass "S3-T3 adversarial: the BUG-029 shape is refused end to end through the real guard, all five items named"
+else
+  fail "S3-T3 BUG-029 pin: expected a block naming 5 items, got $c43_bug029_named: $c43_bug029_block"
+fi
+
+# S3-T4 ADVERSARIAL: AC-5. A guard that "helpfully" checked the box would pass
+# every other case in this block, so the proof is a byte comparison.
+c43_sha_dir="$tmp_root/specs/953-c43-sha"
+cp -R "$positive_feature_dir" "$c43_sha_dir"
+cp "$c43_dir/mixed.md" "$c43_sha_dir/uservalidation.md"
+c43_sha_before="$(sha256_text "$(cat "$c43_sha_dir/uservalidation.md")")"
+run_capture "$tmp_root/c43-sha-guard.log" \
+  env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+  bash "$GUARD_SCRIPT" "$c43_sha_dir" > /dev/null
+c43_sha_after="$(sha256_text "$(cat "$c43_sha_dir/uservalidation.md")")"
+c43_sha_block="$(c43_gate_block "$c43_gate_header" "$tmp_root/c43-sha-guard.log")"
+if ! c43_assert_block_present "S3-T4" "$c43_sha_block" "$tmp_root/c43-sha-guard.log"; then
+  :
+elif [[ "$c43_sha_before" == "$c43_sha_after" ]]; then
+  pass "S3-T4 SCN-B037-011 adversarial: uservalidation.md sha256 is unchanged across a REFUSING guard run (the guard never edits the file)"
+else
+  fail "S3-T4 the guard modified uservalidation.md: before=$c43_sha_before after=$c43_sha_after"
+fi
+
+# S3-T5: SCN-B037-012 — a ceiling-bound target is still exempt. The base fixture
+# ships docs-only, so this reuses it WITHOUT the delivery-contract mutation.
+c43_ceiling_dir="$tmp_root/specs/954-c43-ceiling"
+emit_base_fixture "$c43_ceiling_dir"
+cp "$c43_dir/bug029.md" "$c43_ceiling_dir/uservalidation.md"
+run_capture "$tmp_root/c43-ceiling-guard.log" \
+  env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+  bash "$GUARD_SCRIPT" "$c43_ceiling_dir" > /dev/null
+c43_ceiling_block="$(c43_gate_block "$c43_gate_header" "$tmp_root/c43-ceiling-guard.log")"
+if ! c43_assert_block_present "S3-T5" "$c43_ceiling_block" "$tmp_root/c43-ceiling-guard.log"; then
+  :
+elif printf '%s' "$c43_ceiling_block" | grep -q "is not 'done'" &&
+  ! printf '%s' "$c43_ceiling_block" | grep -q 'PD12-UNCHECKED-ITEM'; then
+  pass "S3-T5 SCN-B037-012: a ceiling-bound target status is still exempt and acceptance is not evaluated"
+else
+  fail "S3-T5 ceiling-bound exemption intact: $c43_ceiling_block"
 fi
 
 rm -rf "$c43_dir"

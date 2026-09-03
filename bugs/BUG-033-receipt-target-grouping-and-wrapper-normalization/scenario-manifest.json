@@ -1,16 +1,40 @@
 {
   "schemaVersion": 1,
   "spec": "BUG-033-receipt-target-grouping-and-wrapper-normalization",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-08-24T06:10:40Z",
   "scenarios": [
     {
       "id": "SCN-B033-001",
+      "scenarioId": "SCN-B033-001",
       "title": "Repeated honest re-runs are not cloned evidence",
-      "requiredTestType": "unit",
+      "requiredTestType": "e2e-api",
       "scopeRef": "Scope 1",
       "behaviorTraits": ["pure-calculation", "shared-consumer"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["report.md#facet-1", "report.md#regression", "report.md#current-test-phase-t24-t26-evidence"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion over the transformed deterministic-sibling classification.",
+          "satisfiedBy": ["bubbles/scripts/receipt-identity-selftest.sh#facet-1-honest-reruns"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus the current Check 43 CLI verdict.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/receipt-identity-selftest.sh#facet-1-honest-reruns",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-033-facet-1-honest-reruns"
+          ]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -19,21 +43,44 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Restore per-receipt target distinctness; the 9-re-run fixture is reported as one clone group.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
     },
     {
       "id": "SCN-B033-002",
+      "scenarioId": "SCN-B033-002",
       "title": "Two identities over one target are still refused",
-      "requiredTestType": "unit",
+      "requiredTestType": "e2e-api",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "shared-consumer", "degraded-state"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["report.md#bounds", "report.md#regression", "report.md#current-test-phase-t24-t26-evidence"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion that target distinctness is measured once per command identity.",
+          "satisfiedBy": ["bubbles/scripts/receipt-identity-selftest.sh#facet-1-single-target-bound"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus the current Check 43 CLI refusal.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/receipt-identity-selftest.sh#facet-1-single-target-bound",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-033-facet-1-single-target-bound"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named clone-refusal assertion with no plausible accepted fallback.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-033-facet-1-single-target-bound"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -42,21 +89,39 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Drop the target-distinctness condition entirely; the single-target fixture stops being refused.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
     },
     {
       "id": "SCN-B033-003",
-      "title": "Wrapper spellings resolve to one command family",
-      "requiredTestType": "unit",
+      "scenarioId": "SCN-B033-003",
+      "title": "Existing transparent wrappers resolve to one command",
+      "requiredTestType": "e2e-api",
       "scopeRef": "Scope 1",
       "behaviorTraits": ["pure-calculation", "shared-consumer"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["report.md#facet-2", "report.md#regression", "report.md#current-test-phase-t24-t26-evidence"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertions over every direct, shell, environment, and assignment spelling.",
+          "satisfiedBy": ["bubbles/scripts/receipt-identity-selftest.sh#facet-2-wrapper-family-probes"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus current whole-guard acceptance.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/receipt-identity-selftest.sh#facet-2-wrapper-equivalence",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-033-facet-2-wrapper-equivalence"
+          ]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -65,21 +130,44 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Restore the single-token bash/sh strip; `bash -c node X` resolves to family `-c`.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
       }
     },
     {
       "id": "SCN-B033-004",
-      "title": "Wrappers do not hide a genuine identity difference",
-      "requiredTestType": "unit",
+      "scenarioId": "SCN-B033-004",
+      "title": "Existing wrappers do not hide different programs",
+      "requiredTestType": "e2e-api",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "shared-consumer", "degraded-state"],
       "riskTier": "high",
-      "linkedTests": ["bubbles/scripts/receipt-identity-selftest.sh"],
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["report.md#bounds", "report.md#regression", "report.md#current-test-phase-t24-t26-evidence"],
       "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion that wrapped cargo and npm remain different identities.",
+          "satisfiedBy": ["bubbles/scripts/receipt-identity-selftest.sh#facet-2-different-program-bound"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus both identities on the current CLI surface.",
+          "satisfiedBy": [
+            "parity:bubbles/scripts/receipt-identity-selftest.sh#facet-2-different-program-bound",
+            "consumer-surface:bubbles/scripts/state-transition-guard-selftest.sh#BUG-033-facet-2-different-program-bound"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named clone-refusal assertion that preserves both incompatible families.",
+          "satisfiedBy": ["bubbles/scripts/state-transition-guard-selftest.sh#BUG-033-facet-2-different-program-bound"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -88,10 +176,292 @@
         "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
         "negativeControl": "Strip the program token as well as the wrappers; cargo and npm collapse into one family and the clone stops being reported.",
         "negativeControlMechanism": "mutation"
-      },
-      "liveProofNotApplicable": {
-        "absentTrait": "user-visible-ui",
-        "reason": "Check 43 is a jq classification over a receipt log with no route and no rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B033-005",
+      "scenarioId": "SCN-B033-005",
+      "title": "Timeout launchers expose the underlying command",
+      "requiredTestType": "e2e-api",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["bug.md#reproduction", "report.md#facet-3-focused-green-evidence", "report.md#facet-3-whole-guard-evidence", "report.md#current-test-phase-t24-t26-evidence"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit parity for direct, timeout, and gtimeout command identities.",
+          "satisfiedBy": ["T08"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus the current Check 43 accepted verdict.",
+          "satisfiedBy": ["parity:T08", "consumer-surface:T09"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Add an unsupported timeout option; the launcher-bearing identity must remain unchanged.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B033-006",
+      "scenarioId": "SCN-B033-006",
+      "title": "The exact portable alarm launcher exposes the underlying command",
+      "requiredTestType": "e2e-api",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["bug.md#reproduction", "report.md#facet-3-focused-green-evidence", "report.md#facet-3-whole-guard-evidence", "report.md#current-test-phase-t24-t26-evidence"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit parity between direct invocation and the exact portable Perl alarm prefix.",
+          "satisfiedBy": ["T10"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus the current Check 43 accepted verdict.",
+          "satisfiedBy": ["parity:T10", "consumer-surface:T11"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Change the Perl body from exact alarm-and-exec; the Perl prefix must remain identity-bearing.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B033-007",
+      "scenarioId": "SCN-B033-007",
+      "title": "Launcher removal composes with existing wrappers",
+      "requiredTestType": "e2e-api",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["bug.md#reproduction", "report.md#facet-3-focused-green-evidence", "report.md#facet-3-whole-guard-evidence", "report.md#current-test-phase-t24-t26-evidence"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit matrix over every supported launcher, shell, environment, and assignment order.",
+          "satisfiedBy": ["T12"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus one current whole-guard composition per launcher kind.",
+          "satisfiedBy": ["parity:T12", "consumer-surface:T13"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Insert unsupported launcher grammar inside a composition; recursion must stop at that prefix.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B033-008",
+      "scenarioId": "SCN-B033-008",
+      "title": "Arbitrary Perl programs remain part of command identity",
+      "requiredTestType": "e2e-api",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer", "degraded-state"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["bug.md#reproduction", "report.md#facet-3-focused-green-evidence", "report.md#facet-3-whole-guard-evidence", "report.md#current-test-phase-t24-t26-evidence"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion that arbitrary Perl remains distinct from direct invocation.",
+          "satisfiedBy": ["T14"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus the current CLI refusal with recorded identity metadata.",
+          "satisfiedBy": ["parity:T14", "consumer-surface:T15"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named refusal showing recorded identity and unchanged normalization.",
+          "satisfiedBy": ["T15"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Replace the arbitrary body with the exact alarm-and-exec body; direct and wrapped identities must become equal.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B033-009",
+      "scenarioId": "SCN-B033-009",
+      "title": "Malformed launcher grammar remains unchanged",
+      "requiredTestType": "e2e-api",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer", "degraded-state"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["bug.md#reproduction", "report.md#facet-3-focused-green-evidence", "report.md#facet-3-whole-guard-evidence", "report.md#current-test-phase-t24-t26-evidence"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit matrix proving every incomplete, option-bearing, and near-match spelling remains unchanged.",
+          "satisfiedBy": ["T16"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus representative malformed timeout and Perl CLI refusals.",
+          "satisfiedBy": ["parity:T16", "consumer-surface:T17"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named refusal that retains the unsupported launcher prefix without inferred command identity.",
+          "satisfiedBy": ["T17"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Complete each accepted launcher grammar; the resulting identity must normalize to the underlying command.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B033-010",
+      "scenarioId": "SCN-B033-010",
+      "title": "Launchers do not hide different underlying commands",
+      "requiredTestType": "e2e-api",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer", "degraded-state"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["bug.md#reproduction", "report.md#facet-3-focused-green-evidence", "report.md#facet-3-whole-guard-evidence", "report.md#current-test-phase-t24-t26-evidence"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit launcher matrix preserving artifact-lint and state-transition-guard as distinct identities.",
+          "satisfiedBy": ["T18"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus both complete identities on every current CLI refusal.",
+          "satisfiedBy": ["parity:T18", "consumer-surface:T19"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named command-identity refusal for timeout, gtimeout, and exact portable Perl launchers.",
+          "satisfiedBy": ["T19"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Use one underlying command on both receipts; command identity incompatibility must disappear.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B033-011",
+      "scenarioId": "SCN-B033-011",
+      "title": "Exit-result differences remain incompatible",
+      "requiredTestType": "e2e-api",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer", "degraded-state"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "lockdown": false,
+      "linkedTests": [
+        "bubbles/scripts/receipt-identity-selftest.sh",
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "evidenceRefs": ["bug.md#reproduction", "report.md#facet-3-focused-green-evidence", "report.md#facet-3-whole-guard-evidence", "report.md#current-test-phase-t24-t26-evidence"],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-unit assertion that launcher normalization leaves exit compatibility independent.",
+          "satisfiedBy": ["T20"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Producer-consumer parity plus both exit values on the current CLI refusal.",
+          "satisfiedBy": ["parity:T20", "consumer-surface:T21"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named exit-result refusal with both normalized identities and original exit values.",
+          "satisfiedBy": ["T21"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Equalize both exit codes; exit-result incompatibility must disappear.",
+        "negativeControlMechanism": "mutation"
       }
     }
   ]

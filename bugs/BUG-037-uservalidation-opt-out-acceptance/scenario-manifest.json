@@ -18,7 +18,19 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "high",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "runtime-config"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Assert the transformed terminal verdict and exact finding set.",
+          "satisfiedBy": ["S1-T1: fully checked record-less checklist returns zero"]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "Execute the shipped requiredAtTerminal false value through the public terminal verdict.",
+          "satisfiedBy": ["S1-T1: shipped registry record-less terminal path"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -61,7 +73,19 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "high",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Assert the transformed terminal verdict and one-item finding cardinality.",
+          "satisfiedBy": ["S1-T2: one unchecked item returns non-zero"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Name the exact rejected item without a plausible acceptance result.",
+          "satisfiedBy": ["S1-T2: named unchecked-item refusal"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -101,14 +125,41 @@
       "regressionRequired": true,
       "lockdown": true,
       "riskTier": "high",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
-      "linkedTests": [
+      "behaviorTraits": ["pure-calculation", "degraded-state", "shared-consumer"],
+      "obligations": [
         {
-          "file": "tests/regression/test_35_human_acceptance_terminal.sh",
-          "testId": "BUG-029 shape: two unchecked items are detected"
+          "trait": "pure-calculation",
+          "requiredProof": "Assert non-zero and exactly five unchecked-item findings for one checked plus five unchecked rows.",
+          "satisfiedBy": ["S1-T3: exact five-item library assertion"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Name every rejected behavior and never return an acceptance result.",
+          "satisfiedBy": ["S1-T3: all five rejection names"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove shared-reader parity and the current Check 43 consumer surface with the same five-item shape.",
+          "satisfiedBy": [
+            "parity:S1-T3 exact five-item shared-reader assertion",
+            "consumer-surface:S3-T3 exact five-item Check 43 assertion"
+          ]
         }
       ],
-      "implementationRefs": ["bubbles/scripts/acceptance-authority-lib.sh"],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T3 SCN-B037-003 ADVERSARIAL: the BUG-029 shape is refused and all five unchecked items are named"
+        },
+        {
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "S3-T3 adversarial: the BUG-029 shape is refused end to end through the real guard, all five items named"
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/acceptance-authority-lib.sh",
+        "bubbles/scripts/guards/tail-delegated-gates.sh"
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
@@ -141,7 +192,19 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "high",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Evaluate the authored record through the production shape verdict.",
+          "satisfiedBy": ["S1-T4: automation acceptor shape verdict"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Emit PD12-AUTOMATION-ACCEPTOR for the exact prohibited identity.",
+          "satisfiedBy": ["S1-T4: named automation-acceptor refusal"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -181,7 +244,19 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "high",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Evaluate readiness and checklist sections through the public terminal verdict.",
+          "satisfiedBy": ["S1-T7: readiness and checklist section separation"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Refuse the unchecked checklist item even when readiness is fully checked.",
+          "satisfiedBy": ["S1-T7: readiness grants no acceptance"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -221,7 +296,22 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "high",
-      "behaviorTraits": ["shared-consumer"],
+      "behaviorTraits": ["shared-consumer", "runtime-config"],
+      "obligations": [
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove template-to-registry parity and the public terminal consumer result.",
+          "satisfiedBy": [
+            "parity:S2-T2 template and registry agreement",
+            "consumer-surface:S2-T1 materialized template terminal verdict"
+          ]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "Execute the shipped template and authority values through the public terminal verdict.",
+          "satisfiedBy": ["S2-T1: materialized production template path"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -234,7 +324,7 @@
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "production-artifact",
+        "inputOrigin": "recorded-fixture",
         "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["agents/bubbles_shared/feature-templates.md"],
@@ -264,7 +354,14 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "medium",
-      "behaviorTraits": ["shared-consumer"],
+      "behaviorTraits": ["pure-calculation"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Run the production lint over an all-unchecked valid checklist and assert no checked-entry demand.",
+          "satisfiedBy": ["S2-T3: shape-only lint accepts all unchecked"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -275,7 +372,7 @@
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/artifact-lint.sh"],
         "negativeControl": "Re-add the pre-9e41da4 checked requirement; the fully unchecked fixture fails lint and a user who rejected everything can no longer say so.",
@@ -304,7 +401,19 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "medium",
-      "behaviorTraits": ["shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Run the production lint over a malformed checklist fixture.",
+          "satisfiedBy": ["S2-T4: malformed checklist production-lint path"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Return non-zero and name the non-checkbox checklist bullet.",
+          "satisfiedBy": ["S2-T4: named malformed-checklist refusal"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -315,7 +424,7 @@
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/artifact-lint.sh"],
         "negativeControl": "Remove the checklist shape checks entirely; the malformed fixture passes and the lint relaxation has widened into blindness.",
@@ -345,6 +454,16 @@
       "lockdown": false,
       "riskTier": "high",
       "behaviorTraits": ["shared-consumer"],
+      "obligations": [
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove shared-reader parity and the current Check 43 guard surface.",
+          "satisfiedBy": [
+            "parity:S1-T1 shared-reader terminal verdict",
+            "consumer-surface:S3-T1 real Check 43 pass"
+          ]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -355,7 +474,7 @@
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
         "negativeControl": "Restore the acceptance-record demand in the library; the guard refuses the fixture and the fix never reached the real enforcement path.",
@@ -384,7 +503,22 @@
       "regressionRequired": true,
       "lockdown": true,
       "riskTier": "high",
-      "behaviorTraits": ["shared-consumer"],
+      "behaviorTraits": ["degraded-state", "shared-consumer"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Return a Gate G136 block that names the exact unchecked item.",
+          "satisfiedBy": ["S3-T2: exact named Check 43 refusal"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove shared-reader output reaches the current Check 43 consumer without stale record text.",
+          "satisfiedBy": [
+            "parity:S1-T2 named shared-reader refusal",
+            "consumer-surface:S3-T2 named Check 43 refusal"
+          ]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -395,7 +529,7 @@
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
         "negativeControl": "Make Check 43 unconditionally pass when the target is done; the one-unchecked fixture is accepted and the gate has become decorative.",
@@ -424,7 +558,22 @@
       "regressionRequired": true,
       "lockdown": true,
       "riskTier": "high",
-      "behaviorTraits": ["shared-consumer"],
+      "behaviorTraits": ["mutable-state", "shared-consumer"],
+      "obligations": [
+        {
+          "trait": "mutable-state",
+          "requiredProof": "Hash the acceptance artifact before and after a real refusing guard run and assert equality.",
+          "satisfiedBy": ["S3-T4: before-and-after acceptance artifact digest"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Exercise the real Check 43 consumer while observing the shared acceptance artifact.",
+          "satisfiedBy": [
+            "parity:S1-T2 non-mutating shared-reader refusal",
+            "consumer-surface:S3-T4 real guard digest assertion"
+          ]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -465,6 +614,16 @@
       "lockdown": false,
       "riskTier": "medium",
       "behaviorTraits": ["shared-consumer"],
+      "obligations": [
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Exercise the current guard consumer at a non-done target and prove acceptance is not evaluated.",
+          "satisfiedBy": [
+            "parity:target-status scope contract",
+            "consumer-surface:S3-T5 ceiling-bound guard assertion"
+          ]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/state-transition-guard-selftest.sh",
@@ -475,7 +634,7 @@
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/guards/tail-delegated-gates.sh"],
         "negativeControl": "Remove the target-status scope test; a validate-only packet with an open checklist is refused and every ceiling-bound mode breaks.",
@@ -504,7 +663,14 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "medium",
-      "behaviorTraits": ["shared-consumer"],
+      "behaviorTraits": ["static-metadata"],
+      "obligations": [
+        {
+          "trait": "static-metadata",
+          "requiredProof": "Assert the exact G136 prose against the current lint and guard contract.",
+          "satisfiedBy": ["S4-T1: governance surfaces carry no deleted lint claim"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -519,7 +685,7 @@
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "production-artifact",
+        "inputOrigin": "recorded-fixture",
         "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/registry/gates.yaml"],
@@ -549,7 +715,14 @@
       "regressionRequired": false,
       "lockdown": false,
       "riskTier": "low",
-      "behaviorTraits": ["shared-consumer"],
+      "behaviorTraits": ["static-metadata"],
+      "obligations": [
+        {
+          "trait": "static-metadata",
+          "requiredProof": "Parse the relevant changelog sections and assert every required contract statement.",
+          "satisfiedBy": ["S4-T4: section-local changelog contract assertion"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/acceptance-authority-selftest.sh",
@@ -559,7 +732,7 @@
       "implementationRefs": ["CHANGELOG.md"],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "production-artifact",
+        "inputOrigin": "recorded-fixture",
         "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["CHANGELOG.md"],
@@ -589,15 +762,31 @@
       "regressionRequired": true,
       "lockdown": false,
       "riskTier": "medium",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "behaviorTraits": ["pure-calculation", "static-metadata"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Regenerate every derived target and assert deterministic byte equality.",
+          "satisfiedBy": ["S4-T3: all three generator freshness checks"]
+        },
+        {
+          "trait": "static-metadata",
+          "requiredProof": "Assert each committed generated target matches its owning generator.",
+          "satisfiedBy": ["S4-T3: committed generated artifact freshness"]
+        }
+      ],
       "linkedTests": [
         {
           "file": "bubbles/scripts/generate-gate-coverage-map-selftest.sh",
-          "testId": "unimplemented"
+          "testId": "generator --print is deterministic across runs"
         },
         {
           "file": "bubbles/scripts/generate-validation-checks-selftest.sh",
-          "testId": "unimplemented"
+          "testId": "A2 two derivations of an unchanged tree are byte-identical"
+        },
+        {
+          "file": "bubbles/scripts/release-manifest-selftest.sh",
+          "testId": "Scenario: release hygiene generates one complete trust manifest for downstream installs."
         }
       ],
       "implementationRefs": [
@@ -607,7 +796,7 @@
       ],
       "testMechanism": {
         "entrypoint": "production-cli",
-        "inputOrigin": "production-artifact",
+        "inputOrigin": "recorded-fixture",
         "assertionSurface": "persisted-state",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/generate-gate-coverage-map.sh"],
@@ -619,6 +808,256 @@
         "reason": "Generated registries and docs are files with no route and no rendered surface."
       },
       "evidenceRefs": ["report.md#bounds-scope-4"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-016",
+      "scope": "01-invert-contract-and-reader",
+      "title": "Authority resolution failures refuse acceptance",
+      "gherkin": {
+        "given": "the acceptance authority is missing, unreadable, malformed, missing a required field, or carries an invalid requiredAtTerminal boolean",
+        "when": "either public acceptance verdict evaluates a valid checked checklist",
+        "then": "the verdict returns 1, emits exactly one PD12-AUTHORITY-UNAVAILABLE finding, and emits no other acceptance result"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": true,
+      "riskTier": "high",
+      "behaviorTraits": ["degraded-state", "runtime-config"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Assert the exact bootstrap code, one-line cardinality, non-zero result, and absence of a plausible acceptance result for every failure class.",
+          "satisfiedBy": ["S1-T11 through S1-T15: authority failure matrix"]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "Execute each invalid authority state through both public production verdict functions.",
+          "satisfiedBy": ["S1-T11 through S1-T15: public verdict authority preflight"]
+        }
+      ],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T11 SCN-B037-016: missing authority fails closed"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T12 SCN-B037-016: unreadable authority fails closed"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T13 SCN-B037-016: malformed authority fails closed"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T14 SCN-B037-016: missing required authority fields fail closed"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T15 SCN-B037-016: invalid requiredAtTerminal values fail closed"
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/acceptance-authority-lib.sh",
+        "bubbles/registry/acceptance-authority.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/acceptance-authority-lib.sh",
+          "bubbles/registry/acceptance-authority.yaml"
+        ],
+        "negativeControl": "Point the current reader at a missing authority; the broken implementation returns success with no finding.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The acceptance authority is consumed by a CLI over repository artifacts, with no rendered user interface."
+      },
+      "evidenceRefs": ["report.md#bug037-plan-current-final-byte-reconciliation"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-017",
+      "scope": "01-invert-contract-and-reader",
+      "title": "A method-conditional value authors the record",
+      "gherkin": {
+        "given": "the Human Acceptance Record retains placeholder base fields and carries a real external record pointer",
+        "when": "the acceptance shape verdict is evaluated",
+        "then": "present-record validation runs and reports every missing base field"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": true,
+      "riskTier": "high",
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Evaluate authorship over the union of base and method-conditional fields.",
+          "satisfiedBy": ["S1-T16 and S1-T17: record-authorship predicate matrix"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Report every missing base field instead of treating the record pointer as an untouched template.",
+          "satisfiedBy": ["S1-T16: method-conditional field exposes incomplete record"]
+        }
+      ],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T16 SCN-B037-017: a real record pointer alone authors the record"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T17 SCN-B037-017: untouched defaults remain unauthored"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T18 SCN-B037-017: method-specific fields remain mandatory"
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/acceptance-authority-lib.sh",
+        "bubbles/registry/acceptance-authority.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/acceptance-authority-lib.sh"],
+        "negativeControl": "Retain the current required-fields-only authorship predicate; a real record pointer alone bypasses present-record validation.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Record authorship is a deterministic text classification with no rendered user interface."
+      },
+      "evidenceRefs": ["report.md#bug037-plan-current-final-byte-reconciliation"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-018",
+      "scope": "01-invert-contract-and-reader",
+      "title": "A supported record requirement activates conditionally",
+      "gherkin": {
+        "given": "a valid authority whose requiredAtTerminal value is true and a fully checked checklist has no authored record",
+        "when": "the terminal acceptance verdict is evaluated",
+        "then": "the verdict returns non-zero and emits declared PD12-NO-RECORD exactly once"
+      },
+      "behaviorClass": "api",
+      "changeType": "regression",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": true,
+      "riskTier": "high",
+      "behaviorTraits": ["degraded-state", "runtime-config"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Refuse a missing authored record with the exact declared conditional code.",
+          "satisfiedBy": ["S1-T8: conditional PD12-NO-RECORD refusal"]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "Execute the explicit true registry value through the public terminal verdict.",
+          "satisfiedBy": ["S1-T8: requiredAtTerminal true production-reader path"]
+        }
+      ],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S1-T8 ADVERSARIAL: flipping requiredAtTerminal back in a fixture registry restores the refusal (the value is READ, not hardcoded)"
+        }
+      ],
+      "implementationRefs": [
+        "bubbles/scripts/acceptance-authority-lib.sh",
+        "bubbles/registry/acceptance-authority.yaml"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": [
+          "bubbles/scripts/acceptance-authority-lib.sh",
+          "bubbles/registry/acceptance-authority.yaml"
+        ],
+        "negativeControl": "Delete the conditional emitter; the explicit true override returns success and breaks the supported compliance contract.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The conditional acceptance decision is exposed through a CLI verdict, with no rendered user interface."
+      },
+      "evidenceRefs": ["report.md#bounds-scope-1"],
+      "replacedBy": null,
+      "invalidatedBy": null
+    },
+    {
+      "scenarioId": "SCN-B037-019",
+      "scope": "04-governance-and-generated",
+      "title": "Legacy acceptance artifacts receive provenance-safe guidance",
+      "gherkin": {
+        "given": "an acceptance artifact has current, legacy pre-PD-12 checked, legacy PD-12 unchecked, or unknown provenance",
+        "when": "the BUG-037 upgrade contract is applied",
+        "then": "the documented handling matches its provenance class and no bulk migration script changes checkbox state"
+      },
+      "behaviorClass": "api",
+      "changeType": "bugfix",
+      "requiredTestType": "unit",
+      "regressionRequired": true,
+      "lockdown": true,
+      "riskTier": "high",
+      "behaviorTraits": ["static-metadata"],
+      "obligations": [
+        {
+          "trait": "static-metadata",
+          "requiredProof": "Parse the BUG-037 upgrade entry and assert four distinct provenance classes, handling rules, and the no-bulk-migration statement.",
+          "satisfiedBy": ["S4-T10: four-class migration contract assertion"]
+        }
+      ],
+      "linkedTests": [
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S4-T10 SCN-B037-019: the changelog distinguishes all four migration classes"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S4-T10a SCN-B037-019: unknown provenance preserves bytes and remains in progress"
+        },
+        {
+          "file": "bubbles/scripts/acceptance-authority-selftest.sh",
+          "testId": "S4-T10b SCN-B037-019: no bulk acceptance migration script exists"
+        }
+      ],
+      "implementationRefs": ["CHANGELOG.md"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "recorded-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["CHANGELOG.md"],
+        "negativeControl": "Delete or merge one provenance class; the section-local migration contract assertion fails.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The migration contract is static release guidance and does not drive a runtime route."
+      },
+      "evidenceRefs": ["report.md#bug037-plan-current-final-byte-reconciliation"],
       "replacedBy": null,
       "invalidatedBy": null
     }

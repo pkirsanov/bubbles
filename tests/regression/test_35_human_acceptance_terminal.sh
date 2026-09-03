@@ -6,12 +6,15 @@ set -euo pipefail
 # BUG-029. artifact-lint.sh required uservalidation.md to carry at least ONE
 # checked `[x]` entry and never rejected an unchecked one, so a checklist of one
 # checked item and five unchecked passed lint and the spec reached a terminal
-# status with five behaviors no human ever accepted.
+# status with five behaviors no user had accepted. That closure is what this
+# regression pins, and BUG-037 leaves it exactly intact.
 #
-# IMP-047 PD-12 found the deeper half: the TEMPLATE shipped checked, because
-# lint demanded it, so the planning artifact alone satisfied this gate with no
-# human act. Acceptance now needs an authored `## Human Acceptance Record`, and
-# automation readiness lives in its own section that grants nothing.
+# BUG-037 inverted the CONTRACT. Acceptance is OPT-OUT: the checklist ships
+# CHECKED, a user's only required act is to UNCHECK an item they reject, and an
+# authored `## Human Acceptance Record` is no longer demanded at a terminal
+# transition. So the fully-checked record-less fixture, which PD-12 refused, now
+# returns zero findings - and the adversarial partner below proves the inversion
+# did not widen into "terminal never checks acceptance".
 #
 # This regression pins the DETECTION RULE the guard's Check 43 applies, through
 # the SHARED reader the guard itself uses. The parser used to be duplicated here
@@ -19,6 +22,7 @@ set -euo pipefail
 # noticed late.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SELF="${BASH_SOURCE[0]}"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 GUARD_FRAGMENT="$REPO_ROOT/bubbles/scripts/guards/tail-delegated-gates.sh"
 ACCEPTANCE_LIB="$REPO_ROOT/bubbles/scripts/acceptance-authority-lib.sh"
@@ -115,12 +119,42 @@ assert_eq "adversarial: a fully accepted checklist reports zero" \
 assert_eq "adversarial: a '[ ]' under '## Notes' is not counted" \
   "0" "$(count_unchecked "$WORKSPACE/single.md")"
 
-# --- PD-12: checked boxes alone are no longer terminal acceptance -----------
-# THE regression case for the deeper half of the defect. Fixture 2 is fully
-# checked and carries no acceptance record; before PD-12 it satisfied the gate,
-# which is exactly what a shipped template used to provide for free.
-assert_eq "adversarial: a fully checked list with no acceptance record is refused" \
-  "PD12-NO-RECORD" "$(terminal_verdict_codes "$WORKSPACE/accepted.md")"
+# --- BUG-037: unchecking nothing IS acceptance ------------------------------
+# S3-T7. Fixture 2 is fully checked and carries no acceptance record. Under
+# PD-12 it was refused with PD12-NO-RECORD, which made the owner's normal case -
+# a satisfied user who objects to nothing - unreachable. It now returns zero
+# findings.
+assert_eq "BUG-037: a fully checked list with no acceptance record now returns zero findings" \
+  "" "$(terminal_verdict_codes "$WORKSPACE/accepted.md")"
+
+# S3-T6 adversarial partner. The inversion must NOT widen into "terminal never
+# checks acceptance": a user's uncheck is a reported regression and still
+# refuses, naming the item.
+assert_eq "adversarial: an unchecked item still yields PD12-UNCHECKED-ITEM at terminal" \
+  "PD12-UNCHECKED-ITEM" "$(terminal_verdict_codes "$WORKSPACE/mixed.md")"
+
+# The verdict returns non-zero by design, and this file runs under `pipefail`,
+# so its output is captured BEFORE it is searched. Piping it straight into grep
+# would report the verdict's exit status rather than whether the item was named.
+mixed_refusal="$(bubbles_acceptance_terminal_verdict "$WORKSPACE/mixed.md" 2>&1 || true)"
+if printf '%s' "$mixed_refusal" | grep -q 'Deleting an item removes it from the list'; then
+  pass_count=$((pass_count + 1))
+  printf '  PASS: adversarial: the refusal NAMES the unchecked item\n'
+else
+  fail_count=$((fail_count + 1))
+  printf '  FAIL: the refusal does not name the unchecked item\n'
+fi
+
+# The conditional code must stay dormant against the shipped false registry.
+# Emitting it here would refuse every satisfied user all over again.
+accepted_verdict="$(bubbles_acceptance_terminal_verdict "$WORKSPACE/accepted.md" 2>&1 || true)"
+if printf '%s' "$accepted_verdict" | grep -q 'PD12-NO-RECORD'; then
+  fail_count=$((fail_count + 1))
+  printf '  FAIL: shipped false policy emitted conditional PD12-NO-RECORD\n'
+else
+  pass_count=$((pass_count + 1))
+  printf '  PASS: shipped false policy leaves conditional PD12-NO-RECORD dormant\n'
+fi
 
 cat > "$WORKSPACE/human-accepted.md" <<'EOF'
 # User Validation
@@ -170,6 +204,21 @@ else
   printf '  FAIL: guard fragment no longer declares Gate G136\n'
 fi
 
+# S3-T8. This file must READ the shared library, never re-implement its parse.
+# A private copy here would pass while the guard applied a different rule, which
+# is the exact desync the shared reader exists to make impossible. The local
+# parser pattern is anchored at a function definition so this check cannot match
+# its own source line.
+if grep -q 'acceptance-authority-lib.sh' "$SELF" &&
+  grep -q 'bubbles_acceptance_terminal_verdict' "$SELF" &&
+  ! grep -qE '^[a-z_]*(section_body|parse_checklist|extract_checklist|checklist_items)\(\)' "$SELF"; then
+  pass_count=$((pass_count + 1))
+  printf '  PASS: the regression sources the shared reader and re-implements no section parser\n'
+else
+  fail_count=$((fail_count + 1))
+  printf '  FAIL: the regression carries a private uservalidation parser instead of sourcing the shared library\n'
+fi
+
 # The gate is only meaningful if it is scoped to a terminal transition; a
 # version that ran on every mode would false-block every planning packet and
 # would be reverted rather than fixed.
@@ -184,7 +233,7 @@ fi
 # The guard must never edit uservalidation.md. Checking a box on the author's
 # behalf would fabricate the acceptance the gate exists to require.
 # portable-ok: the sed -i token below is a SEARCH PATTERN asserting the ABSENCE of an in-place write in the guard fragment, not an invocation of sed
-if grep -nE '^\s*(sed -i|>+\s*"?\$uservalidation_terminal_file)' "$GUARD_FRAGMENT" | grep -q .; then
+if grep -qE '^[[:space:]]*(sed -i|>+[[:space:]]*"?\$uservalidation_terminal_file)' "$GUARD_FRAGMENT"; then
   fail_count=$((fail_count + 1))
   printf '  FAIL: the guard writes to uservalidation.md — it must only report\n'
 else

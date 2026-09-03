@@ -31,6 +31,96 @@ default cadence is deliberate, batched releases, not a bump per commit.
 
 ## [Unreleased]
 
+### User Acceptance Is Opt-Out Again (BUG-037)
+
+`uservalidation.md` acceptance is now **opt-out**. The `## Checklist` ships
+CHECKED, automation authors that initial state, and a user who reviews the
+delivered behavior and objects to nothing performs **no** further act — that
+silence IS the acceptance. Unchecking an item is the user's only required act
+and it is how they REJECT a behavior. An unchecked item at a terminal transition
+is a user-reported regression: Gate G136 still refuses, still names every
+unchecked item, and still never edits the file. After a fix, the **USER**
+re-checks it; no agent, guard or lint may re-check an item a user unchecked.
+
+`## Human Acceptance Record` is now **OPTIONAL** and is **not required** at a
+terminal transition. It remains available for external UAT, explicit sign-off,
+or compliance contexts that want a named acceptor, and when it IS authored every
+shape rule still applies in full — including that `acceptedBy` may never name an
+agent. `## Automation Readiness` is unchanged and still grants nothing.
+
+**What this gives up, stated plainly.** A checked box is no longer evidence that
+a human acted. G136 now proves exactly one thing: that no user recorded an
+objection. "The user reviewed this and was satisfied" and "nobody ever opened
+the file" produce an identical file, and nothing downstream can separate them.
+That is a deliberate owner trade, not an oversight — a satisfied user performing
+zero acts is incompatible with any proof that the user acted. What is preserved:
+the BUG-029 closure, the guard's refusal to edit the artifact, the `^bubbles\.`
+acceptor prohibition, and the rule that automation readiness grants nothing.
+
+`acceptance-checklist.shippedState` is now `checked` and
+`acceptance-record.requiredAtTerminal` is now `false` in
+`bubbles/registry/acceptance-authority.yaml`. Both are READ by
+`acceptance-authority-lib.sh` rather than assumed, so a downstream repository
+with a real compliance obligation can set `requiredAtTerminal: true` in its own
+registry without forking the library. `PD12-NO-RECORD` is conditional-active.
+The shipped `false` value leaves it dormant, while an explicit supported `true`
+activates it. `PD12-AUTHORITY-UNAVAILABLE` is bootstrap-active. Both public
+verdicts emit that code and fail closed when the registry cannot be resolved.
+All eight `PD12-*` codes keep their names because the library and registry ship
+downstream, where a rename would orphan archived evidence and matchers.
+
+`artifact-lint.sh` **did not** re-acquire a checked-entry rule. That rule was the
+coupling leg of the fabrication composition PD-12 correctly diagnosed: lint
+demanded a checked entry, the template shipped checked to satisfy lint, and the
+terminal gate read those boxes as sign-off. The checked state now comes from a
+declared contract instead. The one assurance the deleted rule bought — detecting
+a template authored in the wrong shipped state — moved to a template-versus-
+registry agreement check in `acceptance-authority-selftest.sh`.
+
+**UPGRADE NOTE — provenance classes and safe handling.** A current opt-out file
+was scaffolded from the BUG-037 template at or after the delivering commit. Its
+checked items are the current initial state. Apply the current contract without
+migration, and treat an unchecked item as a user rejection.
+
+A legacy pre-PD-12 checked file was scaffolded before `9e41da4` on 2026-08-17.
+Its inherited checks may be template-authored and do not prove fresh human
+review. Re-author the current checklist before review. Do not cite inherited
+checks as a human act.
+
+A legacy PD-12 unchecked file was scaffolded at or after `9e41da4` and before
+the BUG-037 delivering commit. Its inherited unchecks may be template-authored
+and are not automatically user rejections. Re-author the current checklist
+before review only when history proves that no user interaction occurred.
+
+A file with unknown provenance has ambiguous checkbox bytes. Keep its packet
+`in_progress`. Preserve every checkbox byte until the artifact owner resolves
+provenance with the user. Current bytes and file dates alone never establish
+user intent for any legacy class.
+
+**No migration script exists, and no bulk migration script will be shipped.**
+A script cannot distinguish a template-authored `[ ]` from a user's deliberate
+uncheck. Running one could erase the only rejection signal this contract
+preserves.
+
+### The Acceptance-Authority Change Had No Changelog Entry (IMP-047 PD-12)
+
+Recorded now, because a downstream-shipped template and its lint contract
+changed with no entry at all. IMP-047 slice S-D (`9e41da4`, 2026-08-17)
+introduced the acceptance authority: it split `uservalidation.md` into
+`## Automation Readiness`, `## Checklist` and `## Human Acceptance Record`,
+moved every heading, field, method and refusal code into
+`bubbles/registry/acceptance-authority.yaml`, and made `artifact-lint.sh` and
+Gate G136 read them through the shared `acceptance-authority-lib.sh` instead of
+each carrying a private section parser. That separation, that single authority
+and that shared reader all stand.
+
+The same slice also inverted the acceptance model to opt-in — template ships
+unchecked, terminal requires an authored record — and DELETED the
+`artifact-lint.sh` rule that required at least one checked `[x]`. The deletion
+stands; the inversion is superseded by BUG-037 above. Four governance surfaces
+plus the G136 registry entry continued to describe the deleted lint rule as
+current until BUG-037 corrected them.
+
 ### Downstream Validation No Longer Disables Child Signal Cleanup
 
 The portable timeout fallback launched its command as an asynchronous job while
@@ -1317,12 +1407,16 @@ before comparison: without a code index the framework cannot tell which symbol
 changed, and pretending otherwise would UNDER-report, the direction that leaves
 stale certification standing.
 
-**Gate G136 — human acceptance is terminal (EV-8, BUG-029).** `artifact-lint.sh`
-requires one checked `[x]` and never rejects an unchecked one, so one checked
-plus five unchecked passed lint. The repair is at the TERMINAL transition, not in
-lint: lint also runs during planning, where a checked-by-default template is
-legitimate. The guard prints the item and never edits it — checking a box on the
-author's behalf would fabricate the acceptance the gate requires.
+**Gate G136 — a terminal transition checks user acceptance (EV-8, BUG-029).**
+`artifact-lint.sh` never rejected an unchecked entry, so one checked plus five
+unchecked passed lint and the spec reached a terminal status with five behaviors
+nobody had accepted. The repair is at the TERMINAL transition, not in lint: lint
+also runs while the user is still reviewing, where an open checklist is a
+legitimate state. The guard prints the item and never edits it. **Superseded in
+part by BUG-037** — this entry's original wording described a lint rule
+requiring at least one checked `[x]` and a checked-by-default template as a
+planning convenience. That lint rule was deleted by IMP-047 PD-12 and was not
+restored; see the BUG-037 entry above for the contract that is current.
 
 **`verify-changed-specs` (COV-12, BUG-031).** One generic command discovering
 both directly-changed and impact-marked specs. Measured across the six consumer

@@ -12,7 +12,14 @@ trap 'rm -rf "$TMPDIR"' EXIT INT TERM
 # shellcheck source=/dev/null
 source "$GUARD_LIB"
 
+# The scan resolves its classifier interpreter through python-env.sh. This
+# selftest's skip decision has to be made by the SAME resolver, or it can skip
+# coverage the scan would have run.
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/python-env.sh"
+
 failures=0
+skips=0
 RUN_OUTPUT=""
 RUN_STATUS=0
 
@@ -23,6 +30,61 @@ pass() {
 fail() {
   echo "FAIL: $1"
   failures=$((failures + 1))
+}
+
+skip() {
+  echo "SKIP: $1"
+  skips=$((skips + 1))
+}
+
+# Is the Scan 2B classifier's interpreter USABLE -- not merely present?
+#
+# Those are different questions and on macOS they diverge. /usr/bin/python3 is a
+# shim that dispatches through the ACTIVE developer directory, so when Xcode.app
+# is selected and its licence has not been accepted the shim resolves (satisfying
+# `command -v python3`) and then exits 69 without executing a line. The scan then
+# fails closed to SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED for every candidate
+# line -- correct behaviour -- and assertions on exact classifier tuples fail
+# while naming the code under scan, when the real subject is the absent
+# prerequisite.
+#
+# This asks the SAME resolver the scan asks (python-env.sh's ordered
+# $BUBBLES_PYTHON -> managed venv -> PATH contract, each candidate validated by
+# execution). Probing PATH directly would answer a different question than the
+# one the scan will act on, and a skip decision that disagrees with the scan is
+# the same misreport in the other direction: skipping coverage that would have
+# run, because the managed venv resolves independently of PATH.
+CLASSIFIER_UNAVAILABLE_REASON=""
+CLASSIFIER_REMEDIATION=""
+
+sensitive_storage_classifier_usable() {
+  CLASSIFIER_UNAVAILABLE_REASON=""
+  CLASSIFIER_REMEDIATION=""
+
+  # Not `$(bubbles_python_resolve_runnable)`: a command substitution resolves in
+  # a subshell, so the failure reason would arrive empty and the skip line would
+  # name no cause at all.
+  if bubbles_python_resolve_runnable >/dev/null; then
+    return 0
+  fi
+
+  CLASSIFIER_UNAVAILABLE_REASON="no runnable python3 — $BUBBLES_PYTHON_RUNNABLE_REASON"
+
+  # The Xcode-licence case is the one with a remedy the operator can act on
+  # directly, so name it when the PATH candidate is what declined.
+  local path_python probe_output=""
+  path_python="$(command -v python3 2>/dev/null || true)"
+  if [[ -n "$path_python" ]]; then
+    probe_output="$("$path_python" -c 'import sys' </dev/null 2>&1 || true)"
+  fi
+  if grep -Fq 'Xcode license' <<<"$probe_output"; then
+    local active_developer_dir
+    active_developer_dir="$(xcode-select -p </dev/null 2>/dev/null || echo unknown)"
+    CLASSIFIER_REMEDIATION="provision the managed environment ('bash bubbles/scripts/python-env.sh --provision'), which resolves independently of PATH. The python3 on PATH ($path_python) dispatches through an active developer directory ($active_developer_dir) with an unaccepted Xcode licence; repairing that instead needs operator privileges ('sudo xcodebuild -license accept', or 'sudo xcode-select -s /Library/Developer/CommandLineTools')."
+  else
+    CLASSIFIER_REMEDIATION="provision the managed environment ('bash bubbles/scripts/python-env.sh --provision'), or repair the python3 on PATH so that 'python3 -c pass' succeeds."
+  fi
+  return 1
 }
 
 assert_output_contains() {
@@ -499,30 +561,31 @@ run_expect_success "$FIXTURE_ROOT/telemetry-noop-adapter-feature" "Telemetry no-
 echo "Scenario: a bare non-telemetry no-op integration body is STILL flagged (exclusion opens no hole)."
 run_expect_fake_integration_failure "$FIXTURE_ROOT/fake-noop-integration-feature" "Bare non-telemetry, non-quoted no-op integration body is still flagged as FAKE_INTEGRATION"
 
-echo "Scenario: semantic Scan 2B distinguishes storage operations and exact session classification."
-run_scan_in_repo "$SENSITIVE_REPO" "$SENSITIVE_FEATURE"
-if [[ "$RUN_STATUS" -eq 1 ]]; then
-  pass "Sensitive storage matrix retains blocking findings"
-else
-  fail "Sensitive storage matrix retains blocking findings (expected exit 1, got $RUN_STATUS)"
-fi
-assert_output_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist key=marketProvider:twelvedata:apiKey provider=twelvedata" "Literal and alias-resolved durable credentials are blocked"
-assert_output_not_contains "src/provider-client.js:6" "Exact configured session credential is allowed"
-assert_output_contains "reason=SESSION_PROVIDER_UNKNOWN" "Unknown session provider is blocked distinctly"
-assert_output_contains "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" "Dynamic session provider is blocked unresolved"
-assert_output_contains "reason=FORBIDDEN_SECRET_CLASS storage=sessionStorage" "High-trust session material cannot use approval"
-assert_output_not_contains "src/provider-client.js:11" "Inline comment vocabulary does not taint cache"
-assert_output_not_contains "src/provider-client.js:12" "removeItem remains cleanup"
-assert_output_contains "src/provider-client.js:14" "Credential object before scrub remains blocking"
-assert_output_not_contains "src/provider-client.js:18" "Proven scrubbed rewrite remains clear"
-assert_output_contains "storage=indexedDB operation=read" "IndexedDB credential access remains covered"
-assert_output_contains "storage=SharedPreferences operation=persist" "SharedPreferences credential persistence remains covered"
-assert_output_contains "storage=AsyncStorage operation=persist" "AsyncStorage credential persistence remains covered"
-assert_output_contains "storage=indexedDB operation=persist key=marketProvider:twelvedata:apiKey" "IndexedDB object-store credential persistence remains covered"
-assert_output_contains "src/provider-preferences.dart" "SharedPreferences instance credential persistence remains covered"
+if sensitive_storage_classifier_usable; then
+  echo "Scenario: semantic Scan 2B distinguishes storage operations and exact session classification."
+  run_scan_in_repo "$SENSITIVE_REPO" "$SENSITIVE_FEATURE"
+  if [[ "$RUN_STATUS" -eq 1 ]]; then
+    pass "Sensitive storage matrix retains blocking findings"
+  else
+    fail "Sensitive storage matrix retains blocking findings (expected exit 1, got $RUN_STATUS)"
+  fi
+  assert_output_contains "reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist key=marketProvider:twelvedata:apiKey provider=twelvedata" "Literal and alias-resolved durable credentials are blocked"
+  assert_output_not_contains "src/provider-client.js:6" "Exact configured session credential is allowed"
+  assert_output_contains "reason=SESSION_PROVIDER_UNKNOWN" "Unknown session provider is blocked distinctly"
+  assert_output_contains "reason=SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED" "Dynamic session provider is blocked unresolved"
+  assert_output_contains "reason=FORBIDDEN_SECRET_CLASS storage=sessionStorage" "High-trust session material cannot use approval"
+  assert_output_not_contains "src/provider-client.js:11" "Inline comment vocabulary does not taint cache"
+  assert_output_not_contains "src/provider-client.js:12" "removeItem remains cleanup"
+  assert_output_contains "src/provider-client.js:14" "Credential object before scrub remains blocking"
+  assert_output_not_contains "src/provider-client.js:18" "Proven scrubbed rewrite remains clear"
+  assert_output_contains "storage=indexedDB operation=read" "IndexedDB credential access remains covered"
+  assert_output_contains "storage=SharedPreferences operation=persist" "SharedPreferences credential persistence remains covered"
+  assert_output_contains "storage=AsyncStorage operation=persist" "AsyncStorage credential persistence remains covered"
+  assert_output_contains "storage=indexedDB operation=persist key=marketProvider:twelvedata:apiKey" "IndexedDB object-store credential persistence remains covered"
+  assert_output_contains "src/provider-preferences.dart" "SharedPreferences instance credential persistence remains covered"
 
-echo "Scenario: sensitive storage project configuration fails closed."
-cat > "$SENSITIVE_CONFIG" <<'EOF'
+  echo "Scenario: sensitive storage project configuration fails closed."
+  cat > "$SENSITIVE_CONFIG" <<'EOF'
 scans:
   sensitiveClientStorage:
     approvedSessionCredentials:
@@ -534,9 +597,9 @@ scans:
         privilege: low
         lifetime: same-tab
 EOF
-assert_sensitive_invalid_config "Traversal and wildcard approval"
+  assert_sensitive_invalid_config "Traversal and wildcard approval"
 
-cat > "$SENSITIVE_CONFIG" <<'EOF'
+  cat > "$SENSITIVE_CONFIG" <<'EOF'
 scans:
   sensitiveClientStorage:
     approvedSessionCredentials:
@@ -555,9 +618,9 @@ scans:
         privilege: low
         lifetime: same-tab
 EOF
-assert_sensitive_invalid_config "Duplicate approval tuple"
+  assert_sensitive_invalid_config "Duplicate approval tuple"
 
-cat > "$SENSITIVE_CONFIG" <<'EOF'
+  cat > "$SENSITIVE_CONFIG" <<'EOF'
 scans:
   sensitiveClientStorage:
     unknownField: true
@@ -570,9 +633,9 @@ scans:
         privilege: high
         lifetime: durable
 EOF
-assert_sensitive_invalid_config "Unknown field and enum values"
+  assert_sensitive_invalid_config "Unknown field and enum values"
 
-cat > "$SENSITIVE_CONFIG" <<'EOF'
+  cat > "$SENSITIVE_CONFIG" <<'EOF'
 scans:
   sensitiveClientStorage:
     approvedSessionCredentials:
@@ -580,7 +643,19 @@ scans:
         storage sessionStorage
         key: marketProvider:twelvedata:apiKey
 EOF
-assert_sensitive_invalid_config "Malformed sensitive storage YAML"
+  assert_sensitive_invalid_config "Malformed sensitive storage YAML"
+else
+  # Machine-readable for consumers (tests/regression/test_24_...) so a skip can
+  # never be scraped as a pass.
+  echo "SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1"
+  skip "semantic Scan 2B classification and sensitive-storage config integrity — $CLASSIFIER_UNAVAILABLE_REASON"
+  echo "      remediation: $CLASSIFIER_REMEDIATION"
+  echo "      not run: 15 semantic classification assertions, 8 config-integrity assertions."
+  echo "      Both groups assert exact classifier tuples. With the classifier unable to start, the scan"
+  echo "      fails closed to SENSITIVE_STORAGE_CLASSIFICATION_UNRESOLVED for every candidate line and"
+  echo "      emits SENSITIVE_STORAGE_CONFIG_INVALID for any config declaring the key, so neither a pass"
+  echo "      nor a failure from these assertions would carry information about the classifier."
+fi
 
 write_sensitive_valid_config
 NO_PARSER_PATH="$TMPDIR/no-parser-path"
@@ -624,9 +699,18 @@ else
   fail "Portable watchdog preserves exit 124"
 fi
 
+if [[ "$skips" -gt 0 ]]; then
+  echo "implementation-reality-scan selftest skipped $skips scenario group(s) for an absent prerequisite."
+fi
+
 if [[ "$failures" -gt 0 ]]; then
   echo "implementation-reality-scan selftest failed with $failures issue(s)."
   exit 1
+fi
+
+if [[ "$skips" -gt 0 ]]; then
+  echo "implementation-reality-scan selftest passed the scenarios it could run ($skips skipped)."
+  exit 0
 fi
 
 echo "implementation-reality-scan selftest passed."

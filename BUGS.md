@@ -2195,16 +2195,12 @@ reconciliation, and exact validation commands.
 ## BUG-033 — Check 43 measures receipt-sibling target distinctness per receipt, so repeated honest re-runs are reported as cloned evidence
 
 - **Filed:** 2026-08-16
-- **Disposition:** **FIXED**, before 2026-08-17. The fix described below is
-  present in `bubbles/scripts/state-transition-guard.sh`: Check 43 binds
-  `$targets` with `group_by(.cmd | cmd_identity) | map(.[0] | target_identity)`
-  (line 4457), together with the facet-2 wrapper normalisation.
-  `bash bubbles/scripts/receipt-identity-selftest.sh` reports 15 passed, 0 failed.
-  The packet's own `state.json` remains `in_progress`: on 2026-08-17
-  `state-transition-guard.sh` refused the `done` transition for
-  `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization` with 28
-  failures (`blockingCode: DELIVERY_COMPLETION_FAILED`), so the status was left
-  exactly as the guard found it.
+- **Disposition:** **REOPENED / PARTIALLY FIXED** on 2026-08-23. The original
+  target-grouping fix and shell/env/assignment wrapper fix are present in
+  `bubbles/scripts/state-transition-guard.sh`. A newly reproduced facet shows
+  that `timeout`, `gtimeout`, and the exact portable Perl alarm launcher remain
+  outside `strip_wrappers`. The packet's `state.json` correctly remains
+  `in_progress`; no validate-owned certification is claimed.
 - **Severity:** high. It blocks promotion of a downstream feature whose own
   evidence is sound, and it does so by alleging forgery — the most serious thing
   this guard can say about honest work.
@@ -2322,11 +2318,33 @@ script matches no category heuristic. That is conservative and was left alone �
 once the wrappers normalize, the receipts share one identity and the category
 never has to carry the decision.
 
-### Disposition — FIXED, packet opened (2026-08-17)
+### Third facet — timeout and alarm launchers remain opaque (2026-08-23)
 
-Both facets are fixed in `bubbles/scripts/state-transition-guard.sh`. This entry
-is retained as the filing record; the working artifacts live in the full packet
-at `bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/`.
+The same Check 43 definitions now reproduce a direct-versus-launcher mismatch.
+One underlying `artifact-lint.sh` command and target normalize to four
+identities: `artifact-lint.sh <target>`, `timeout 120`, `gtimeout 120`, and
+`perl shift`. Their shared substantive output is reported as one clone group.
+
+The opposite adversarial shape is also wrong before the fix. Wrapping
+`artifact-lint.sh` and `state-transition-guard.sh` with the same timeout makes
+both identities `timeout 120`; wrapping them with the exact portable Perl alarm
+launcher makes both identities `perl shift`. Both fixtures produce zero clone
+groups because the launcher hides the underlying program.
+
+The focused probe exited `1` with `0 passed, 3 failed`. Its complete current-
+session output and bounded fix contract are recorded in the packet's `bug.md`.
+No source or repository test file changed during discovery.
+
+This is an amendment to BUG-033, not a new bug: it changes the same
+`strip_wrappers` function, violates the same command-identity contract, and was
+found while the existing packet was still in progress and uncertified.
+
+### Disposition — REOPENED packet
+
+Facets 1 and 2 remain implemented. Facet 3 is reproduced but not implemented.
+This entry is retained as the filing record; the working artifacts live in the
+full packet at
+`bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/`.
 
 The packet form was resolved mechanically rather than chosen. The compact
 micro-fix packet is the DEFAULT route since IMP-047 S-D, and
@@ -2439,3 +2457,356 @@ Escalates, on the same two answers as BUG-033: `no-new-behavior` fails because a
 refused transition becomes an accepted one, and `no-cross-product-effect` fails
 because the resolver ships into every consuming repository.
 
+---
+
+## BUG-037 — `uservalidation.md` implements opt-in acceptance, so a satisfied user cannot reach a terminal status at all
+
+- **Filed:** 2026-08-23
+- **Packet:** `bugs/BUG-037-uservalidation-opt-out-acceptance/`
+- **Severity:** high. It makes the repository owner's normal case — a user who
+  reviews the delivered behavior and objects to nothing — unreachable, and it
+  ships that model into every consuming repository through the template, the
+  registry, the lint and the guard.
+- **Related:** BUG-029, whose closure this preserves; BUG-032, whose
+  pre-remediation G136 finding was conditional `PD12-NO-RECORD` and whose packet
+  is deliberately untouched.
+
+### Half 1 — the acceptance model is inverted
+
+IMP-047 PD-12 (`9e41da4`) diagnosed a real defect: `artifact-lint.sh` required
+the checklist to carry at least one checked `[x]`, the template therefore
+shipped checked, and Gate G136 read those boxes as terminal sign-off. Three
+rules jointly asserted a human had acted while no rule checked that one had.
+
+The repair chosen was to invert the DEFAULT — ship unchecked, demand a
+separately authored `## Human Acceptance Record` at terminal. That optimises for
+un-forgeable proof and makes the owner's standing requirement unreachable:
+
+> uservalidation must be create checked by default, only if user chooses to
+> uncheck, then agent must fix, then user validates and checks; if user does not
+> uncheck anything, it must be takes as user acceptance
+
+The fix removes the COUPLING leg instead of the default. The checked shipped
+state now comes from `acceptance-authority.yaml`'s contract, never from a lint
+refusal; `artifact-lint.sh` keeps only the shape questions and re-acquires no
+checked-entry rule. The BUG-029 closure is preserved exactly: an unchecked item
+still refuses a terminal transition and every one is still named.
+
+### Half 2 — five surfaces described a lint rule that no longer existed
+
+`agents/bubbles_shared/quality-gates.md`,
+`agents/bubbles_shared/test-core.md`,
+`skills/bubbles-quality-gates-catalog/SKILL.md`, the `G136` entry in
+`bubbles/registry/gates.yaml`, and the only G136 `CHANGELOG.md` entry all still
+asserted that `artifact-lint.sh` requires at least one checked `[x]` — a rule
+`9e41da4` had deleted — and that a checked-by-default template is a planning
+convenience. Nothing forces a gate's description to agree with the script that
+enforces it, so the drift was silent.
+
+### What is deliberately given up
+
+A checked box is no longer evidence that a human acted. G136 proves exactly one
+thing at a terminal transition: that no user recorded an objection. A satisfied
+reviewer and a file nobody opened are byte-identical. That is the owner's trade,
+recorded in the packet's `spec.md` § 5 and `design.md` § 3.6 so it is not later
+read as an accident to be corrected back.
+
+### Micro-fix admission
+
+Escalates: `no-new-behavior` fails because a refused terminal transition becomes
+an accepted one, and `no-cross-product-effect` fails because the template, the
+registry, the lint and the guard all ship into every consuming repository.
+
+---
+
+## BUG-043 — `phase-name-enum-lint.sh` reads a dict-shaped phase claim's keys and evidence refs as phase names
+
+- **Filed:** 2026-08-25
+- **Disposition:** fixed in-repo in `bubbles/scripts/phase-name-enum-lint.sh`
+  with two adversarial regression assertions added to
+  `bubbles/scripts/phase-name-enum-lint-selftest.sh` (S6a, S6b). No packet
+  folder yet — creating one is planning work owned by `bubbles.plan` /
+  `bubbles.bug`, not by the implement pass that landed the repair.
+- **Discovered by:** a `framework-validate` run in which Gate G140 failed while
+  every named "phase" was a JSON key or an evidence reference.
+- **Severity:** high. The lint is Gate G140 and it fails CLOSED, so any packet
+  whose `execution.completedPhaseClaims[]` carries dict claim records — the form
+  `state-transition-guard.sh` reads its evidence refs from — could not pass a
+  gate no truthful record could satisfy.
+- **Attribution:** NOT introduced by the session that hit it, but EXPOSED by it.
+  The defect has been latent since the lint shipped. BUG-035 and BUG-036 pass
+  only because their `completedPhaseClaims` are EMPTY lists; BUG-038, BUG-041
+  and BUG-042 are the first packets with POPULATED dict records.
+
+### Reproduction (pre-fix, real output)
+
+The fix is uncommitted, so `HEAD` still holds the defective scanner. Running
+`HEAD`'s AWK block verbatim against a real packet reproduces the defect without
+touching any script in the tree:
+
+```
+$ git show HEAD:bubbles/scripts/phase-name-enum-lint.sh   # source of the block below
+$ awk '<HEAD block, lines 138-149>' \
+    bugs/BUG-041-artifact-lint-ignores-compact-packet-form/state.json | sort -u
+E-I1
+E-I2
+E-I3
+E-I4
+E-I5
+E-I6
+E-I7
+E-I8
+E-I9
+agent
+bootstrap
+claim
+dodChecked
+dodTotal
+evidenceFile
+evidenceSections
+implement
+partial
+phase
+scope
+AWK_EXIT=0
+```
+
+21 tokens are emitted as phase names. Exactly **two** — `implement` and
+`bootstrap` — are phases. Nine are evidence references (`E-I1`…`E-I9`), eight
+are dict keys (`agent`, `claim`, `dodChecked`, `dodTotal`, `evidenceFile`,
+`evidenceSections`, `phase`, `scope`), and `partial` is an `outcome` value. Every
+one of the other 19 is then measured against the registered phase set, which is
+why a truthful packet could not satisfy Gate G140.
+
+Post-fix, the same packet is scanned by the repaired lint:
+
+```
+$ bash bubbles/scripts/phase-name-enum-lint.sh . --verbose
+[phase-name-enum-lint] scanned 10 state.json file(s), 6 packet phase(s), 6 authored phase(s)
+[phase-name-enum-lint] registered phases: 30
+[phase-name-enum-lint] baselined names:   1
+[phase-name-enum-lint] OK [G140] - every phase name is registered or baselined
+LINT_EXIT=0
+```
+
+6 packet phases across 10 state files, where the pre-fix block produced 21
+purported phase names from a single file.
+
+### Root cause
+
+The packet scan used a line-oriented AWK block that, once inside a
+`"phasesExecuted"` or `"completedPhaseClaims"` array, printed EVERY quoted token
+it saw and filtered only the two array key names:
+
+```awk
+/"(phasesExecuted|completedPhaseClaims)"[[:space:]]*:[[:space:]]*\[/ { ina = 1 }
+if (tok != "phasesExecuted" && tok != "completedPhaseClaims") print tok
+```
+
+For `["implement","test"]` that is correct. An entry may equally be a claim
+RECORD — `{"phase": "implement", "agent": "bubbles.implement", "evidenceSections": ["E-I1"]}`
+— and for that shape the block emitted the keys (`agent`, `claim`, `claimedAt`,
+`dodChecked`, `evidenceSections`, `phase`, `scope`) and the nested evidence refs
+(`E-I1` … `E-I9`) as if each were a phase name. None of them names a phase.
+
+`state-transition-guard.sh` had already met and fixed this exact class: its
+`_phase_name()` helper normalises bare strings and dict claim records alike,
+after a dict entry once crashed Check 6. The lint never received the same
+treatment, so the two surfaces disagreed about what an array element is.
+
+### Fix
+
+The AWK block now parses the array STRUCTURALLY — brace/bracket depth and string
+state — splits it into top-level elements, and resolves each element the way
+`_phase_name()` does: a string is itself; a dict yields its `phase` value, else
+its `name` value; anything else is skipped. Registry lookup, the baseline
+ratchet, the authoring half and the no-bypass flag surface are untouched.
+
+### Non-vacuity
+
+The repair could have been made by blinding the lint, so the fix is proved
+against mutation rather than against absence of output. Fixtures under
+`/tmp/g140-mut/`:
+
+| fixture | shape | expected | observed |
+|---|---|---|---|
+| `clean-dict` | dict record with keys + `E-I1`/`E-I9`, plus a bare `"validate"` | pass | exit 0, 2 packet phases |
+| `dict-unregistered` | dict record whose `phase` is `totally-not-a-registered-phase` | fail | exit 1, names that phase |
+| `string-unregistered` | bare `["implement","bare-string-unregistered-phase"]` | fail | exit 1, names that phase |
+
+The same two directions are frozen in the selftest as S6a (dict keys and
+evidence refs are not phases) and S6b (an unregistered phase inside a dict
+record still fails). Suite moved 21 → 23 checks, 0 failures:
+
+```
+$ bash bubbles/scripts/phase-name-enum-lint-selftest.sh
+...
+ok   S12 --update-baseline records the unknown name
+ok   S12 tree is clean after baseline update (exit 0)
+
+PASS=23 FAIL=0
+SELFTEST_EXIT=0
+```
+
+Each mutation-fixture row above was produced by
+`bash bubbles/scripts/phase-name-enum-lint.sh /tmp/g140-mut/<fixture>`; the
+`observed` column is that command's real stdout and exit code.
+
+### Micro-fix admission
+
+Escalates: `no-new-behavior` fails because packets the lint previously refused
+now pass, and `no-cross-product-effect` fails because `phase-name-enum-lint.sh`
+is a managed manifest entry that ships into every consuming repository.
+
+---
+
+## BUG-044 — ENHANCEMENT: 82 scripts gate on `command -v python3`, which tests interpreter PRESENCE, not USABILITY; the framework refuses instead of resolving a usable interpreter it already knows how to find
+
+- **Filed:** 2026-08-25
+- **Disposition:** filed as a tracked ENHANCEMENT in this entry, which is the
+  artifact and exists on disk now. Deliberately NOT implemented in the session
+  that measured it: the change spans 82 call sites and the mechanism is an open
+  design decision (see "Design tension" below), so landing a partial sweep would
+  create a third interpreter-resolution posture in a repository that already has
+  two. This entry records the reproduction, the root cause and the resolution
+  mechanism the framework already ships, so the design pass starts from measured
+  facts rather than from a re-derivation.
+- **Discovered by:** operator observation while running framework tooling on a
+  macOS host whose `/usr/bin/python3` exits 69 (`You have not agreed to the Xcode
+  license agreements`) while `command -v python3` resolves to a working
+  `/opt/homebrew/bin/python3`.
+- **Severity:** LOW, and deliberately not inflated. This is an ENHANCEMENT, not
+  a defect. On the affected path the framework fails CLOSED and LOUD with the
+  real interpreter error surfaced verbatim: `artifact-lint.sh` captures the
+  resolver's output with `2>&1`, echoes it line-prefixed, and exits 2. There is
+  **no false-PASS and no silent degradation**. That is the material difference
+  from BUG-039, which was a genuine defect because it silently reported a
+  classification failure as a semantic RESULT and published a path that did not
+  exist. Here the operator is told the truth and the work correctly stops; the
+  enhancement is that the work need not have stopped at all.
+- **Affects:** every `bubbles/scripts/*.sh` whose python3 precondition is a
+  presence test. The measured exemplar is `bug-packet-resolve.sh` (line 95),
+  reached through `artifact-lint.sh`. Not repo-specific: the same gate ships
+  into every consuming repository.
+
+### Reproduction (real output)
+
+The host condition — PATH python3 works, `/usr/bin/python3` does not:
+
+```
+$ command -v python3
+/opt/homebrew/bin/python3
+$ /usr/bin/python3 -c "print(1)" </dev/null
+You have not agreed to the Xcode license agreements. Please run 'sudo xcodebuild -license' from within a Terminal window to review and agree to the Xcode and Apple SDKs license.
+USRBIN_EXIT=69
+```
+
+A stock Mac with Xcode installed and its licence unaccepted has
+`/usr/bin/python3` as the FIRST python3 on PATH. Sanitising PATH to the system
+directories reproduces that machine exactly, and the lint refuses:
+
+```
+$ env PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+    bash bubbles/scripts/artifact-lint.sh \
+    bugs/BUG-042-compact-packet-has-no-completion-basis </dev/null
+ERROR: cannot read bubbles/registry/bug-packet.yaml
+   -> You have not agreed to the Xcode license agreements. Please run 'sudo xcodebuild -license' from within a Terminal window to review and agree to the Xcode and Apple SDKs license.
+LINT_EXIT=2
+```
+
+`command -v python3` SUCCEEDED there. The gate at `bug-packet-resolve.sh:95`
+passed, and the interpreter then failed at execution. Note the first line
+attributes the failure to the registry, which is readable; the accurate cause is
+on the second line. That is a diagnosis-quality nit, not a correctness defect —
+the operator is not misled, because the real message is printed.
+
+The framework can already resolve a usable interpreter under that same PATH,
+using the helper BUG-039 shipped:
+
+```
+$ env PATH=/usr/bin:/bin:/usr/sbin:/sbin bash bubbles/scripts/python-env.sh --path </dev/null
+~/.cache/bubbles/python/bin/python3
+PATH_EXIT=0
+
+$ env PATH=/usr/bin:/bin:/usr/sbin:/sbin bash -c '. bubbles/scripts/python-env.sh; p=$(bubbles_python_resolve_runnable); echo "resolved=$p"; bubbles_python_runs "$p" && echo RUNS=yes || echo RUNS=no' </dev/null
+resolved=~/.cache/bubbles/python/bin/python3
+RUNS=yes
+PROBE_EXIT=0
+```
+
+(Both commands printed the absolute home path; it is written as `~` here.) So
+the refusal is not forced by the environment — a usable interpreter was
+reachable at that moment and the gate did not look for it.
+
+### Scale of the class
+
+```
+$ grep -lE "command -v python3" bubbles/scripts/*.sh | wc -l
+82
+$ grep -lE "bubbles_python_resolve_runnable|bubbles_python_runs" bubbles/scripts/*.sh | wc -l
+4
+$ grep -lE "bubbles_python_resolve_runnable|bubbles_python_runs" bubbles/scripts/*.sh
+bubbles/scripts/implementation-reality-scan-selftest.sh
+bubbles/scripts/implementation-reality-scan.sh
+bubbles/scripts/python-env-selftest.sh
+bubbles/scripts/python-env.sh
+```
+
+Two of the four adopters are `python-env.sh` itself and its selftest, so exactly
+ONE production script (`implementation-reality-scan.sh`) currently probes
+usability. 82 gate on presence.
+
+### Root cause
+
+`command -v python3` answers "is there a file named python3 on PATH", which is
+NOT the question any of these 82 scripts is actually asking. The question is
+"can I run a python3". Those differ whenever the first PATH python3 is a
+shim that resolves but cannot execute — the Xcode-licence stub is the common
+case, a broken conda/venv symlink and a quarantined binary are others.
+
+BUG-039 already established this distinction and shipped the remedy:
+`bubbles_python_runs()` executes a sentinel probe (`python-env.sh:128-133`) and
+`bubbles_python_resolve_runnable()` applies the ordered, non-ambient resolution
+($BUBBLES_PYTHON → managed venv → PATH python3) for consumers that need only a
+working stdlib interpreter. The remedy was shipped but not adopted: the 82 sites
+predate it and were never migrated. The root cause of THIS entry is therefore
+non-adoption of an existing mechanism, not an absent mechanism.
+
+### Design tension (why this is not a mechanical sweep)
+
+Recorded so the design pass does not re-derive it:
+
+1. **Where does the resolution live?** A shared wrapper invoked as a
+   subprocess, `guard-lib.sh` sourcing `python-env.sh`, or per-script sourcing.
+   Each answer changes 82 files differently and only one should be chosen.
+2. **The exemplar cannot simply source it.** `bug-packet-resolve.sh:19-20`
+   states: "`artifact-lint.sh` deliberately sources no sibling library, so this
+   is invoked as a subprocess, not sourced." Any fix for the measured path must
+   either honour that constraint or change it deliberately, with its own reason.
+3. **Two different bars.** `python-env.sh --path` resolves an interpreter that
+   satisfies the REQUIRED MODULE set (yaml, jsonschema); a stdlib-only consumer
+   such as `bug-packet-resolve.sh` needs only "runs".
+   `bubbles_python_resolve_runnable` exists for exactly that reason
+   (`python-env.sh:135-142`), so the sweep must pick the right resolver per
+   call site rather than applying one uniformly.
+4. **Unmeasured, and left unmeasured on purpose:** the behaviour on a host with
+   NO provisioned managed venv AND an unusable first PATH python3. That was not
+   executed here, so no claim is made about it. It is the first thing the design
+   pass should measure, because it decides whether the enhancement can always
+   improve the outcome or only sometimes.
+
+### Fix
+
+None in this repository yet, by the disposition above. The enhancement is:
+replace the presence gate with a usability-resolving precondition built on
+`bubbles_python_resolve_runnable` / `bubbles_python_runs`, so a host whose first
+PATH python3 is unusable proceeds on a usable one instead of refusing. Where no
+usable interpreter exists, the refusal stays — but names the interpreter as the
+cause and points at `python-env.sh --provision`, rather than attributing it to
+the file being read.
+
+### Evidence
+
+Every block above is the real stdout and real exit code of the command shown
+directly above it, executed in this repository on the filing date. No output is
+paraphrased and no exit code is inferred.
