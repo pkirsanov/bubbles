@@ -296,6 +296,59 @@ class TypedGraphTests(RuntimeCase):
         self.assertNotIn("reference-dispatch-result", replay.stdout,
                  "replayed dispatch reached the post-child result path")
 
+    def test_reference_broker_launches_executable_snapshot_after_path_replacement(self) -> None:
+        executable = Path(self.temp.name) / "mutable-python"
+        shutil.copyfile(sys.executable, executable)
+        executable.chmod(0o500)
+        child_marker = Path(self.temp.name) / "snapshot-child-ran"
+        snapshot_ready = Path(self.temp.name) / "snapshot-ready"
+        snapshot_release = Path(self.temp.name) / "snapshot-release"
+        argv = [str(executable), "-c", "from pathlib import Path; Path(__import__('sys').argv[1]).write_text('original', encoding='utf-8')", str(child_marker)]
+        canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        fixture = self.prepare(action_digest=action_digest)
+        permit = self.runtime.permit_issue(
+            decision_id=fixture["decision"]["decisionId"], nonce="nonce:executable-snapshot",
+            expires_at=EXP, issued_at=T[12], enforcement_kind="repository-reference")
+        action_file = Path(self.temp.name) / "snapshot-action.json"
+        consumption_file = Path(self.temp.name) / "snapshot-consumption.json"
+        action_file.write_text(json.dumps({"actionDigest": action_digest, "argv": argv}), encoding="utf-8")
+        consumption_file.write_text(json.dumps({
+            "permit_id": permit["permitId"], "nonce": "nonce:executable-snapshot",
+            "consumed_at": T[13], "action_digest": action_digest}), encoding="utf-8")
+        environment = {
+            **os.environ,
+            "BUBBLES_REFERENCE_BROKER_SNAPSHOT_READY_FILE": str(snapshot_ready),
+            "BUBBLES_REFERENCE_BROKER_SNAPSHOT_RELEASE_FILE": str(snapshot_release),
+            "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path,
+        }
+        command = [str(HERE.parent / "adapters/dispatch/reference-broker.sh"), "dispatch",
+                   "--store-root", self.temp.name, "--permit-consumption", str(consumption_file),
+                   "--action", str(action_file)]
+        process = subprocess.Popen(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
+        try:
+            for _ in range(100):
+                if snapshot_ready.exists():
+                    break
+                process.poll()
+                if process.returncode is not None:
+                    break
+                __import__("time").sleep(0.01)
+            self.assertTrue(snapshot_ready.exists(), "broker did not expose the deterministic post-snapshot test seam")
+            executable.chmod(0o700)
+            executable.write_text("#!/bin/sh\nprintf replacement > \"$1\"\n", encoding="utf-8")
+            executable.chmod(0o700)
+            snapshot_release.touch()
+            stdout, stderr = process.communicate(timeout=30)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual(child_marker.read_text(encoding="utf-8"), "original",
+                         "broker launched replacement bytes from the caller pathname")
+        self.assertEqual(json.loads(stdout)["settlement"], "debit")
+
     def test_reference_broker_action_mismatch_never_starts_child(self) -> None:
         marker = Path(self.temp.name) / "mismatched-child-started"
         argv = ["/usr/bin/touch", str(marker)]

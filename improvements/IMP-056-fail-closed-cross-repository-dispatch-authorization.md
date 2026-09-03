@@ -2,8 +2,8 @@
 
 **Status:** IN PROGRESS
 **Owner approval:** 2026-09-02. The owner approved the corrected repository-enforceable scope and incremental delivery.
-**Workflow mode:** `ship action:deliver lifecycle:dark-launch`
-**Status ceiling:** `delivered_pending_activation`; native host activation remains external and blocked on IMP-057, with no promised activation date.
+**Workflow mode:** `implement action:full-delivery target:spec`
+**Status ceiling:** `done` for the bounded repository-reference enforcement contract only. This status does not claim native host interception or IMP-057 completion.
 **Surface:** framework-health (G125)
 **Verified gaps addressed:** GF-16 — resolver success is not mutation authorization; GF-17 — repository ownership is conflated with dispatch authority; HO-7 — mutable runners lack one mandatory authorization edge; EV-17 — post-execution evidence is conflated with pre-execution authority; COV-22 — denied and ambiguous launches lack adversarial coverage
 
@@ -44,7 +44,8 @@ This improvement proves repository-reference enforcement only. IMP-057 owns nati
 - The broker uses a capability-proven immutable launch strategy and fails closed for unsupported combinations.
 - `launch-ambiguous` holds the full reservation and prohibits automatic retry.
 - Result-envelope authorization fields are post-execution audit evidence only.
-- Native activation is outside IMP-056 and blocked on IMP-057.
+- Native host interception is outside IMP-056 and independently tracked by IMP-057.
+- Completing IMP-056 does not claim native VS Code, MCP, browser, ambient shell, or host coverage.
 
 ### Open Questions
 
@@ -93,7 +94,8 @@ The broker records `launch-pending`, consumes the permit immediately before proc
 ### SCOPE-1 — Proposal And Contract Correction
 
 - Reconcile IMP-056 and the improvement index to the approved repository-only design.
-- Record the dark-launch workflow, `delivered_pending_activation` ceiling, IMP-057 unblocker, six-scope order, and no promised activation date.
+- Record the done-capable full-delivery workflow, bounded `done` ceiling, six-scope order, and independent IMP-057 native-host proposal.
+- State that IMP-056 completion covers repository-reference mutable command-vector enforcement only and does not claim native coverage.
 - Preserve all runtime, schema, gate, generated, and release surfaces unchanged in this slice.
 
 ### SCOPE-2 — Broker Action/Executable Snapshot And Crash-State Hardening
@@ -134,7 +136,8 @@ The broker records `launch-pending`, consumes the permit immediately before proc
 - Migrate the four mutable orchestrator definitions to the same final edge without duplicating authorization logic.
 - Add caller-coverage checks that enumerate mutable command vectors and fail on a broker or gateway bypass.
 - Wire focused selftests, framework validation, gate metadata, installer/release inventory, and downstream synchronization required by changed surfaces.
-- Deliver at `delivered_pending_activation`. Do not claim native host coverage or activate native enforcement; IMP-057 remains the named external unblocker.
+- Complete the bounded repository-reference contract only after all six repository-owned scopes, tests, and gates pass.
+- Do not claim or activate native host interception. IMP-057 independently owns those surfaces.
 
 ## Migration / rollout
 
@@ -147,7 +150,7 @@ The broker records `launch-pending`, consumes the permit immediately before proc
 
 No new feature flag or activation key is introduced. `dispatchAdmission.adapter` remains the single configuration seam. Absence or `none` denies child dispatch, `reference-broker` selects repository-reference enforcement, and unknown values fail loud.
 
-Delivery stops at `delivered_pending_activation`. IMP-057 supplies native host interception before any native activation decision. No date is attached to that external decision.
+IMP-056 may reach `done` only when its repository-reference mutable command-vector contract passes every repository-owned scope, test, and gate. Native VS Code, MCP, browser, ambient shell, and host interception remain outside this contract. IMP-057 tracks that separate proposal independently. IMP-056 sets no native activation date and makes no native coverage claim.
 
 ## Risks & mitigations
 
@@ -156,11 +159,11 @@ Delivery stops at `delivered_pending_activation`. IMP-057 supplies native host i
 - **R3 — authorization and permit identities drift** → sign and verify the same canonical snapshot and link records through occurrence and reservation identities.
 - **R4 — a legacy command bypasses the gateway** → remove coordinator direct execution and enforce caller coverage with structural and mutation tests.
 - **R5 — post-execution evidence is mistaken for authority** → derive envelope fields from durable broker records and prove envelope input cannot open the gateway.
-- **R6 — repository enforcement is overstated as native enforcement** → retain the `repository-reference` enforcement kind, ceiling status, and IMP-057 blocker in operator-facing claims.
+- **R6 — repository enforcement is overstated as native enforcement** → retain the `repository-reference` enforcement kind and state that `done` excludes IMP-057 and native-host coverage.
 
 ## Acceptance Criteria
 
-- [ ] The proposal and index carry the approved title, status, workflow, ceiling, six-scope order, and IMP-057 blocker.
+- [ ] The proposal and index carry the approved title, IN PROGRESS status, done-capable workflow, bounded `done` ceiling, and six-scope order.
 - [ ] The broker launches only a capability-proven immutable action, executable, and interpreter snapshot and never rereads caller action bytes.
 - [ ] Unsupported platform, executable, interpreter, or launch-strategy combinations fail closed before permit consumption.
 - [ ] `mutable-dispatch-authorization/v1` verifies under purpose `mutable-dispatch-authorization` and binds current repository, receipt, snapshot, and permit identities.
@@ -169,7 +172,9 @@ Delivery stops at `delivered_pending_activation`. IMP-057 supplies native host i
 - [ ] Unprovable post-consumption state becomes `launch-ambiguous`, holds the full reservation, and cannot automatically retry.
 - [ ] Result-envelope fields are post-execution audit evidence and cannot authorize process creation.
 - [ ] `phase-coordinator.sh` and all four mutable orchestrators use the canonical gateway with no direct mutable bypass.
-- [ ] Delivery stops at `delivered_pending_activation`; native host enforcement remains blocked on IMP-057 without an activation date.
+- [ ] All six repository-owned scopes and their focused tests, caller-coverage checks, gates, validation wiring, and release inventory pass before IMP-056 reaches `done`.
+- [ ] IMP-056 `done` means only that repository-reference mutable command-vector enforcement is complete.
+- [ ] No IMP-056 status, evidence, or release claim treats `done` as IMP-057 completion or native host interception coverage.
 
 ## Files To Touch By Scope
 
@@ -180,7 +185,7 @@ Delivery stops at `delivered_pending_activation`. IMP-057 supplies native host i
 | SCOPE-3 | Authorization schema/issuer/verifier, security-authority integration, focused selftests | Reuse existing authority implementation |
 | SCOPE-4 | Canonical final-edge gateway and integration selftests | Compose all invariants and current permit |
 | SCOPE-5 | Result-envelope schema, producers, consumers, semantic tests | Audit-only fields |
-| SCOPE-6 | Phase coordinator, four orchestrator definitions, caller coverage, gates, validation and release inventory | No native activation claim |
+| SCOPE-6 | Phase coordinator, four orchestrator definitions, caller coverage, gates, validation and release inventory | Repository contract may reach `done`; native surfaces remain excluded |
 
 The table is an implementation map, not authorization to edit later-scope surfaces during this slice.
 
@@ -232,8 +237,8 @@ This corrected design derives from current-session source inspection on 2026-09-
 - `bubbles/scripts/security-authority.py` for provider-free HMAC authority and hardened authority-file handling;
 - `bubbles/scripts/goal-boundary-receipt.sh` for unchanged `goal-boundary-receipt/v1` behavior;
 - `agents/bubbles_shared/project-config-contract.md` for `dispatchAdmission.adapter`;
-- `bubbles/workflows.yaml` for the `delivered_pending_activation` ceiling;
-- `improvements/IMP-057-native-host-budget-interception.md` for native host ownership and activation dependency.
+- `bubbles/workflows.yaml` for the done-capable `implement action:full-delivery target:spec` mode;
+- `improvements/IMP-057-native-host-budget-interception.md` for independently tracked native host interception.
 
 The inspection establishes design constraints and current source behavior. It does not claim that later scopes are implemented or that an immutable launch primitive has passed a capability probe.
 
@@ -244,6 +249,7 @@ The inspection establishes design constraints and current source behavior. It do
 - Replacing repository binding, G134, IMP-055 permits, the event ledger, or settlement with parallel systems.
 - Authorizing cross-repository mutation from a source session after a route decision.
 - Native VS Code, MCP, ambient shell, or host-wide interception; IMP-057 owns those surfaces.
+- Treating IMP-056 `done` as evidence that IMP-057 or native interception is complete.
 - Claiming literal atomicity across filesystem records, permit consumption, and process creation.
 - Promising a native activation date.
 - Treating Chronicle attribution, current working directory, active editor, workspace order, ownership metadata, or result-envelope claims as authority.

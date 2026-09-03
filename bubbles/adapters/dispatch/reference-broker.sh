@@ -7,6 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(cd "$SCRIPT_DIR/../../scripts" && pwd)"
 ENGINE="$SCRIPTS_DIR/measured-budget-runtime.py"
 FINALIZER="$SCRIPTS_DIR/measured-budget-broker-finalize.py"
+SNAPSHOT_HELPER="$SCRIPTS_DIR/reference-broker-snapshot.py"
 USAGE_ADAPTER="$SCRIPT_DIR/../usage/reference-test.sh"
 
 usage() {
@@ -37,7 +38,7 @@ digest_text() {
 verb="$1"
 shift
 if [[ "$verb" == "capabilities" ]]; then
-  printf '%s\n' '{"adapterId":"reference-broker","ambientInterception":"unsupported","enforcementKind":"repository-reference","mcpInterception":"unsupported","nativeVsCodeInterception":"unsupported"}'
+  printf '%s\n' '{"adapterId":"reference-broker","ambientInterception":"unsupported","enforcementKind":"repository-reference","executableSnapshot":{"launchStrategy":"broker-owned-copy","permitted":["linux-regular-native-elf"],"refused":["mach-o","script-pathname","shebang","symlink","unknown-format","writable-executable"]},"mcpInterception":"unsupported","nativeVsCodeInterception":"unsupported"}'
   exit 0
 fi
 [[ "$verb" == "dispatch" ]] || { echo "reference-broker: unsupported verb '$verb'" >&2; exit 2; }
@@ -56,54 +57,37 @@ done
 for required in "$store_root" "$consumption_file" "$action_file"; do
   [[ -n "$required" ]] || { usage; exit 2; }
 done
-for required_file in "$consumption_file" "$action_file"; do
-  [[ -f "$required_file" ]] || { echo "reference-broker: required input unavailable" >&2; exit 2; }
-done
 command -v jq >/dev/null 2>&1 || { echo "reference-broker: jq is required" >&2; exit 2; }
 
-# No shell strings, control characters, environment assignments, or relative
-# executables are accepted. The exact argv is the authorized action.
-jq -e '.argv | type == "array" and length > 0 and all(.[]; type == "string" and length > 0 and (contains("\n")|not) and (contains("\r")|not) and (contains("\u0000")|not))' "$action_file" >/dev/null || {
-  echo "reference-broker: action argv is invalid" >&2
-  exit 2
-}
-executable="$(jq -r '.argv[0]' "$action_file")"
-case "$executable" in /*) ;; *) echo "reference-broker: executable must be an absolute path" >&2; exit 2 ;; esac
-[[ -x "$executable" && -f "$executable" ]] || { echo "reference-broker: executable is unavailable" >&2; exit 2; }
-
-canonical_action="$(jq -cS '{argv:.argv}' "$action_file")"
-computed_digest="sha256:$(printf '%s' "$canonical_action" | digest_text)"
-declared_digest="$(jq -r '.actionDigest // ""' "$action_file")"
-permit_digest="$(jq -r '.action_digest // .actionDigest // ""' "$consumption_file")"
-[[ "$declared_digest" == "$computed_digest" && "$permit_digest" == "$computed_digest" ]] || {
-  echo "reference-broker: action digest does not match permit binding" >&2
-  exit 4
-}
+work_dir="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-reference-broker.XXXXXX")"
+chmod 700 "$work_dir"
+trap 'rm -rf "$work_dir"' EXIT INT TERM
+python3 "$SNAPSHOT_HELPER" --action "$action_file" --permit-consumption "$consumption_file" --output-dir "$work_dir"
+snapshot_action="$work_dir/action.json"
+snapshot_consumption="$work_dir/permit-consumption.json"
 
 # MBE validates every permit binding, expiry, and one-use state under the ECF
 # lock. A failed consumption exits before the child can run.
-python3 "$ENGINE" permit-consume --store-root "$store_root" --input "$consumption_file" >/dev/null
+python3 "$ENGINE" permit-consume --store-root "$store_root" --input "$snapshot_consumption" >/dev/null
 
 argv=()
 argv_index=0
 while IFS= read -r item; do
   argv[$argv_index]="$item"
   argv_index=$((argv_index + 1))
-done < <(jq -r '.argv[]' "$action_file")
-expected_argc="$(jq -r '.argv | length' "$action_file")"
+done < <(jq -r '.argv[1:][]' "$snapshot_action")
+expected_argc="$(jq -r '.argv | length - 1' "$snapshot_action")"
 [[ "$argv_index" -eq "$expected_argc" ]] || {
   echo "reference-broker: action argv could not be loaded exactly" >&2
   exit 2
 }
 
-work_dir="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-reference-broker.XXXXXX")"
-trap 'rm -rf "$work_dir"' EXIT INT TERM
 child_status=0
-env -i PATH=/usr/bin:/bin HOME="$work_dir" LANG=C LC_ALL=C "${argv[@]}" >"$work_dir/stdout" 2>"$work_dir/stderr" || child_status=$?
+env -i PATH=/usr/bin:/bin HOME="$work_dir" LANG=C LC_ALL=C "$work_dir/executable" "${argv[@]}" >"$work_dir/stdout" 2>"$work_dir/stderr" || child_status=$?
 
-permit_id="$(jq -r '.permit_id // .permitId // ""' "$consumption_file")"
+permit_id="$(jq -r '.permit_id // .permitId // ""' "$snapshot_consumption")"
 [[ -n "$permit_id" ]] || { echo "reference-broker: permit identity unavailable" >&2; exit 2; }
-at="$(jq -r '.consumed_at // .consumedAt // ""' "$consumption_file")"
+at="$(jq -r '.consumed_at // .consumedAt // ""' "$snapshot_consumption")"
 [[ -n "$at" ]] || { echo "reference-broker: dispatch time unavailable" >&2; exit 2; }
 python3 "$FINALIZER" context --store-root "$store_root" --permit-id "$permit_id" --child-exit-code "$child_status" --at "$at" >"$work_dir/receipt-input.json"
 BUBBLES_USAGE_REFERENCE_TEST=enabled bash "$USAGE_ADAPTER" receipt "$work_dir/receipt-input.json" >"$work_dir/receipt.json"
