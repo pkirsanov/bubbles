@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-042-same-revision-receipt-supersession",
+  "scenarios": [
+    {
+      "id": "SCN-B042-001",
+      "title": "Later coherent GREEN supersedes substituted-test history",
+      "requiredTestType": "integration",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "The production resolver selects the coherent test identity after reading append-only receipt history.",
+          "satisfiedBy": [
+            "test-plan:TP-B042-T01",
+            "test-plan:TP-B042-T10",
+            "test-plan:TP-B042-T13",
+            "test-plan:TP-B042-T14",
+            "test-plan:TP-B042-T17"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The production consumers accept a selected conflict-free chain and preserve the resolver refusal boundary.",
+          "satisfiedBy": [
+            "parity:TP-B042-T01",
+            "consumer-surface:TP-B042-T01"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/scenario-state-resolve-selftest.sh"],
+      "implementationRefs": [
+        "bubbles/scripts/scenario-state-resolve.sh",
+        "bubbles/registry/scenario-states.yaml",
+        "bubbles/scripts/phase-coordinator.sh",
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "evidenceRefs": [
+        "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-remediation-independent"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/scenario-state-resolve.sh",
+          "bubbles/scripts/phase-coordinator.sh",
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Restore eager blocking for every historical mismatched-test GREEN. The replacement assertion must turn red.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B042-002",
+      "title": "Later coherent GREEN supersedes substituted-control history",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "The production resolver selects the coherent negative control after reading append-only receipt history.",
+          "satisfiedBy": [
+            "test-plan:TP-B042-T02",
+            "test-plan:TP-B042-T06",
+            "test-plan:TP-B042-T17"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/scenario-state-resolve-selftest.sh"],
+      "implementationRefs": [
+        "bubbles/scripts/scenario-state-resolve.sh",
+        "bubbles/registry/scenario-states.yaml"
+      ],
+      "evidenceRefs": [
+        "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-remediation-independent"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/scenario-state-resolve.sh"],
+        "negativeControl": "Make every control substitution nonblocking. The later unresolved control assertion must turn red.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The resolver is a repository-state command with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B042-003",
+      "title": "Later failing RED supersedes exit-zero RED history",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "The production resolver selects the later failing RED as the coherent chain anchor.",
+          "satisfiedBy": [
+            "test-plan:TP-B042-T03",
+            "test-plan:TP-B042-T07",
+            "test-plan:TP-B042-T17"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/scenario-state-resolve-selftest.sh"],
+      "implementationRefs": [
+        "bubbles/scripts/scenario-state-resolve.sh",
+        "bubbles/registry/scenario-states.yaml"
+      ],
+      "evidenceRefs": [
+        "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-remediation-independent"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/scenario-state-resolve.sh"],
+        "negativeControl": "Make every exit-zero RED nonblocking. The later unresolved RED assertion must turn red.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The resolver is a repository-state command with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B042-004",
+      "title": "Physical append order is deterministic and conflict-safe",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "The production resolver derives deterministic local identities, preserves duplicate events, and refuses contradictory model order.",
+          "satisfiedBy": [
+            "test-plan:TP-B042-T04",
+            "test-plan:TP-B042-T11",
+            "test-plan:TP-B042-T15",
+            "test-plan:TP-B042-T16",
+            "test-plan:TP-B042-T17"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/scenario-state-resolve-selftest.sh"],
+      "implementationRefs": [
+        "bubbles/scripts/scenario-state-resolve.sh",
+        "bubbles/registry/scenario-states.yaml"
+      ],
+      "evidenceRefs": [
+        "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-remediation-independent"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/scenario-state-resolve.sh"],
+        "negativeControl": "Replace ordinal authority with timestamp or digest ordering. At least one tie, duplicate, or conflict assertion must turn red.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The resolver is a repository-state command with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B042-005",
+      "title": "A prior valid chain remains visible beside an unresolved later campaign",
+      "requiredTestType": "integration",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation", "degraded-state", "shared-consumer"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "The production resolver retains the valid chain while reporting a newer unresolved conflict.",
+          "satisfiedBy": [
+            "test-plan:TP-B042-T05",
+            "test-plan:TP-B042-T06",
+            "test-plan:TP-B042-T07",
+            "test-plan:TP-B042-T08",
+            "test-plan:TP-B042-T09",
+            "test-plan:TP-B042-T12",
+            "test-plan:TP-B042-T18"
+          ]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Every later invalid or partial campaign remains explicit, blocks certification, and never becomes a plausible success default.",
+          "satisfiedBy": [
+            "test-plan:TP-B042-T05",
+            "test-plan:TP-B042-T06",
+            "test-plan:TP-B042-T07",
+            "test-plan:TP-B042-T08",
+            "test-plan:TP-B042-T09"
+          ]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "The production consumers preserve the selected-chain success boundary and the unresolved-current-conflict refusal boundary.",
+          "satisfiedBy": [
+            "parity:TP-B042-T05",
+            "consumer-surface:TP-B042-T05"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/scenario-state-resolve-selftest.sh"],
+      "implementationRefs": [
+        "bubbles/scripts/scenario-state-resolve.sh",
+        "bubbles/registry/scenario-states.yaml",
+        "bubbles/scripts/phase-coordinator.sh",
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "evidenceRefs": [
+        "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-remediation-independent"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/scenario-state-resolve.sh",
+          "bubbles/scripts/phase-coordinator.sh",
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Suppress every invalid or partial row after the selected GREEN. The unresolved-current-conflict assertions must turn red.",
+        "negativeControlMechanism": "mutation"
+      }
+    }
+  ]
+}
