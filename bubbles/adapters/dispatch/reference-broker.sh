@@ -70,10 +70,9 @@ snapshot_consumption="$work_dir/permit-consumption.json"
 # lock. A failed consumption exits before the child can run.
 python3 "$ENGINE" permit-consume --store-root "$store_root" --input "$snapshot_consumption" >/dev/null
 
-argv=()
 argv_index=0
 while IFS= read -r item; do
-  argv[$argv_index]="$item"
+  : "$item"
   argv_index=$((argv_index + 1))
 done < <(jq -r '.argv[1:][]' "$snapshot_action")
 expected_argc="$(jq -r '.argv | length - 1' "$snapshot_action")"
