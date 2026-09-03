@@ -38,7 +38,7 @@ digest_text() {
 verb="$1"
 shift
 if [[ "$verb" == "capabilities" ]]; then
-  printf '%s\n' '{"adapterId":"reference-broker","ambientInterception":"unsupported","enforcementKind":"repository-reference","executableSnapshot":{"launchStrategy":"broker-owned-copy","permitted":["linux-regular-native-elf"],"refused":["mach-o","script-pathname","shebang","symlink","unknown-format","writable-executable"]},"mcpInterception":"unsupported","nativeVsCodeInterception":"unsupported"}'
+  printf '%s\n' '{"adapterId":"reference-broker","ambientInterception":"unsupported","descriptorExec":"unsupported","enforcementKind":"repository-reference","executableSnapshot":{"launchStrategy":"broker-owned-copy","permitted":["linux-regular-native-elf-without-existing-absolute-path-arguments","linux-dash-inline-c"],"refused":["explicit-interpreter-with-script-path","group-world-writable-executable","mach-o","script-pathname","shebang","symlink","unknown-format"]},"mcpInterception":"unsupported","nativeVsCodeInterception":"unsupported"}'
   exit 0
 fi
 [[ "$verb" == "dispatch" ]] || { echo "reference-broker: unsupported verb '$verb'" >&2; exit 2; }

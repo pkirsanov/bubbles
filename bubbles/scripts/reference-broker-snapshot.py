@@ -7,14 +7,21 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import stat
 import sys
 import time
+import datetime as dt
 from pathlib import Path
 from typing import Any
 
 MAX_INPUT_BYTES = 1024 * 1024
 MAX_EXECUTABLE_BYTES = 256 * 1024 * 1024
+CONSUMPTION_FIELDS = {"action_digest", "consumed_at", "nonce", "permit_id"}
+KNOWN_DASH_PATH = "/usr/bin/dash"
+IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
+TIMESTAMP = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$")
 
 
 class SnapshotError(Exception):
@@ -76,6 +83,25 @@ def parse_object(raw: bytes, label: str) -> dict[str, Any]:
     return value
 
 
+def validate_consumption(consumption: dict[str, Any]) -> None:
+    if set(consumption) != CONSUMPTION_FIELDS:
+        raise SnapshotError("permit consumption has unsupported fields")
+    if not all(isinstance(consumption[field], str) and consumption[field] for field in CONSUMPTION_FIELDS):
+        raise SnapshotError("permit consumption fields must be non-empty strings")
+    if not IDENTIFIER.fullmatch(consumption["permit_id"]):
+        raise SnapshotError("permit consumption permit_id is invalid")
+    if not IDENTIFIER.fullmatch(consumption["nonce"]):
+        raise SnapshotError("permit consumption nonce is invalid")
+    if not DIGEST.fullmatch(consumption["action_digest"]):
+        raise SnapshotError("permit consumption action digest is invalid")
+    if not TIMESTAMP.fullmatch(consumption["consumed_at"]):
+        raise SnapshotError("permit consumption consumed_at is invalid")
+    try:
+        dt.datetime.strptime(consumption["consumed_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+    except ValueError as error:
+        raise SnapshotError("permit consumption consumed_at is invalid") from error
+
+
 def validate_action(action: dict[str, Any], consumption: dict[str, Any]) -> tuple[list[str], str]:
     if set(action) != {"actionDigest", "argv"}:
         raise SnapshotError("action has unsupported fields")
@@ -92,13 +118,35 @@ def validate_action(action: dict[str, Any], consumption: dict[str, Any]) -> tupl
     permit_digest = consumption.get("action_digest", consumption.get("actionDigest"))
     if action.get("actionDigest") != computed_digest or permit_digest != computed_digest:
         raise SnapshotError("action digest does not match permit binding")
+    for argument in argv[1:]:
+        if argument.startswith("/") and os.path.lexists(argument):
+            raise SnapshotError("existing pathname arguments are unsupported by the native ELF launch matrix")
     return argv, computed_digest
+
+
+def known_dash_digest() -> str:
+    dash_fd = open_regular_no_symlinks(KNOWN_DASH_PATH)
+    try:
+        raw, dash_stat = read_stable(dash_fd, MAX_EXECUTABLE_BYTES, "known dash interpreter")
+    finally:
+        os.close(dash_fd)
+    if dash_stat.st_mode & 0o022 or not raw.startswith(b"\x7fELF"):
+        raise SnapshotError("known dash interpreter is not a stable supported ELF")
+    return "sha256:" + hashlib.sha256(raw).hexdigest()
+
+
+def validate_launch_form(argv: list[str], executable_metadata: dict[str, Any]) -> str:
+    if executable_metadata["sha256"] != known_dash_digest():
+        return "native-elf"
+    if len(argv) < 3 or argv[1] != "-c":
+        raise SnapshotError("dash interpreter requires the exact inline -c form")
+    return "dash-inline-c"
 
 
 def copy_linux_elf(source_fd: int, destination: Path) -> dict[str, Any]:
     source_stat = os.fstat(source_fd)
-    if source_stat.st_mode & 0o222:
-        raise SnapshotError("executable is writable and unsupported")
+    if source_stat.st_mode & 0o022:
+        raise SnapshotError("executable is group/world writable and unsupported")
     if source_stat.st_size > MAX_EXECUTABLE_BYTES:
         raise SnapshotError("executable exceeds the size limit")
     prefix = os.read(source_fd, 4)
@@ -176,18 +224,21 @@ def create_snapshot(action_path: str, consumption_path: str, output_dir_text: st
     finally:
         os.close(action_fd)
         os.close(consumption_fd)
+    validate_consumption(consumption)
     argv, action_digest = validate_action(action, consumption)
     executable_fd = open_regular_no_symlinks(argv[0])
     try:
         executable_metadata = copy_linux_elf(executable_fd, output_dir / "executable")
     finally:
         os.close(executable_fd)
+    launch_form = validate_launch_form(argv, executable_metadata)
     write_json(output_dir / "action.json", {"actionDigest": action_digest, "argv": argv})
     write_json(output_dir / "permit-consumption.json", consumption)
     write_json(output_dir / "snapshot-metadata.json", {
         "actionDigest": action_digest,
         "executable": executable_metadata,
         "executableFormat": "elf",
+        "launchForm": launch_form,
         "launchStrategy": "broker-owned-copy",
         "platform": "linux",
         "schemaVersion": 1,

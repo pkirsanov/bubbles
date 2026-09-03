@@ -68,6 +68,35 @@ class RuntimeCase(unittest.TestCase):
         Path(self.usage_authority_path).write_text(json.dumps({"contractType":"security-hmac-authority","schemaVersion":1,"purpose":"usage-receipt","authorityId":"authority:usage.selftest","trustRootId":"trust:usage.selftest","keyHex":"22" * 32}), encoding="utf-8")
         os.chmod(self.usage_authority_path, 0o600)
 
+    def private_dash(self, name: str) -> Path:
+        executable = Path(self.temp.name) / name
+        shutil.copyfile("/usr/bin/dash", executable)
+        executable.chmod(0o700)
+        return executable
+
+    def broker_fixture(self, argv: list[str], nonce: str) -> tuple[dict[str, Any], Path, Path, list[str]]:
+        canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        fixture = self.prepare(action_digest=action_digest)
+        permit = self.runtime.permit_issue(
+            decision_id=fixture["decision"]["decisionId"], nonce=nonce,
+            expires_at=EXP, issued_at=T[12], enforcement_kind="repository-reference")
+        action_file = Path(self.temp.name) / "broker-action.json"
+        consumption_file = Path(self.temp.name) / "broker-consumption.json"
+        action_file.write_text(json.dumps({"actionDigest": action_digest, "argv": argv}), encoding="utf-8")
+        consumption_file.write_text(json.dumps({
+            "permit_id": permit["permitId"], "nonce": nonce,
+            "consumed_at": T[13], "action_digest": action_digest}), encoding="utf-8")
+        command = [str(HERE.parent / "adapters/dispatch/reference-broker.sh"), "dispatch",
+                   "--store-root", self.temp.name, "--permit-consumption", str(consumption_file),
+                   "--action", str(action_file)]
+        return permit, action_file, consumption_file, command
+
+    def assert_permit_remains_usable(self, permit: dict[str, Any], nonce: str) -> None:
+        consumption = self.runtime.permit_consume(
+            permit_id=permit["permitId"], nonce=nonce, consumed_at=T[13])
+        self.assertEqual(consumption["permitId"], permit["permitId"])
+
     def tearDown(self) -> None:
         self.temp.cleanup()
 
@@ -176,6 +205,30 @@ class RuntimeCase(unittest.TestCase):
 
 
 class TypedGraphTests(RuntimeCase):
+    def run_broker_refusal(self, argv: list[str], nonce: str) -> subprocess.CompletedProcess[str]:
+        canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        fixture = self.prepare(action_digest=action_digest)
+        permit = self.runtime.permit_issue(
+            decision_id=fixture["decision"]["decisionId"], nonce=nonce,
+            expires_at=EXP, issued_at=T[12], enforcement_kind="repository-reference")
+        action_file = Path(self.temp.name) / f"{nonce.replace(':', '-')}-action.json"
+        consumption_file = Path(self.temp.name) / f"{nonce.replace(':', '-')}-consumption.json"
+        action_file.write_text(json.dumps({"actionDigest": action_digest, "argv": argv}), encoding="utf-8")
+        consumption_file.write_text(json.dumps({
+            "permit_id": permit["permitId"], "nonce": nonce,
+            "consumed_at": T[13], "action_digest": action_digest}), encoding="utf-8")
+        denied = subprocess.run(
+            [str(HERE.parent / "adapters/dispatch/reference-broker.sh"), "dispatch",
+             "--store-root", self.temp.name, "--permit-consumption", str(consumption_file),
+             "--action", str(action_file)],
+            text=True, capture_output=True, timeout=30, check=False)
+        consumption = self.runtime.permit_consume(
+            permit_id=permit["permitId"], nonce=nonce, consumed_at=T[13])
+        self.assertEqual(consumption["permitId"], permit["permitId"],
+                         "unsupported launch form consumed its permit before refusing")
+        return denied
+
     def test_corpus_reports_counterfactual_coverage_exclusions_and_quality_pairing(self) -> None:
         rows = [
             {"rowId": "row:included", "sessionDigest": D[1], "mode": "implement", "phase": "implementation", "epochClass": "implementation", "riskClass": "bounded", "modelClass": "none", "toolFamily": "repository", "measurementStatus": "measured", "outcome": "complete", "evidenceDigest": D[2], "exclusionReason": None},
@@ -265,7 +318,7 @@ class TypedGraphTests(RuntimeCase):
             expires_at=EXP, issued_at=T[12], enforcement_kind="repository-reference"))
 
     def test_reference_broker_constructs_settlement_and_refuses_replay(self) -> None:
-        argv = ["/usr/bin/test", "x", "=", "x"]
+        argv = [str(self.private_dash("success-dash")), "-c", "test x = x"]
         canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         fixture = self.prepare(action_digest=action_digest)
@@ -297,13 +350,10 @@ class TypedGraphTests(RuntimeCase):
                  "replayed dispatch reached the post-child result path")
 
     def test_reference_broker_launches_executable_snapshot_after_path_replacement(self) -> None:
-        executable = Path(self.temp.name) / "mutable-python"
-        shutil.copyfile(sys.executable, executable)
-        executable.chmod(0o500)
-        child_marker = Path(self.temp.name) / "snapshot-child-ran"
+        executable = self.private_dash("mutable-dash")
         snapshot_ready = Path(self.temp.name) / "snapshot-ready"
         snapshot_release = Path(self.temp.name) / "snapshot-release"
-        argv = [str(executable), "-c", "from pathlib import Path; Path(__import__('sys').argv[1]).write_text('original', encoding='utf-8')", str(child_marker)]
+        argv = [str(executable), "-c", "exit 0"]
         canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         fixture = self.prepare(action_digest=action_digest)
@@ -318,6 +368,7 @@ class TypedGraphTests(RuntimeCase):
             "consumed_at": T[13], "action_digest": action_digest}), encoding="utf-8")
         environment = {
             **os.environ,
+            "BUBBLES_REFERENCE_BROKER_TEST": "enabled",
             "BUBBLES_REFERENCE_BROKER_SNAPSHOT_READY_FILE": str(snapshot_ready),
             "BUBBLES_REFERENCE_BROKER_SNAPSHOT_RELEASE_FILE": str(snapshot_release),
             "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path,
@@ -327,31 +378,153 @@ class TypedGraphTests(RuntimeCase):
                    "--action", str(action_file)]
         process = subprocess.Popen(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
         try:
-            for _ in range(100):
-                if snapshot_ready.exists():
-                    break
-                process.poll()
-                if process.returncode is not None:
+            deadline = __import__("time").monotonic() + 30
+            while __import__("time").monotonic() < deadline:
+                if snapshot_ready.exists() or process.poll() is not None:
                     break
                 __import__("time").sleep(0.01)
             self.assertTrue(snapshot_ready.exists(), "broker did not expose the deterministic post-snapshot test seam")
             executable.chmod(0o700)
-            executable.write_text("#!/bin/sh\nprintf replacement > \"$1\"\n", encoding="utf-8")
+            executable.write_text("#!/bin/sh\nexit 42\n", encoding="utf-8")
             executable.chmod(0o700)
             snapshot_release.touch()
             stdout, stderr = process.communicate(timeout=30)
         finally:
             if process.poll() is None:
                 process.kill()
+            if process.stdout is not None and not process.stdout.closed:
                 process.communicate()
         self.assertEqual(process.returncode, 0, stderr)
-        self.assertEqual(child_marker.read_text(encoding="utf-8"), "original",
-                         "broker launched replacement bytes from the caller pathname")
-        self.assertEqual(json.loads(stdout)["settlement"], "debit")
+        result = json.loads(stdout)
+        self.assertEqual(result["childExitCode"], 0,
+                 "broker launched replacement bytes from the caller pathname")
+        self.assertEqual(result["settlement"], "debit")
+
+    def test_reference_broker_never_rereads_replaced_action_path(self) -> None:
+        executable = Path(self.temp.name) / "action-snapshot-dash"
+        shutil.copyfile("/usr/bin/dash", executable)
+        executable.chmod(0o500)
+        snapshot_ready = Path(self.temp.name) / "action-snapshot-ready"
+        snapshot_release = Path(self.temp.name) / "action-snapshot-release"
+        argv = [str(executable), "-c", "exit 0"]
+        canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        fixture = self.prepare(action_digest=action_digest)
+        permit = self.runtime.permit_issue(
+            decision_id=fixture["decision"]["decisionId"], nonce="nonce:action-snapshot",
+            expires_at=EXP, issued_at=T[12], enforcement_kind="repository-reference")
+        action_file = Path(self.temp.name) / "action-snapshot.json"
+        consumption_file = Path(self.temp.name) / "action-snapshot-consumption.json"
+        action_file.write_text(json.dumps({"actionDigest": action_digest, "argv": argv}), encoding="utf-8")
+        consumption_file.write_text(json.dumps({
+            "permit_id": permit["permitId"], "nonce": "nonce:action-snapshot",
+            "consumed_at": T[13], "action_digest": action_digest}), encoding="utf-8")
+        environment = {
+            **os.environ,
+            "BUBBLES_REFERENCE_BROKER_TEST": "enabled",
+            "BUBBLES_REFERENCE_BROKER_SNAPSHOT_READY_FILE": str(snapshot_ready),
+            "BUBBLES_REFERENCE_BROKER_SNAPSHOT_RELEASE_FILE": str(snapshot_release),
+            "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path,
+        }
+        command = [str(HERE.parent / "adapters/dispatch/reference-broker.sh"), "dispatch",
+                   "--store-root", self.temp.name, "--permit-consumption", str(consumption_file),
+                   "--action", str(action_file)]
+        process = subprocess.Popen(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=environment)
+        try:
+            deadline = __import__("time").monotonic() + 30
+            while __import__("time").monotonic() < deadline:
+                if snapshot_ready.exists() or process.poll() is not None:
+                    break
+                __import__("time").sleep(0.01)
+            self.assertTrue(snapshot_ready.exists(), "broker did not reach the deterministic post-snapshot seam")
+            replacement_argv = [str(executable), "-c", "exit 42"]
+            action_file.write_text(json.dumps({"actionDigest": action_digest, "argv": replacement_argv}), encoding="utf-8")
+            snapshot_release.touch()
+            stdout, stderr = process.communicate(timeout=30)
+        finally:
+            if process.poll() is None:
+                process.kill()
+            if process.stdout is not None and not process.stdout.closed:
+                process.communicate()
+        self.assertEqual(process.returncode, 0, stderr)
+        self.assertEqual(json.loads(stdout)["childExitCode"], 0,
+                         "broker reread replacement argv from the caller action pathname")
+
+    def test_reference_broker_refuses_executable_symlink_before_consumption(self) -> None:
+        executable = Path(self.temp.name) / "symlink-dash"
+        executable.symlink_to("/usr/bin/dash")
+        denied = self.run_broker_refusal([str(executable), "-c", "exit 0"], "nonce:symlink")
+        self.assertEqual(denied.returncode, 4)
+        self.assertIn("symbolic", denied.stderr)
+
+    def test_reference_broker_refuses_component_symlink_before_consumption(self) -> None:
+        target_dir = Path(self.temp.name) / "target-dir"
+        target_dir.mkdir()
+        executable = target_dir / "dash"
+        shutil.copyfile("/usr/bin/dash", executable)
+        executable.chmod(0o700)
+        linked_dir = Path(self.temp.name) / "linked-dir"
+        linked_dir.symlink_to(target_dir, target_is_directory=True)
+        denied = self.run_broker_refusal([str(linked_dir / "dash"), "-c", "exit 0"], "nonce:component-symlink")
+        self.assertEqual(denied.returncode, 4)
+        self.assertIn("symbolic component", denied.stderr)
+
+    def test_reference_broker_refuses_group_writable_executable_before_consumption(self) -> None:
+        executable = Path(self.temp.name) / "group-writable-dash"
+        shutil.copyfile("/usr/bin/dash", executable)
+        executable.chmod(0o720)
+        denied = self.run_broker_refusal([str(executable), "-c", "exit 0"], "nonce:group-writable")
+        self.assertEqual(denied.returncode, 4)
+        self.assertIn("group/world writable and unsupported", denied.stderr)
+
+    def test_reference_broker_refuses_shebang_executable_before_consumption(self) -> None:
+        executable = Path(self.temp.name) / "child-script"
+        executable.write_text("#!/usr/bin/dash\nexit 0\n", encoding="utf-8")
+        executable.chmod(0o500)
+        denied = self.run_broker_refusal([str(executable)], "nonce:shebang")
+        self.assertEqual(denied.returncode, 4)
+        self.assertIn("only Linux ELF is allowed", denied.stderr)
+
+    def test_reference_broker_refuses_explicit_interpreter_script_before_consumption(self) -> None:
+        interpreter = Path(self.temp.name) / "interpreter-dash"
+        shutil.copyfile("/usr/bin/dash", interpreter)
+        interpreter.chmod(0o500)
+        script = Path(self.temp.name) / "explicit-script"
+        script.write_text("exit 0\n", encoding="utf-8")
+        script.chmod(0o400)
+        denied = self.run_broker_refusal([str(interpreter), str(script)], "nonce:explicit-interpreter")
+        self.assertEqual(denied.returncode, 4)
+        self.assertIn("existing pathname arguments are unsupported", denied.stderr)
+
+    def test_reference_broker_refuses_malformed_consumption_before_consumption(self) -> None:
+        executable = self.private_dash("malformed-consumption-dash")
+        permit, _action_file, consumption_file, command = self.broker_fixture(
+            [str(executable), "-c", "exit 0"], "nonce:malformed-consumption")
+        consumption = json.loads(consumption_file.read_text(encoding="utf-8"))
+        consumption["unknown"] = True
+        consumption_file.write_text(json.dumps(consumption), encoding="utf-8")
+        denied = subprocess.run(command, text=True, capture_output=True, timeout=30, check=False)
+        self.assertEqual(denied.returncode, 4)
+        self.assertIn("permit consumption has unsupported fields", denied.stderr)
+        self.assert_permit_remains_usable(permit, "nonce:malformed-consumption")
+
+    def test_reference_broker_test_seam_is_default_off_before_consumption(self) -> None:
+        executable = self.private_dash("test-seam-dash")
+        permit, _action_file, _consumption_file, command = self.broker_fixture(
+            [str(executable), "-c", "exit 0"], "nonce:test-seam")
+        environment = {
+            **os.environ,
+            "BUBBLES_REFERENCE_BROKER_SNAPSHOT_READY_FILE": str(Path(self.temp.name) / "ready"),
+            "BUBBLES_REFERENCE_BROKER_SNAPSHOT_RELEASE_FILE": str(Path(self.temp.name) / "release"),
+        }
+        denied = subprocess.run(command, text=True, capture_output=True, timeout=30, check=False, env=environment)
+        self.assertEqual(denied.returncode, 4)
+        self.assertIn("test seam is not enabled", denied.stderr)
+        self.assert_permit_remains_usable(permit, "nonce:test-seam")
 
     def test_reference_broker_action_mismatch_never_starts_child(self) -> None:
         marker = Path(self.temp.name) / "mismatched-child-started"
-        argv = ["/usr/bin/touch", str(marker)]
+        argv = [str(self.private_dash("mismatch-dash")), "-c", "touch \"$1\"", "mismatch-child", str(marker)]
         canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         fixture = self.prepare(action_digest=action_digest)
@@ -408,7 +581,7 @@ class TypedGraphTests(RuntimeCase):
 
     def test_reference_broker_denial_never_starts_child(self) -> None:
         marker = Path(self.temp.name) / "child-started"
-        argv = ["/usr/bin/touch", str(marker)]
+        argv = [str(self.private_dash("denial-dash")), "-c", "touch \"$1\"", "denial-child", str(marker)]
         canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
         action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         fixture = self.prepare(action_digest=action_digest)
