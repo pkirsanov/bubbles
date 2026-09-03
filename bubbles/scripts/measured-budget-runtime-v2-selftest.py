@@ -349,6 +349,31 @@ class TypedGraphTests(RuntimeCase):
         self.assertNotIn("reference-dispatch-result", replay.stdout,
                  "replayed dispatch reached the post-child result path")
 
+    def test_reference_broker_preserves_nonzero_child_exit_through_settlement(self) -> None:
+        executable = self.private_dash("failing-dash")
+        argv = [str(executable), "-c", "exit 7"]
+        permit, _action_file, _consumption_file, command = self.broker_fixture(
+            argv, "nonce:child-exit-seven")
+        completed = subprocess.run(
+            command, text=True, capture_output=True, timeout=30, check=False,
+            env={**os.environ, "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path})
+        self.assertTrue(completed.stdout, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertEqual(result["childExitCode"], 7)
+        self.assertEqual(completed.returncode, 7, completed.stderr)
+        self.assertEqual(result["settlement"], "debit")
+        records = self.runtime.records()
+        consumption = next(row for row in records if row.get("contractType") == "permit-consumption")
+        receipt = next(row for row in records if row.get("contractType") == "usage-receipt")
+        settlement = next(row for row in records if row.get("contractType") == "budget-settlement")
+        self.assertEqual(consumption["permitId"], permit["permitId"])
+        self.assertEqual(receipt["permitId"], permit["permitId"])
+        child_result = json.dumps({"childExitCode": 7}, sort_keys=True, separators=(",", ":"))
+        child_digest = hashlib.sha256(f"reference-test-result:1:{child_result}".encode("utf-8")).hexdigest()
+        self.assertEqual(receipt["providerReceiptDigest"], f"sha256:{child_digest}")
+        self.assertEqual(settlement["usageReceiptId"], receipt["usageReceiptId"])
+        self.assertEqual(settlement["terminalState"], "debit")
+
     def test_reference_broker_launches_executable_snapshot_after_path_replacement(self) -> None:
         executable = self.private_dash("mutable-dash")
         snapshot_ready = Path(self.temp.name) / "snapshot-ready"

@@ -55,7 +55,8 @@ case "$OPERATION" in
     result_digest="sha256:$(typed_digest reference-test-result "$result_payload")"
     proof_payload="$(jq -cS --arg providerReceiptDigest "$result_digest" '{consumptionId:.consumptionId,permitId:.permitId,providerReceiptDigest:$providerReceiptDigest}' "$INPUT_FILE")"
     proof_digest="sha256:$(typed_digest reference-test-proof "$proof_payload")"
-    if [[ "$child_exit" == "0" ]]; then status=measured; else status=unsupported; fi
+    [[ "$child_exit" =~ ^[0-9]+$ ]] || fail "MBE-USAGE-RECEIPT-INVALID" "child exit code is invalid"
+    status=measured
     receipt_payload="$(jq -cS --arg adapter reference-test --arg status "$status" --arg provider "$result_digest" --arg proof "$proof_digest" '{actionDigest:.actionDigest,adapterContractVersion:2,adapterId:$adapter,attemptId:.attemptId,budgetId:.budgetId,contractType:"usage-receipt",epochId:.epochId,finishedAt:.finishedAt,goalId:.goalId,hostSchemaId:"repository-reference-test-v2",intentId:.intentId,measurement:(if $status == "measured" then .measurement else [] end),measurementStatus:$status,monotonicFinishedNs:.monotonicFinishedNs,monotonicStartedNs:.monotonicStartedNs,occurrenceId:.occurrenceId,permitId:.permitId,providerReceiptDigest:$provider,retainedProjectionBytes:0,retainedProjectionDigest:null,revision:1,schemaVersion:2,sessionIdentityId:.sessionIdentityId,sourceProofDigest:$proof,startedAt:.startedAt,supersedesReceiptId:null}' "$INPUT_FILE")"
     receipt_digest="$(typed_digest usage-receipt "$receipt_payload")"
     printf '%s' "$receipt_payload" | jq -cS --arg id "urc:$receipt_digest" '. + {usageReceiptId:$id}'

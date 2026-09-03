@@ -82,8 +82,12 @@ expected_argc="$(jq -r '.argv | length - 1' "$snapshot_action")"
   exit 2
 }
 
-child_status=0
-env -i PATH=/usr/bin:/bin HOME="$work_dir" LANG=C LC_ALL=C "$work_dir/executable" "${argv[@]}" >"$work_dir/stdout" 2>"$work_dir/stderr" || child_status=$?
+python3 "$SNAPSHOT_HELPER" launch --output-dir "$work_dir"
+child_status="$(<"$work_dir/child-status")"
+[[ "$child_status" =~ ^[0-9]+$ ]] || {
+  echo "reference-broker: child exit status is invalid" >&2
+  exit 4
+}
 
 permit_id="$(jq -r '.permit_id // .permitId // ""' "$snapshot_consumption")"
 [[ -n "$permit_id" ]] || { echo "reference-broker: permit identity unavailable" >&2; exit 2; }

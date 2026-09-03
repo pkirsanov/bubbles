@@ -9,6 +9,7 @@ import json
 import os
 import re
 import stat
+import subprocess
 import sys
 import time
 import datetime as dt
@@ -190,6 +191,22 @@ def write_json(path: Path, value: dict[str, Any]) -> None:
     path.chmod(0o600)
 
 
+def read_private_snapshot_file(path: Path, label: str, mode: int) -> bytes:
+    fd = open_regular_no_symlinks(str(path))
+    try:
+        file_stat = os.fstat(fd)
+        if stat.S_IMODE(file_stat.st_mode) != mode:
+            raise SnapshotError(f"{label} must have mode {mode:04o}")
+        return read_stable(fd, MAX_EXECUTABLE_BYTES, label)[0]
+    finally:
+        os.close(fd)
+
+
+def open_private_output(path: Path) -> Any:
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    return os.fdopen(fd, "wb")
+
+
 def wait_at_test_seam() -> None:
     ready = os.environ.get("BUBBLES_REFERENCE_BROKER_SNAPSHOT_READY_FILE")
     release = os.environ.get("BUBBLES_REFERENCE_BROKER_SNAPSHOT_RELEASE_FILE")
@@ -246,14 +263,76 @@ def create_snapshot(action_path: str, consumption_path: str, output_dir_text: st
     wait_at_test_seam()
 
 
+def launch_snapshot(output_dir_text: str) -> None:
+    output_dir = Path(output_dir_text)
+    output_stat = output_dir.lstat()
+    if not output_dir.is_dir() or stat.S_IMODE(output_stat.st_mode) != 0o700:
+        raise SnapshotError("snapshot directory must be private mode 0700")
+    if stat.S_ISLNK(output_stat.st_mode):
+        raise SnapshotError("snapshot directory must not be a symlink")
+    action = parse_object(read_private_snapshot_file(output_dir / "action.json", "snapshot action", 0o600), "snapshot action")
+    if set(action) != {"actionDigest", "argv"}:
+        raise SnapshotError("snapshot action has unsupported fields")
+    argv = action["argv"]
+    if not isinstance(argv, list) or not argv or not all(
+        isinstance(item, str) and item and not any(character in item for character in "\n\r\0")
+        for item in argv
+    ):
+        raise SnapshotError("snapshot action argv is invalid")
+    canonical = json.dumps({"argv": argv}, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    if action["actionDigest"] != action_digest:
+        raise SnapshotError("snapshot action digest is invalid")
+    metadata = parse_object(
+        read_private_snapshot_file(output_dir / "snapshot-metadata.json", "snapshot metadata", 0o600),
+        "snapshot metadata",
+    )
+    if set(metadata) != {"actionDigest", "executable", "executableFormat", "launchForm", "launchStrategy", "platform", "schemaVersion"}:
+        raise SnapshotError("snapshot metadata has unsupported fields")
+    if metadata["actionDigest"] != action_digest or metadata["executableFormat"] != "elf" \
+            or metadata["launchStrategy"] != "broker-owned-copy" or metadata["platform"] != "linux" \
+            or metadata["schemaVersion"] != 1 or metadata["launchForm"] not in {"native-elf", "dash-inline-c"}:
+        raise SnapshotError("snapshot metadata is invalid")
+    executable_bytes = read_private_snapshot_file(output_dir / "executable", "snapshot executable", 0o500)
+    executable_identity = {
+        "bytes": len(executable_bytes),
+        "sha256": "sha256:" + hashlib.sha256(executable_bytes).hexdigest(),
+    }
+    if not executable_bytes.startswith(b"\x7fELF") or metadata["executable"] != executable_identity:
+        raise SnapshotError("snapshot executable identity is invalid")
+    executable = output_dir / "executable"
+    with open_private_output(output_dir / "stdout") as stdout_file, open_private_output(output_dir / "stderr") as stderr_file:
+        completed = subprocess.run(
+            [str(executable), *argv[1:]],
+            stdout=stdout_file,
+            stderr=stderr_file,
+            env={"PATH": "/usr/bin:/bin", "HOME": output_dir_text, "LANG": "C", "LC_ALL": "C"},
+            check=False,
+        )
+        child_status = completed.returncode if completed.returncode >= 0 else 128 - completed.returncode
+    status_path = output_dir / "child-status"
+    status_fd = os.open(status_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        os.write(status_fd, f"{child_status}\n".encode("ascii"))
+        os.fsync(status_fd)
+    finally:
+        os.close(status_fd)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--action", required=True)
-    parser.add_argument("--permit-consumption", required=True)
+    parser.add_argument("operation", nargs="?", choices=("snapshot", "launch"), default="snapshot")
+    parser.add_argument("--action")
+    parser.add_argument("--permit-consumption")
     parser.add_argument("--output-dir", required=True)
     arguments = parser.parse_args()
     try:
-        create_snapshot(arguments.action, arguments.permit_consumption, arguments.output_dir)
+        if arguments.operation == "launch":
+            launch_snapshot(arguments.output_dir)
+        elif arguments.action is None or arguments.permit_consumption is None:
+            parser.error("snapshot requires --action and --permit-consumption")
+        else:
+            create_snapshot(arguments.action, arguments.permit_consumption, arguments.output_dir)
     except (OSError, SnapshotError) as error:
         print(f"reference-broker: snapshot refused: {error}", file=sys.stderr)
         return 4
