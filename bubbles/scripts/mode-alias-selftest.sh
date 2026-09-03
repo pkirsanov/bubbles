@@ -167,6 +167,34 @@ else
   pass "adversarial: resolver rejects unknown tag for known primitive"
 fi
 
+# BUG-038: the metadata-only train assignment tuple is exact, while all five
+# pre-existing train lifecycle/status aliases retain their canonical names.
+if [[ "$(bash "$RESOLVER" --resolve-v6 ship action:assign target:train-metadata 2>/dev/null || true)" == "release-train-assign-metadata" ]]; then
+  pass "BUG-038: exact train metadata assignment tuple resolves"
+else
+  fail "BUG-038: exact train metadata assignment tuple does not resolve"
+fi
+
+train_alias_failures=0
+for train_alias_row in \
+  "ship action:cut|release-train-cut" \
+  "ship action:promote|release-train-promote" \
+  "ship action:rollback|release-train-rollback" \
+  "ship action:retire|release-train-retire" \
+  "ship action:status scope:all-trains|release-train-status-all"; do
+  train_input="${train_alias_row%%|*}"
+  train_expected="${train_alias_row#*|}"
+  # shellcheck disable=SC2086
+  train_actual="$(bash "$RESOLVER" --resolve-v6 $train_input 2>/dev/null || true)"
+  if [[ "$train_actual" != "$train_expected" ]]; then
+    fail "BUG-038: existing tuple '$train_input' resolved to '$train_actual' instead of '$train_expected'"
+    train_alias_failures=$((train_alias_failures + 1))
+  fi
+done
+if [[ "$train_alias_failures" -eq 0 ]]; then
+  pass "BUG-038: five existing train aliases retain their targets"
+fi
+
 # 8c. adversarial: duplicate (primitive, tag) tuple is rejected by an
 # alternate aliases file passed via BUBBLES_WORKFLOW_ALIASES_FILE.
 # yq runs under snap on some platforms and cannot read /tmp; use $HOME.

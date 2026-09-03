@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "specId": "BUG-045",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-09-02T06:40:53Z",
+  "scopes": [
+    {
+      "scopeId": "01-reject-empty-evidence-refs",
+      "scopeName": "Reject empty evidence reference arrays",
+      "tests": [
+        {
+          "testId": "B045-T1",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B045-001",
+          "description": "A one-scenario fixture with evidenceRefs set to an empty array is rejected with the exact 0-of-1 diagnostic.",
+          "expectedIdentity": "SCN-B045-001 ADVERSARIAL: empty evidenceRefs array is rejected and counted as uncovered",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "B045-T2",
+          "type": "unit",
+          "category": "unit",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B045-002",
+          "description": "The existing canonical one-member evidenceRefs fixture continues to satisfy the cross-check.",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "existing-control"
+        },
+        {
+          "testId": "B045-T3",
+          "type": "Regression E2E (CLI)",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "SCN-B045-003",
+          "description": "The public guard CLI rejects a two-scenario manifest with one empty array and reports exactly 1 of 2 covered.",
+          "expectedIdentity": "SCN-B045-003 ADVERSARIAL: mixed evidenceRefs cardinality is exact",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "B045-T4",
+          "type": "mutation",
+          "category": "functional",
+          "file": "bubbles/scripts/traceability-guard-selftest.sh",
+          "scenarioId": "Mutation control",
+          "description": "Restoring the type-only predicate makes the empty and mixed adversarial assertions fail while the non-empty control remains green.",
+          "command": "bash bubbles/scripts/traceability-guard-selftest.sh",
+          "liveSystem": false,
+          "testState": "planned"
+        },
+        {
+          "testId": "B045-T5",
+          "type": "artifact lint",
+          "category": "unit",
+          "file": "bubbles/scripts/artifact-lint.sh",
+          "scenarioId": "Packet",
+          "description": "The BUG-045 packet satisfies the canonical artifact contract after planning reconciliation.",
+          "command": "bash bubbles/scripts/artifact-lint.sh bugs/BUG-045-traceability-empty-evidence-refs",
+          "liveSystem": false,
+          "testState": "planned"
+        }
+      ]
+    }
+  ]
+}

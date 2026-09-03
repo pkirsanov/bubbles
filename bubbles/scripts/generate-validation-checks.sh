@@ -99,7 +99,8 @@ TARGET="$REPO_ROOT/bubbles/registry/validation-checks.yaml"
 # refuses to generate anything if the scanner has gone inert.
 extract_refs() {
   local file="$1"
-  LC_ALL=C awk '
+  {
+    LC_ALL=C awk '
     function emit(tok) { if (tok != "") print tok }
     {
       line = $0
@@ -110,7 +111,57 @@ extract_refs() {
         rest = substr(rest, RSTART + RLENGTH)
       }
     }
-  ' "$file" | LC_ALL=C sort -u
+    ' "$file"
+    if [[ "$file" == *.py ]]; then
+      extract_python_path_refs "$file"
+    fi
+  } | LC_ALL=C sort -u
+}
+
+# Python checks use pathlib rather than shell-rooted strings. Trace the local
+# HERE/ROOT path expressions so Python validation drivers receive the same
+# dependency closure as shell drivers. Each quoted filename is emitted
+# separately; this also handles list comprehensions such as
+# `HERE.parent / "schemas" / name for name in ("a.json", "b.json")`.
+extract_python_path_refs() {
+  local file="$1"
+  LC_ALL=C awk '
+    /^[ \t]*#/ { next }
+    {
+      line = $0
+      prefix = ""
+      start = 0
+      if (match(line, /HERE[.]parent[.]parent[ \t]*\//)) {
+        start = RSTART + RLENGTH
+      } else if (match(line, /HERE[.]parent[ \t]*\//)) {
+        prefix = "bubbles"
+        start = RSTART + RLENGTH
+      } else if (match(line, /HERE[ \t]*\//)) {
+        prefix = "bubbles/scripts"
+        start = RSTART + RLENGTH
+      } else if (match(line, /ROOT[ \t]*\//)) {
+        prefix = "bubbles"
+        start = RSTART + RLENGTH
+      } else {
+        next
+      }
+
+      rest = substr(line, start)
+      dirs = ""
+      while (match(rest, /"[A-Za-z0-9_.-]+"/)) {
+        token = substr(rest, RSTART + 1, RLENGTH - 2)
+        rest = substr(rest, RSTART + RLENGTH)
+        if (token ~ /[.](sh|py|yaml|yml|json|txt|md|mjs)$/) {
+          path = prefix
+          if (dirs != "") path = (path == "" ? dirs : path "/" dirs)
+          path = (path == "" ? token : path "/" token)
+          print path
+        } else {
+          dirs = (dirs == "" ? token : dirs "/" token)
+        }
+      }
+    }
+  ' "$file"
 }
 
 # The extractor is the whole derivation. If it stops matching, every closure
@@ -297,7 +348,7 @@ scan_file() {
     [[ -n "$norm" ]] || continue
     [[ "$norm" == "$path" ]] && continue
     case "$norm" in
-      *.sh) scripts+="$norm"$'\n' ;;
+      *.sh | *.py) scripts+="$norm"$'\n' ;;
       *) data+="$norm"$'\n' ;;
     esac
   done < <(extract_refs "$abs")
@@ -404,7 +455,7 @@ registrations() {
 
 slug_for() {
   local path="$1" slug
-  slug="${path%.sh}"
+  slug="${path%.*}"
   slug="$(printf '%s' "$slug" | LC_ALL=C tr -c 'A-Za-z0-9' '-')"
   while [[ "$slug" == *--* ]]; do slug="${slug//--/-}"; done
   slug="${slug#-}"
@@ -440,7 +491,7 @@ emit_registry() {
     for token in $line; do
       token="${token//\"/}"
       case "$token" in
-        *SCRIPT_DIR/*.sh | *REPO_ROOT/*.sh)
+        *SCRIPT_DIR/*.sh | *REPO_ROOT/*.sh | *SCRIPT_DIR/*.py | *REPO_ROOT/*.py)
           script="$(normalize_ref "$token")"
           [[ -n "$script" ]] && break
           ;;

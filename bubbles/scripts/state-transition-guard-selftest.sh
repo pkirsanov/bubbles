@@ -27,6 +27,21 @@ tmp_root="$(mktemp -d "$selftest_tmp_base/bubbles-transition-guard-selftest.XXXX
 failures=0
 assertions=0
 
+# PATH is an input to this harness, not a trust root. Keep a silent adversarial
+# env executable first for the entire suite so any executable dependency on
+# PATH-resolved `env` turns the affected capture log empty and fails its
+# existing content assertions. Trusted launchers below apply assignments
+# directly in Bash and invoke the guard with an explicit bash command.
+fake_env_dir="$tmp_root/fake-env-path"
+mkdir -p "$fake_env_dir"
+cat <<'EOF' > "$fake_env_dir/env"
+#!/usr/bin/env bash
+exit 0
+EOF
+chmod +x "$fake_env_dir/env"
+PATH="$fake_env_dir:$PATH"
+export PATH
+
 cleanup() {
   if [[ "$failures" -eq 0 ]] && [[ "${KEEP_SELFTEST_TMP:-0}" != "1" ]]; then
     rm -rf "$tmp_root"
@@ -71,6 +86,44 @@ run_capture_from() {
   set -e
 
   echo "$status"
+}
+
+run_guard_fast_disabled() {
+  local guard_script="$1"
+  local feature_dir="$2"
+
+  BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+    bash "$guard_script" "$feature_dir"
+}
+
+run_guard_with_repo_root_and_lint_timeout() {
+  local repository_root="$1"
+  local lint_timeout="$2"
+  local guard_script="$3"
+  local feature_dir="$4"
+
+  BUBBLES_REPO_ROOT="$repository_root" \
+    BUBBLES_ARTIFACT_LINT_TIMEOUT="$lint_timeout" \
+    bash "$guard_script" "$feature_dir"
+}
+
+run_guard_with_resolver_count() {
+  local count_file="$1"
+  local guard_script="$2"
+  local feature_dir="$3"
+
+  BUBBLES_TRANSITION_RESOLVER_COUNT_FILE="$count_file" \
+    bash "$guard_script" "$feature_dir"
+}
+
+run_guard_with_repo_root_fast_disabled() {
+  local repository_root="$1"
+  local guard_script="$2"
+  local feature_dir="$3"
+
+  BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
+    BUBBLES_REPO_ROOT="$repository_root" \
+    bash "$guard_script" "$feature_dir"
 }
 
 sha256_text() {
@@ -2213,6 +2266,111 @@ with open(path, "w", encoding="utf-8") as handle:
 PY
 }
 
+run_bug033_timeout_guard_assertions() {
+  local fixture_root="$tmp_root/bug033-timeout-receipt-repo"
+  local feature_dir="$fixture_root/specs/951-bug033-timeout-identity"
+  local receipt_log="$fixture_root/.specify/runtime/tool-calls.jsonl"
+  local output_hash case_log status
+
+  echo "Running focused BUG-033 timeout wrapper regressions..."
+  clone_framework_surface "$fixture_root"
+  emit_base_fixture "$feature_dir"
+  mutate_delivery_contract "$feature_dir/state.json"
+  git -C "$fixture_root" init -q
+  mkdir -p "$(dirname "$receipt_log")"
+  output_hash="$(sha256_text 'bug033-timeout-nonempty-output')"
+
+  cat > "$receipt_log" <<EOF
+{"ts":"2026-09-02T09:00:01Z","sessionId":"bug033-timeout-bare","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/scenario-test-resolve-selftest.sh alpha","exitCode":0,"durationMs":101,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:00:03Z","sessionId":"bug033-timeout-short-v","spec":"specs/alpha","scope":"SCOPE-1","cmd":"timeout -v 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh alpha","exitCode":0,"durationMs":103,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:00:05Z","sessionId":"bug033-timeout-nested","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash -c env CHECK=1 gtimeout --verbose 150 sh bubbles/scripts/scenario-test-resolve-selftest.sh alpha","exitCode":0,"durationMs":105,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:00:07Z","sessionId":"bug033-gtimeout-options","spec":"specs/alpha","scope":"SCOPE-1","cmd":"gtimeout --signal TERM --kill-after=5 --foreground --preserve-status 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh alpha","exitCode":0,"durationMs":107,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+EOF
+  case_log="$tmp_root/bug033-timeout-transparent.log"
+  status="$(run_capture "$case_log" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -eq 0 ]]; then
+    pass "BUG-033 timeout: Check 43 accepts -v and nested timeout/gtimeout wrappers as transparent"
+  else
+    fail "BUG-033 timeout: transparent wrappers must pass the whole guard (observed $status)"
+  fi
+  assert_log_not_contains "$case_log" "Evidence receipt CLONE" \
+    "BUG-033 timeout: transparent timeout spellings do not produce a clone allegation"
+
+  cat > "$receipt_log" <<EOF
+{"ts":"2026-09-02T09:05:01Z","sessionId":"bug033-timeout-path-child","spec":"specs/alpha","scope":"SCOPE-1","cmd":"bash bubbles/scripts/scenario-test-resolve-selftest.sh alpha","exitCode":0,"durationMs":151,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:05:03Z","sessionId":"bug033-timeout-path-attacker","spec":"specs/beta","scope":"SCOPE-1","cmd":"/tmp/timeout 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh beta","exitCode":0,"durationMs":153,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:05:05Z","sessionId":"bug033-timeout-path-system","spec":"specs/gamma","scope":"SCOPE-1","cmd":"/usr/bin/timeout 150 bash bubbles/scripts/scenario-test-resolve-selftest.sh gamma","exitCode":0,"durationMs":155,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+EOF
+  case_log="$tmp_root/bug033-timeout-path-qualified.log"
+  status="$(run_capture "$case_log" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -ne 0 ]]; then
+    pass "BUG-033 timeout trust bound: path-qualified timeout tokens remain opaque"
+  else
+    fail "BUG-033 timeout trust bound: unverified timeout paths must not collapse to the nested child"
+  fi
+  assert_log_contains "$case_log" "Evidence receipt CLONE" \
+    "BUG-033 timeout trust bound: path-qualified impersonation remains a clone allegation"
+  assert_log_contains "$case_log" "family=timeout" \
+    "BUG-033 timeout trust bound: path-qualified system and attacker wrappers retain timeout family"
+  assert_log_contains "$case_log" "family=scenario-test-resolve-selftest.sh" \
+    "BUG-033 timeout trust bound: nested child remains distinct from opaque wrappers"
+
+  cat > "$receipt_log" <<EOF
+{"ts":"2026-09-02T09:10:01Z","sessionId":"bug033-timeout-malformed-k","spec":"specs/alpha","scope":"SCOPE-1","cmd":"timeout -k --verbose 150 cargo test","exitCode":0,"durationMs":201,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:03Z","sessionId":"bug033-timeout-malformed-s","spec":"specs/beta","scope":"SCOPE-1","cmd":"timeout -s --verbose 150 cargo test","exitCode":0,"durationMs":203,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:05Z","sessionId":"bug033-timeout-unknown","spec":"specs/gamma","scope":"SCOPE-1","cmd":"timeout --unknown 150 cargo test","exitCode":0,"durationMs":205,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:07Z","sessionId":"bug033-timeout-no-duration","spec":"specs/delta","scope":"SCOPE-1","cmd":"timeout -v cargo test","exitCode":0,"durationMs":207,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:09Z","sessionId":"bug033-timeout-near-miss","spec":"specs/epsilon","scope":"SCOPE-1","cmd":"mytimeout 150 cargo test","exitCode":0,"durationMs":209,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:11Z","sessionId":"bug033-timeout-real-child","spec":"specs/zeta","scope":"SCOPE-1","cmd":"cargo test","exitCode":0,"durationMs":211,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:13Z","sessionId":"bug033-timeout-unknown-signal","spec":"specs/eta","scope":"SCOPE-1","cmd":"timeout -s BOGUS 150 cargo test","exitCode":0,"durationMs":213,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:15Z","sessionId":"bug033-timeout-terminal-option","spec":"specs/theta","scope":"SCOPE-1","cmd":"timeout --help 150 cargo test","exitCode":0,"durationMs":215,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:17Z","sessionId":"bug033-timeout-cluster","spec":"specs/iota","scope":"SCOPE-1","cmd":"timeout -vfp 150 cargo test","exitCode":0,"durationMs":217,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:19Z","sessionId":"bug033-timeout-attached-k","spec":"specs/kappa","scope":"SCOPE-1","cmd":"timeout -k.5 150 cargo test","exitCode":0,"durationMs":219,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:10:21Z","sessionId":"bug033-timeout-attached-s","spec":"specs/lambda","scope":"SCOPE-1","cmd":"timeout -sTERM 150 cargo test","exitCode":0,"durationMs":221,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+EOF
+  case_log="$tmp_root/bug033-timeout-opaque.log"
+  status="$(run_capture "$case_log" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -ne 0 ]]; then
+    pass "BUG-033 timeout bound: malformed, unknown, attached, clustered, missing-duration, and near-miss wrappers remain opaque"
+  else
+    fail "BUG-033 timeout bound: opaque timeout syntax must not be attributed to cargo"
+  fi
+  assert_log_contains "$case_log" "Evidence receipt CLONE" \
+    "BUG-033 timeout bound: opaque syntax sharing substantive stdout remains a clone allegation"
+  assert_log_contains "$case_log" "family=timeout" \
+    "BUG-033 timeout bound: malformed timeout syntax retains timeout as its family"
+
+  cat > "$receipt_log" <<EOF
+{"ts":"2026-09-02T09:15:01Z","sessionId":"bug033-timeout-near-miss","spec":"specs/alpha","scope":"SCOPE-1","cmd":"mytimeout 150 cargo test","exitCode":0,"durationMs":251,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:15:03Z","sessionId":"bug033-timeout-real-child","spec":"specs/beta","scope":"SCOPE-1","cmd":"cargo test","exitCode":0,"durationMs":253,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+EOF
+  case_log="$tmp_root/bug033-timeout-near-miss.log"
+  status="$(run_capture "$case_log" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -ne 0 ]]; then
+    pass "BUG-033 timeout bound: an exact-basename near miss remains opaque"
+  else
+    fail "BUG-033 timeout bound: mytimeout must not be normalized as timeout"
+  fi
+  assert_log_contains "$case_log" "family=mytimeout" \
+    "BUG-033 timeout bound: an exact-basename near miss retains its own family"
+
+  cat > "$receipt_log" <<EOF
+{"ts":"2026-09-02T09:20:01Z","sessionId":"bug033-timeout-cargo","spec":"specs/alpha","scope":"SCOPE-1","cmd":"timeout -v 150 cargo test","exitCode":0,"durationMs":301,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+{"ts":"2026-09-02T09:20:03Z","sessionId":"bug033-timeout-npm","spec":"specs/beta","scope":"SCOPE-1","cmd":"gtimeout --preserve-status 150 npm run test","exitCode":0,"durationMs":303,"stdoutHash":"$output_hash","stdoutBytes":128,"tags":["test"]}
+EOF
+  case_log="$tmp_root/bug033-timeout-different-child.log"
+  status="$(run_capture "$case_log" bash "$GUARD_SCRIPT" "$feature_dir")"
+  if [[ "$status" -ne 0 ]]; then
+    pass "BUG-033 timeout bound: transparent wrappers do not hide different child programs"
+  else
+    fail "BUG-033 timeout bound: cargo and npm children sharing stdout must still refuse"
+  fi
+  assert_log_contains "$case_log" "family=cargo category=test" \
+    "BUG-033 timeout bound: the whole guard names the cargo child"
+  assert_log_contains "$case_log" "family=npm category=test" \
+    "BUG-033 timeout bound: the whole guard names the npm child"
+}
+
 emit_g040_fixture() {
   # G040 / Check 18 selftest fixture builder.
   #
@@ -2348,6 +2506,37 @@ if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG049_ONLY:-0}" == "1" ]]; then
   echo "state-transition-guard BUG-049 selftest passed."
   exit 0
 fi
+
+emit_g040_exposure_fixture() {
+  local feature_dir="$1"
+  local reason="$2"
+
+  emit_base_fixture "$feature_dir"
+  mutate_delivery_contract "$feature_dir/state.json"
+
+  python3 - "$feature_dir/state.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    data = json.load(handle)
+
+data["status"] = "done"
+data.setdefault("certification", {})["status"] = "done"
+
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+    handle.write("\n")
+PY
+
+  {
+    echo ""
+    echo "### Exposure"
+    echo ""
+    echo "- **Exposure-Deferred:** $reason -> spec.md#exposure"
+  } >> "$feature_dir/scopes.md"
+}
 
 emit_g040_cw_fixture() {
   # G040 / Check 18 certifying-window fixture builder (report.md marker parity
@@ -3192,6 +3381,16 @@ PY
 assert_transition_result_contract_matches_emitter \
   "TRANSITION_GUARD_RESULT_V1 emitter field order matches this suite's expectation"
 
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG033_TIMEOUT_ONLY:-0}" == "1" ]]; then
+  run_bug033_timeout_guard_assertions
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard BUG-033 timeout selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard BUG-033 timeout selftest passed."
+  exit 0
+fi
+
 if [[ "${BUBBLES_STATE_TRANSITION_GUARD_CONTAINMENT_ONLY:-0}" == "1" ]]; then
   run_strict_manifest_containment_regressions
   if [[ "$failures" -gt 0 ]]; then
@@ -3304,6 +3503,10 @@ g040_cw_pre_skipped_dir="$tmp_root/specs/934-g040-cw-pre-marker-skipped"
 g040_cw_post_blocks_dir="$tmp_root/specs/935-g040-cw-post-marker-blocks"
 g040_cw_no_marker_dir="$tmp_root/specs/936-g040-cw-no-marker-full-enforcement"
 g040_cw_two_markers_dir="$tmp_root/specs/937-g040-cw-two-markers-fail-loud"
+# Keep deferral terms out of these paths because emit_base_fixture records each
+# absolute fixture path in scopes.md, which Check 18 scans.
+g040_neg_exposure_label_dir="$tmp_root/specs/942-g040-negative-exposure-label"
+g040_pos_exposure_reason_dir="$tmp_root/specs/943-g040-positive-exposure-reason"
 fast_lane_profile_dir="$tmp_root/specs/940-fast-lane-profile-resolve"
 framework_proposal_profile_dir="$tmp_root/specs/941-framework-proposal-profile-resolve"
 g064_framework_root="$tmp_root/framework-g064"
@@ -3847,6 +4050,11 @@ emit_g040_cw_fixture "$g040_cw_no_marker_dir" 0 \
 emit_g040_cw_fixture "$g040_cw_two_markers_dir" 2 \
   "Several action items were deferred to next sprint in the prior release cycle." ""
 
+emit_g040_exposure_fixture "$g040_neg_exposure_label_dir" \
+  "this scope ships guard configuration only and has no runnable consumer surface"
+emit_g040_exposure_fixture "$g040_pos_exposure_reason_dir" \
+  "punted to a future iteration"
+
 clone_framework_surface "$g064_framework_root"
 mkdir -p "$g064_framework_root/specs"
 emit_base_fixture "$g064_feature_dir"
@@ -4023,8 +4231,7 @@ repo_root_isolation_log="$tmp_root/repo-root-isolation-guard.log"
 repo_root_isolation_status="$(
   cd "$repo_root_isolation_ambient_dir"
   run_capture "$repo_root_isolation_log" \
-    env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
-    bash "$GUARD_SCRIPT" "$repo_root_isolation_feature_dir"
+    run_guard_fast_disabled "$GUARD_SCRIPT" "$repo_root_isolation_feature_dir"
 )"
 if [[ "$repo_root_isolation_status" -eq 0 ]]; then
   pass "Guarded-repository fixture passes from a hostile ambient CWD"
@@ -4038,6 +4245,15 @@ assert_log_not_contains "$repo_root_isolation_log" \
 assert_log_contains "$repo_root_isolation_log" \
   "Retro convergence health SLO is pass/degraded (Gate G090)" \
   "G090 evaluates convergence health against the guarded repository root"
+
+if [[ "${BUBBLES_STATE_TRANSITION_GUARD_ROOT_ISOLATION_ONLY:-0}" == "1" ]]; then
+  if [[ "$failures" -gt 0 ]]; then
+    echo "state-transition-guard root-isolation selftest failed with $failures issue(s)."
+    exit 1
+  fi
+  echo "state-transition-guard root-isolation selftest passed."
+  exit 0
+fi
 
 # --- G053 Check 13B: shell (.sh) runtime-path recognition ---
 # Regression guard for the G053<->G093 alignment fix. The G093 delivery-delta
@@ -4153,10 +4369,9 @@ sleep 20
 EOF
 
 c13_timeout_log="$tmp_root/check13-timeout.log"
-run_capture "$c13_timeout_log" env \
-  BUBBLES_REPO_ROOT="$c13_stub_root" \
-  BUBBLES_ARTIFACT_LINT_TIMEOUT="$c13_lint_cap_seconds" \
-  bash "$c13_stub_guard" "$c13_stub_feature_dir" >/dev/null
+run_capture "$c13_timeout_log" run_guard_with_repo_root_and_lint_timeout \
+  "$c13_stub_root" "$c13_lint_cap_seconds" \
+  "$c13_stub_guard" "$c13_stub_feature_dir" >/dev/null
 assert_log_contains "$c13_timeout_log" \
   "this is a TIMEOUT, not a lint failure" \
   "Check 13 reports a lint that did not COMPLETE as a timeout, naming the cap"
@@ -4178,10 +4393,9 @@ cat <<'EOF' > "$c13_stub_lint"
 exit 0
 EOF
 c13_completes_log="$tmp_root/check13-completes.log"
-run_capture "$c13_completes_log" env \
-  BUBBLES_REPO_ROOT="$c13_stub_root" \
-  BUBBLES_ARTIFACT_LINT_TIMEOUT="$c13_lint_cap_seconds" \
-  bash "$c13_stub_guard" "$c13_stub_feature_dir" >/dev/null
+run_capture "$c13_completes_log" run_guard_with_repo_root_and_lint_timeout \
+  "$c13_stub_root" "$c13_lint_cap_seconds" \
+  "$c13_stub_guard" "$c13_stub_feature_dir" >/dev/null
 assert_log_not_contains "$c13_completes_log" \
   "this is a TIMEOUT, not a lint failure" \
   "Check 13 does not take the timeout path when the same staged lint completes (timeout case is non-tautological)" # portable-ok: assertion prose, not a timeout invocation
@@ -4828,9 +5042,9 @@ exec bash "$SCRIPT_DIR/transition-contract-resolver.real.sh" "$@"
 EOF
 s03_resolver_count_file="$tmp_root/s03-resolver-count.txt"
 s03_resolver_once_log="$tmp_root/s03-resolver-once.log"
-s03_resolver_once_status="$(run_capture "$s03_resolver_once_log" env \
-  BUBBLES_TRANSITION_RESOLVER_COUNT_FILE="$s03_resolver_count_file" \
-  bash "$s03_resolver_once_root/bubbles/scripts/state-transition-guard.sh" "$s03_resolver_once_feature")"
+s03_resolver_once_status="$(run_capture "$s03_resolver_once_log" run_guard_with_resolver_count \
+  "$s03_resolver_count_file" \
+  "$s03_resolver_once_root/bubbles/scripts/state-transition-guard.sh" "$s03_resolver_once_feature")"
 if [[ "$s03_resolver_once_status" -eq 0 \
   && "$(wc -l < "$s03_resolver_count_file" | tr -d '[:space:]')" -eq 1 ]]; then
   pass "BUG-009 S03: guard resolves the transition contract exactly once per invocation"
@@ -5060,10 +5274,9 @@ git -C "$s03_planning_gates_root" -c user.name='Bubbles Selftest' -c user.email=
   commit -q -m 'test: seed planning gate fixtures'
 
 s03_g087_log="$tmp_root/s03-g087.log"
-s03_g087_status="$(run_capture "$s03_g087_log" env \
-  BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
-  BUBBLES_REPO_ROOT="$s03_planning_gates_root" \
-  bash "$s03_planning_gates_root/bubbles/scripts/state-transition-guard.sh" "$s03_g087_feature")"
+s03_g087_status="$(run_capture "$s03_g087_log" run_guard_with_repo_root_fast_disabled \
+  "$s03_planning_gates_root" \
+  "$s03_planning_gates_root/bubbles/scripts/state-transition-guard.sh" "$s03_g087_feature")"
 if [[ "$s03_g087_status" -eq 1 ]]; then
   pass "BUG-009 S03: G087 linkage adversary blocks the real planning guard"
 else
@@ -5078,10 +5291,9 @@ git -C "$s03_planning_gates_root" add -f agents/bubbles.workflow.agent.md
 git -C "$s03_planning_gates_root" -c user.name='Bubbles Selftest' -c user.email='bubbles-selftest@example.invalid' \
   commit -q -m 'test: inject G091 planning-chain adversary'
 s03_g091_log="$tmp_root/s03-g091.log"
-s03_g091_status="$(run_capture "$s03_g091_log" env \
-  BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 \
-  BUBBLES_REPO_ROOT="$s03_planning_gates_root" \
-  bash "$s03_planning_gates_root/bubbles/scripts/state-transition-guard.sh" "$s03_g091_feature")"
+s03_g091_status="$(run_capture "$s03_g091_log" run_guard_with_repo_root_fast_disabled \
+  "$s03_planning_gates_root" \
+  "$s03_planning_gates_root/bubbles/scripts/state-transition-guard.sh" "$s03_g091_feature")"
 if [[ "$s03_g091_status" -eq 1 ]]; then
   pass "BUG-009 S03: G091 chain adversary blocks the real planning guard"
 else
@@ -5169,7 +5381,9 @@ assert_log_contains "$lockdown_round_log" "lockdownState.round=3" "Negative fixt
 echo "Running negative workflow-runner-authorization selftest..."
 g064_log="$tmp_root/g064-guard.log"
 g064_timeout_seconds="${BUBBLES_G064_SELFTEST_TIMEOUT_SECONDS:-120}"
-g064_status="$(run_capture "$g064_log" bubbles_run_with_timeout "$g064_timeout_seconds" env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=0 bash "$g064_framework_root/bubbles/scripts/state-transition-guard.sh" "$g064_feature_dir")"
+g064_status="$(run_capture "$g064_log" bubbles_run_with_timeout "$g064_timeout_seconds" \
+  run_guard_fast_disabled \
+  "$g064_framework_root/bubbles/scripts/state-transition-guard.sh" "$g064_feature_dir")"
 if [[ "$g064_status" -ne 0 ]]; then
   pass "Unauthorized workflow runner fixture fails the transition guard as expected"
 else
@@ -5248,6 +5462,17 @@ run_capture "$g040_pos_mixed_log" bash "$GUARD_SCRIPT" "$g040_pos_strict_done_mi
 assert_log_contains "$g040_pos_mixed_log" "deferral language hit" "G040 Check 18 BLOCKs under status=done when real deferral prose ('punted to Phase 3') accompanies schema followUp* tokens"
 
 run_bug049_regression_cases
+
+echo "Running G040 Check 18 mandated exposure-label pair..."
+g040_neg_exposure_label_log="$tmp_root/g040-neg-exposure-label.log"
+run_capture "$g040_neg_exposure_label_log" bash "$GUARD_SCRIPT" "$g040_neg_exposure_label_dir" >/dev/null
+assert_log_not_contains "$g040_neg_exposure_label_log" "deferral language hit" \
+  "G040 Check 18 ignores the vertical-delivery-mandated Exposure-Deferred label when its reason is benign"
+
+g040_pos_exposure_reason_log="$tmp_root/g040-pos-exposure-reason.log"
+run_capture "$g040_pos_exposure_reason_log" bash "$GUARD_SCRIPT" "$g040_pos_exposure_reason_dir" >/dev/null
+assert_log_contains "$g040_pos_exposure_reason_log" "deferral language hit" \
+  "G040 Check 18 still blocks a deferring reason after the Exposure-Deferred label"
 
 # ----------------------------------------------------------------------------
 # G040 / Check 18 — certifying-window boundary (report.md marker parity with
@@ -5849,6 +6074,7 @@ assert_log_contains "$bug033_wrapper_adv_log" \
   "BUG-033 facet 2 bound: unwrapping reveals the npm identity behind the env wrapper"
 
 run_bug050_regression_case
+run_bug033_timeout_guard_assertions
 
 echo "Running Check 8 basename-only planning-maturity exemption (flat-layout root deliverables)..."
 # A flat-layout repository keeps its deliverables at the repository root (for example

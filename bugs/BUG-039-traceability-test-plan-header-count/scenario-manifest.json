@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-039-traceability-test-plan-header-count",
+  "bugId": "BUG-039",
+  "scenarios": [
+    {
+      "id": "SCN-B039-001",
+      "title": "Structural rows do not count",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "testPlanIds": ["TP-B039-01", "TP-B039-06"],
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/traceability-guard-selftest.sh"],
+      "evidenceRefs": ["report.md#revision-7-focused-implementation--2026-09-02"],
+      "implementationRefs": ["bubbles/scripts/traceability-guard.sh", "bubbles/scripts/traceability-guard-selftest.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Persistent production-CLI regression proves the recognized header and immediate separator emit zero records while each contiguous valid data row emits once.",
+          "satisfiedBy": ["TP-B039-01"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/traceability-guard.sh"],
+        "negativeControl": "Count either structural row as data; the emitted-record assertion must fail.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-002",
+      "title": "Genuine rows count exactly once across tables",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "testPlanIds": ["TP-B039-02", "TP-B039-06"],
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/traceability-guard-selftest.sh"],
+      "evidenceRefs": ["report.md#g060-reconstructed-behavioral-red-green---2026-09-02"],
+      "implementationRefs": ["bubbles/scripts/traceability-guard.sh", "bubbles/scripts/traceability-guard-selftest.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "A focused failing assertion is captured before repair, then four independent six-row fixtures produce 24 distinct records with direct exact-once summary accounting in the later green run.",
+          "satisfiedBy": ["TP-B039-02"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/traceability-guard.sh"],
+        "negativeControl": "Reintroduce structural-row leakage; the focused assertion fails before repair and the later aggregate becomes larger than 24.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-003",
+      "title": "Closed heading families remain compatible",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "testPlanIds": ["TP-B039-03", "TP-B039-06"],
+      "behaviorTraits": ["static-metadata", "degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/traceability-guard-selftest.sh"],
+      "evidenceRefs": ["report.md#revision-7-focused-implementation--2026-09-02"],
+      "implementationRefs": ["bubbles/scripts/traceability-guard.sh", "bubbles/scripts/traceability-guard-selftest.sh"],
+      "obligations": [
+        {
+          "trait": "static-metadata",
+          "requiredProof": "Positive controls accept canonical and legacy heading families with each exact supported path heading.",
+          "satisfiedBy": ["TP-B039-03"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Negative controls reject unlisted aliases and duplicate, partial, or mixed semantic headings with parser status 4, a stable failure class, and the visible line number.",
+          "satisfiedBy": ["TP-B039-03"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/traceability-guard.sh"],
+        "negativeControl": "Replace the path heading with an unlisted alias or add a duplicate semantic heading; recognition must fail.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-004",
+      "title": "Malformed structure and data fail loudly",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "testPlanIds": ["TP-B039-04", "TP-B039-06"],
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/traceability-guard-selftest.sh"],
+      "evidenceRefs": ["report.md#revision-7-focused-implementation--2026-09-02"],
+      "implementationRefs": ["bubbles/scripts/traceability-guard.sh", "bubbles/scripts/traceability-guard-selftest.sh"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Persistent adversarial fixtures prove every malformed separator, malformed row, empty required cell, and recognized-rowless terminal returns parser status 4 through the deterministic diagnostic helper with a stable failure class and visible line; parser text remains distinct from the outer extraction failure.",
+          "satisfiedBy": ["TP-B039-04"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/traceability-guard.sh"],
+        "negativeControl": "Replace a structural helper call with a bare status-4 exit or silently skip malformed content; the named diagnostic, visible-line, and failure-layer assertions fail.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-005",
+      "title": "Table boundaries and duplicate tables fail deterministically",
+      "requiredTestType": "regression",
+      "scopeRef": "Scope 1",
+      "testPlanIds": ["TP-B039-05", "TP-B039-06"],
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "linkedTests": ["bubbles/scripts/traceability-guard-selftest.sh"],
+      "evidenceRefs": ["report.md#revision-7-focused-implementation--2026-09-02"],
+      "implementationRefs": ["bubbles/scripts/traceability-guard.sh", "bubbles/scripts/traceability-guard-selftest.sh"],
+      "obligations": [
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Blank, prose, deeper-heading, equal-or-shallower section-boundary, and end-of-file cases exercise exact terminal behavior; adjacent and separated second tables fail at their visible header line in READ_ROWS and DONE and contribute no records.",
+          "satisfiedBy": ["TP-B039-05"]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "not-applicable",
+        "productionOwners": ["bubbles/scripts/traceability-guard.sh"],
+        "negativeControl": "Ignore a second table in READ_ROWS or DONE, or inspect beyond the equal-or-shallower section boundary; the state-specific status, line, and record-count assertions fail.",
+        "negativeControlMechanism": "mutation"
+      }
+    }
+  ]
+}

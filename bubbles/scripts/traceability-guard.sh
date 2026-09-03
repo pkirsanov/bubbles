@@ -2,7 +2,25 @@
 # Capability: dod-gherkin-fidelity-threshold
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+script_source="${BASH_SOURCE[0]}"
+script_source_hops=0
+while [[ -L "$script_source" ]]; do
+  script_source_hops=$((script_source_hops + 1))
+  if [[ "$script_source_hops" -gt 40 ]]; then
+    echo "ERROR: traceability guard script path exceeds the symlink limit" >&2
+    exit 2
+  fi
+  if ! script_link="$(readlink "$script_source")"; then
+    echo "ERROR: traceability guard script path cannot be resolved" >&2
+    exit 2
+  fi
+  if [[ "$script_link" == /* ]]; then
+    script_source="$script_link"
+  else
+    script_source="$(dirname "$script_source")/$script_link"
+  fi
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$script_source")" && pwd -P)"
 
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/dod-section-lib.sh"
@@ -73,17 +91,34 @@ fi
 
 detect_repo_root() {
   if [[ "$SCRIPT_DIR" == */.github/bubbles/scripts ]]; then
-    (cd "$SCRIPT_DIR/../../.." && pwd)
+    (cd -P "$SCRIPT_DIR/../../.." && pwd -P)
   else
-    (cd "$SCRIPT_DIR/../.." && pwd)
+    (cd -P "$SCRIPT_DIR/../.." && pwd -P)
   fi
 }
 
-repo_root="$(detect_repo_root)"
+canonical_path_is_within() {
+  local candidate_path="$1"
+  local canonical_root="$2"
+
+  if [[ "$canonical_root" == "/" ]]; then
+    [[ "$candidate_path" == /* ]]
+  else
+    [[ "$candidate_path" == "$canonical_root" || "$candidate_path" == "$canonical_root/"* ]]
+  fi
+}
+
+if ! repo_root="$(detect_repo_root)"; then
+  echo "ERROR: repository root cannot be canonicalized" >&2
+  exit 2
+fi
 
 if [[ "$feature_dir" != /* ]]; then
   if [[ -d "$PWD/$feature_dir" ]]; then
-    repo_root="$PWD"
+    if ! repo_root="$(cd -P "$PWD" && pwd -P)"; then
+      echo "ERROR: caller repository root cannot be canonicalized" >&2
+      exit 2
+    fi
   fi
   feature_dir="$repo_root/$feature_dir"
 fi
@@ -93,17 +128,14 @@ if [[ ! -d "$feature_dir" ]]; then
   exit 2
 fi
 
-# Hermetic selftests pass an absolute feature directory outside the checkout
-# that owns this script. Bind such a fixture to its own git root when present,
-# or to the fixture directory itself. Real source/downstream feature paths stay
-# bound to the repository root derived above.
-case "$feature_dir" in
-  "$repo_root"|"$repo_root"/*) ;;
-  *)
-    fixture_repo_root="$(git -C "$feature_dir" rev-parse --show-toplevel 2>/dev/null || true)"
-    repo_root="${fixture_repo_root:-$feature_dir}"
-    ;;
-esac
+if ! feature_dir="$(cd -P "$feature_dir" && pwd -P)"; then
+  echo "ERROR: feature directory cannot be canonicalized" >&2
+  exit 2
+fi
+if ! canonical_path_is_within "$feature_dir" "$repo_root"; then
+  echo "ERROR: feature directory resolves outside the repository root" >&2
+  exit 2
+fi
 
 failures=0
 warnings=0
@@ -290,23 +322,111 @@ def cells(line):
     return out
 
 header = None
-for line in visible[start:]:
+path_header = None
+table_kind = None
+state = "SEEK_HEADER"
+row_count = 0
+path_headers = ("file/location", "file/surface", "persistentfileandexacttitle")
+
+def fail_structure(message, line_number):
+    print(f"ERROR: {message} at visible line {line_number}", file=sys.stderr)
+    raise SystemExit(4)
+
+def is_separator(row):
+    return bool(row) and all(
+        bool(value) and re.fullmatch(r":?-{3,}:?", value.replace(" ", ""))
+        for value in row
+    )
+
+section = []
+section_end_line = len(visible) + 1
+for line_number, line in enumerate(visible[start:], start=start + 1):
     heading = re.match(r"^(#{1,6})(?:\s|$)", line)
-    if heading and len(heading.group(1)) <= depth: break
+    if heading and len(heading.group(1)) <= depth: section_end_line = line_number; break
+    section.append((line_number, line, heading))
+
+index = 0
+while index < len(section):
+    line_number, line, heading = section[index]
     row = cells(line)
-    if row is None:
-        header = None; continue
-    if all(re.fullmatch(r":?-{3,}:?", value.replace(" ", "")) for value in row if value): continue
-    if header is None:
-        normalized = [re.sub(r"\s+", "", value).lower() for value in row]
-        if "testtype" not in normalized and "file/location" not in normalized: continue
-        if normalized.count("testtype") != 1 or normalized.count("file/location") != 1: raise SystemExit(4)
-        header = normalized
+
+    if state == "DONE":
+        next_row = cells(section[index + 1][1]) if index + 1 < len(section) else None
+        if row is not None and next_row is not None and len(next_row) == len(row) and is_separator(next_row):
+            fail_structure("second Markdown table in Test Plan section", line_number)
+        index += 1
         continue
-    if len(row) < len(header): row += [""] * (len(header) - len(row))
-    file_value = row[header.index("file/location")]
-    semantic = [value for i, value in enumerate(row[:len(header)]) if header[i] not in ("file/location", "command") and value]
+
+    if state == "SEEK_HEADER":
+        if row is None:
+            index += 1
+            continue
+        normalized = [re.sub(r"\s+", "", value).lower() for value in row]
+        matched_paths = [value for value in path_headers if value in normalized]
+        reserved_candidate = any(value in normalized for value in ("id", "type", "testtype") + path_headers)
+        if not reserved_candidate:
+            index += 1
+            continue
+        if normalized.count("testtype") == 1 and len(matched_paths) == 1:
+            if (normalized.count("id") != 0 or normalized.count("type") != 0
+              or any(normalized.count(value) != 1 for value in matched_paths)): fail_structure("malformed Test Plan header", line_number)
+            table_kind = "legacy"
+        elif normalized.count("id") == 1 and normalized.count("type") == 1 and len(matched_paths) == 1:
+            if (normalized.count("testtype") != 0
+              or any(normalized.count(value) != 1 for value in matched_paths)): fail_structure("malformed Test Plan header", line_number)
+            table_kind = "canonical"
+        else: fail_structure("malformed Test Plan header", line_number)
+        header = normalized
+        path_header = matched_paths[0]
+        state = "EXPECT_SEPARATOR"
+        index += 1
+        continue
+
+    if state == "EXPECT_SEPARATOR":
+        if row is None:
+            fail_structure("missing or delayed Test Plan separator", line_number)
+        if len(row) != len(header):
+            fail_structure(
+                f"wrong-width Test Plan separator: expected {len(header)} cells, got {len(row)}",
+                line_number,
+            )
+        if not is_separator(row):
+            fail_structure("invalid or empty Test Plan separator cell", line_number)
+        state = "READ_ROWS"
+        index += 1
+        continue
+
+    if row is None or heading:
+        if row_count == 0:
+            fail_structure("rowless recognized Test Plan table", line_number)
+        state = "DONE"
+        index += 1
+        continue
+
+    next_row = cells(section[index + 1][1]) if index + 1 < len(section) else None
+    if next_row is not None and len(next_row) == len(row) and is_separator(next_row):
+        fail_structure("second Markdown table in Test Plan section", line_number)
+    if is_separator(row):
+        fail_structure("unexpected separator inside Test Plan data rows", line_number)
+    if len(row) != len(header):
+        fail_structure(
+            f"malformed Test Plan row: expected {len(header)} cells, got {len(row)}",
+            line_number,
+        )
+    required_headers = ("testtype", path_header) if table_kind == "legacy" else ("id", "type", path_header)
+    if any(not row[header.index(required)] for required in required_headers):
+        fail_structure("required Test Plan cell is empty", line_number)
+    file_value = row[header.index(path_header)]
+    semantic = [value for position, value in enumerate(row)
+                if header[position] not in path_headers + ("command",) and value]
     print(file_value + "\t" + " | ".join(semantic))
+    row_count += 1
+    index += 1
+
+if state == "EXPECT_SEPARATOR":
+    fail_structure("missing or delayed Test Plan separator", section_end_line)
+if state == "READ_ROWS" and row_count == 0:
+    fail_structure("rowless recognized Test Plan table", section_end_line)
 PY
 }
 
@@ -492,6 +612,381 @@ raise SystemExit(0 if valid else 1)
 PY
 }
 
+normalize_absolute_path_lexically() {
+  local input_path="$1"
+  local component
+  local last_index
+  local normalized=""
+  local -a input_components=()
+  local -a normalized_components=()
+
+  IFS='/' read -r -a input_components <<< "$input_path"
+  if [[ ${#input_components[@]} -gt 0 ]]; then
+    for component in "${input_components[@]}"; do
+      case "$component" in
+        ""|.) continue ;;
+        ..)
+          if [[ ${#normalized_components[@]} -gt 0 ]]; then
+            last_index=$((${#normalized_components[@]} - 1))
+            unset "normalized_components[$last_index]"
+          fi
+          ;;
+        *) normalized_components+=("$component") ;;
+      esac
+    done
+  fi
+
+  if [[ ${#normalized_components[@]} -gt 0 ]]; then
+    for component in "${normalized_components[@]}"; do
+      normalized="$normalized/$component"
+    done
+  fi
+  normalized_absolute_path="${normalized:-/}"
+}
+
+resolve_linked_test_candidate_once() {
+  local canonical_base="$1"
+  local relative_path="$2"
+  local resolved_path="$canonical_base"
+  local component
+  local candidate_path
+  local link_target
+  local target_relative
+  local symlink_hops=0
+  local -a pending_components=()
+  local -a link_components=()
+
+  resolved_candidate_path=""
+  resolved_candidate_status="missing-target"
+  IFS='/' read -r -a pending_components <<< "$relative_path"
+
+  while [[ ${#pending_components[@]} -gt 0 ]]; do
+    component="${pending_components[0]}"
+    if [[ ${#pending_components[@]} -gt 1 ]]; then
+      pending_components=("${pending_components[@]:1}")
+    else
+      pending_components=()
+    fi
+
+    case "$component" in
+      ""|.) continue ;;
+      ..)
+        resolved_path="$(dirname "$resolved_path")"
+        if ! canonical_path_is_within "$resolved_path" "$repo_root"; then
+          resolved_candidate_status="outside-repository"
+          return 1
+        fi
+        continue
+        ;;
+    esac
+
+    candidate_path="$resolved_path/$component"
+    if [[ -L "$candidate_path" ]]; then
+      symlink_hops=$((symlink_hops + 1))
+      if [[ "$symlink_hops" -gt 40 ]]; then
+        resolved_candidate_status="unstable-target"
+        return 1
+      fi
+      if ! link_target="$(readlink "$candidate_path")"; then
+        resolved_candidate_status="unstable-target"
+        return 1
+      fi
+      link_components=()
+
+      if [[ "$link_target" == /* ]]; then
+        normalize_absolute_path_lexically "$link_target"
+        if ! canonical_path_is_within "$normalized_absolute_path" "$repo_root"; then
+          resolved_candidate_status="outside-repository"
+          return 1
+        fi
+        resolved_path="$repo_root"
+        if [[ "$normalized_absolute_path" == "$repo_root" ]]; then
+          link_components=()
+        else
+          target_relative="${normalized_absolute_path#"$repo_root"/}"
+          IFS='/' read -r -a link_components <<< "$target_relative"
+        fi
+      else
+        IFS='/' read -r -a link_components <<< "$link_target"
+      fi
+      if [[ ${#link_components[@]} -gt 0 ]]; then
+        if [[ ${#pending_components[@]} -gt 0 ]]; then
+          pending_components=("${link_components[@]}" "${pending_components[@]}")
+        else
+          pending_components=("${link_components[@]}")
+        fi
+      fi
+      continue
+    fi
+
+    if [[ ${#pending_components[@]} -gt 0 ]]; then
+      if [[ -d "$candidate_path" ]]; then
+        if ! resolved_path="$(cd -P "$candidate_path" && pwd -P)"; then
+          resolved_candidate_status="unstable-target"
+          return 1
+        fi
+        if ! canonical_path_is_within "$resolved_path" "$repo_root"; then
+          resolved_candidate_status="outside-repository"
+          return 1
+        fi
+      elif [[ -e "$candidate_path" ]]; then
+        resolved_candidate_status="non-regular-target"
+        return 1
+      else
+        resolved_candidate_status="missing-target"
+        return 1
+      fi
+      continue
+    fi
+
+    if ! canonical_path_is_within "$candidate_path" "$repo_root"; then
+      resolved_candidate_status="outside-repository"
+      return 1
+    fi
+    if [[ -f "$candidate_path" ]]; then
+      resolved_candidate_path="$candidate_path"
+      resolved_candidate_status="ok"
+      return 0
+    fi
+    if [[ -e "$candidate_path" ]]; then
+      resolved_candidate_status="non-regular-target"
+    else
+      resolved_candidate_status="missing-target"
+    fi
+    return 1
+  done
+
+  resolved_candidate_status="non-regular-target"
+  return 1
+}
+
+resolve_linked_test_path() {
+  local relative_path="$1"
+  local scope_dir="$2"
+  local base
+  local canonical_base
+  local first_path
+  local first_status
+  local second_path
+  local second_status
+  local duplicate
+  local first_seen_base=""
+  local saw_unstable=0
+  local saw_outside=0
+  local saw_nonregular=0
+  local -a candidate_bases=("$repo_root" "$scope_dir")
+
+  linked_test_resolution_status="missing-target"
+  linked_test_resolution_base=""
+
+  for base in "${candidate_bases[@]}"; do
+    if ! canonical_base="$(cd -P "$base" && pwd -P)"; then
+      continue
+    fi
+    if ! canonical_path_is_within "$canonical_base" "$repo_root"; then
+      saw_outside=1
+      continue
+    fi
+
+    duplicate=0
+    if [[ -n "$first_seen_base" && "$canonical_base" == "$first_seen_base" ]]; then
+      duplicate=1
+    fi
+    if [[ "$duplicate" -eq 1 ]]; then
+      continue
+    fi
+    if [[ -z "$first_seen_base" ]]; then
+      first_seen_base="$canonical_base"
+    fi
+
+    if resolve_linked_test_candidate_once "$canonical_base" "$relative_path"; then
+      first_path="$resolved_candidate_path"
+      first_status="$resolved_candidate_status"
+    else
+      first_path="$resolved_candidate_path"
+      first_status="$resolved_candidate_status"
+    fi
+
+    if [[ "$first_status" == "ok" ]]; then
+      if resolve_linked_test_candidate_once "$canonical_base" "$relative_path"; then
+        second_path="$resolved_candidate_path"
+        second_status="$resolved_candidate_status"
+      else
+        second_path="$resolved_candidate_path"
+        second_status="$resolved_candidate_status"
+      fi
+      if [[ "$second_status" == "ok" && "$second_path" == "$first_path" && -f "$second_path" ]]; then
+        linked_test_resolution_status="ok"
+        if [[ "$canonical_base" == "$repo_root" ]]; then
+          linked_test_resolution_base="repository"
+        else
+          linked_test_resolution_base="feature"
+        fi
+        return 0
+      fi
+      saw_unstable=1
+      continue
+    fi
+
+    case "$first_status" in
+      unstable-target) saw_unstable=1 ;;
+      outside-repository) saw_outside=1 ;;
+      non-regular-target) saw_nonregular=1 ;;
+    esac
+  done
+
+  if [[ "$saw_unstable" -eq 1 ]]; then
+    linked_test_resolution_status="unstable-target"
+  elif [[ "$saw_outside" -eq 1 ]]; then
+    linked_test_resolution_status="outside-repository"
+  elif [[ "$saw_nonregular" -eq 1 ]]; then
+    linked_test_resolution_status="non-regular-target"
+  else
+    linked_test_resolution_status="missing-target"
+  fi
+  return 1
+}
+
+classify_linked_test_record() {
+  local record="$1"
+
+  jq -r '
+    if ((.ordinal | type) != "number") or ((.path | type) != "string") then
+      error("invalid linked-test projection record")
+    else
+      .path as $path
+      | if ($path | explode | any(. < 32 or . == 127)) then "control-character"
+        elif ($path | test("^[[:space:]]*$")) then "empty-reference"
+        elif ($path | startswith("/"))
+          or ($path | startswith("\\\\"))
+          or ($path | test("^[A-Za-z]:")) then "absolute-reference"
+        elif ($path | split("/") | any(. == "..")) then "parent-traversal"
+        else "lexically-safe-relative"
+        end
+    end
+  ' <<< "$record" 2>/dev/null
+}
+
+linked_test_reference_is_acceptable() {
+  local record="$1"
+  local scope_dir="$2"
+  local lexical_status
+  local candidate_path
+
+  linked_test_reference_ordinal=""
+  linked_test_reference_path=""
+  linked_test_reference_status="projection-error"
+
+  if ! linked_test_reference_ordinal="$(jq -r '.ordinal | select(type == "number")' <<< "$record" 2>/dev/null)" \
+    || [[ -z "$linked_test_reference_ordinal" ]]; then
+    return 1
+  fi
+  if ! lexical_status="$(classify_linked_test_record "$record")" || [[ -z "$lexical_status" ]]; then
+    return 1
+  fi
+  if [[ "$lexical_status" != "lexically-safe-relative" ]]; then
+    linked_test_reference_status="$lexical_status"
+    return 1
+  fi
+  if ! candidate_path="$(jq -er '.path | select(type == "string")' <<< "$record" 2>/dev/null)"; then
+    return 1
+  fi
+
+  linked_test_reference_path="$candidate_path"
+  if resolve_linked_test_path "$candidate_path" "$scope_dir"; then
+    linked_test_reference_status="ok"
+    return 0
+  fi
+  linked_test_reference_status="$linked_test_resolution_status"
+  return 1
+}
+
+concrete_test_path_is_acceptable() {
+  local candidate_path="$1"
+  local scope_dir="$2"
+  local record
+
+  if ! record="$(jq -cn --arg path "$candidate_path" \
+    '{ordinal: 0, field: "testPlan", form: "path", path: $path}')"; then
+    return 1
+  fi
+  linked_test_reference_is_acceptable "$record" "$scope_dir"
+}
+
+legacy_manifest_projection() {
+  jq -c '
+    def scenarios:
+      if type == "array" then .
+      elif type == "object" and (.scenarios | type == "array") then .scenarios
+      else error("expected object.scenarios[] or legacy top-level array")
+      end;
+    def trimmed:
+      gsub("^[[:space:]]+|[[:space:]]+$"; "");
+    def authored_reference($field; $index; $reference):
+      if ($reference | type) == "string" then
+        {field: $field, index: $index, kind: "authored", path: (($reference | split("#") | .[0] // "") | trimmed), identity: null}
+      elif (($reference | type) == "object") and (($reference.file? | type) == "string") then
+        {field: $field, index: $index, kind: "authored", path: ($reference.file | trimmed), identity: null}
+      elif (($reference | type) == "object") and ($reference.file? == null)
+        and (($reference.path? | type) == "string") then
+        {field: $field, index: $index, kind: "authored", path: ($reference.path | trimmed), identity: null}
+      else error("linked-test reference must be a string or object with file/path")
+      end;
+    def planned_reference($index; $reference):
+      if (($reference | type) == "object") and (($reference.path? | type) == "string") then
+        {field: "plannedTests", index: $index, kind: "planned", path: ($reference.path | trimmed), identity: null}
+      else error("planned-test reference must be an object with path")
+      end;
+    {
+      scenarios: [
+        scenarios[] as $scenario
+        | (($scenario.id // $scenario.scenarioId) // error("scenario has no id or scenarioId")) as $scenario_id
+        | {
+            scenarioId: $scenario_id,
+            scopeRef: ($scenario.scopeRef // $scenario.scope // $scenario.scopeId // null),
+            title: ($scenario.title // null),
+            requiredTestType: ($scenario.requiredTestType // null),
+            evidenceRefs: ($scenario.evidenceRefs // []),
+            implementationRefs: ($scenario.implementationRefs // []),
+            invariantRefs: ($scenario.invariantRefs // []),
+            obligations: ($scenario.obligations // null),
+            testMechanism: ($scenario.testMechanism // null),
+            references: (
+              [
+                ["linkedTests", "linkedTestContracts"][] as $field
+                | (($scenario[$field] // []) | to_entries[]) as $entry
+                | authored_reference($field; $entry.key; $entry.value)
+              ] + [
+                (($scenario.plannedTests // []) | to_entries[]) as $entry
+                | planned_reference($entry.key; $entry.value)
+              ]
+            )
+          }
+      ]
+    }
+  ' "$scenario_manifest_file"
+}
+
+legacy_projection_uses_feature_root() {
+  local projection_file="$1"
+  local reference=""
+  local ordinal=0
+  local saw_feature_root=0
+
+  while IFS= read -r reference; do
+    [[ -n "$reference" ]] || continue
+    ordinal=$((ordinal + 1))
+    reference="$(jq -c --argjson ordinal "$ordinal" '. + {ordinal: $ordinal}' <<< "$reference")"
+    if linked_test_reference_is_acceptable "$reference" "$feature_dir" \
+      && [[ "$linked_test_resolution_base" == "feature" ]]; then
+      saw_feature_root=1
+      break
+    fi
+  done < <(jq -c '.scenarios[].references[] | select(.kind == "authored")' "$projection_file")
+
+  [[ "$saw_feature_root" -eq 1 ]]
+}
+
 report_mentions_path() {
   local report_path="$1"
   local candidate="$2"
@@ -673,7 +1168,7 @@ fi
 # the current scope could not become Done until a later scope authored its test,
 # while the later scope could not start until the current scope was Done.
 #
-# Default --all-scopes behavior remains byte-for-byte strict. The structured
+# Default --all-scopes selection remains strict. The structured
 # projection exists only in --current-scope, which already requires Python for
 # the fail-closed scope-universe resolver. Every scenario must resolve to one
 # physical scope directory; an unknown/ambiguous scope reference is a refusal,
@@ -681,16 +1176,52 @@ fi
 manifest_linked_test_projection() {
   local reference_file=""
   local applicable_scope_file=""
+  local fallback_file=""
+  local manifest_shape=""
+  local reader_error_file=""
   local reference_reader="$SCRIPT_DIR/scenario-reference-reader.py"
-  [[ -f "$reference_reader" ]] || {
-    printf 'scenario-reference-reader.py is required\n' >&2
-    return 2
-  }
   reference_file="$(mktemp)"
   applicable_scope_file="$(mktemp)"
-  scope_section_tmp_files+=("$reference_file" "$applicable_scope_file")
-  if ! python3 "$reference_reader" "$scenario_manifest_file" --repo-root "$repo_root" >"$reference_file"; then
+  fallback_file="$(mktemp)"
+  reader_error_file="$(mktemp)"
+  scope_section_tmp_files+=("$reference_file" "$applicable_scope_file" "$fallback_file" "$reader_error_file")
+
+  if ! manifest_shape="$(jq -er '
+    if type == "array" then "legacy-array"
+    elif type == "object" and (.scenarios | type == "array") and (has("schemaVersion") | not) then "legacy-object"
+    elif type == "object" and .schemaVersion == 1 then "schema-1"
+    elif type == "object" and .schemaVersion == 2 then "schema-2"
+    else error("unsupported scenario manifest envelope")
+    end
+  ' "$scenario_manifest_file")"; then
     return 2
+  fi
+
+  if [[ "$manifest_shape" == "legacy-object" ]]; then
+    if ! legacy_manifest_projection >"$reference_file"; then
+      return 2
+    fi
+  else
+    [[ -f "$reference_reader" ]] || {
+      printf 'scenario-reference-reader.py is required\n' >&2
+      return 2
+    }
+    if ! python3 "$reference_reader" "$scenario_manifest_file" --repo-root "$repo_root" \
+      >"$reference_file" 2>"$reader_error_file"; then
+      if [[ "$manifest_shape" != "schema-2" ]] \
+        && grep -Fq 'authored path is not an existing stable regular file' "$reader_error_file" \
+        && legacy_manifest_projection >"$fallback_file" \
+        && legacy_projection_uses_feature_root "$fallback_file"; then
+        cat "$fallback_file" >"$reference_file"
+      else
+        cat "$reader_error_file" >&2
+        return 2
+      fi
+    fi
+  fi
+  if [[ "$scope_mode" != "--current-scope" ]]; then
+    cat "$reference_file"
+    return 0
   fi
   printf '%s\n' "$applicable_scope_dirs" >"$applicable_scope_file"
   python3 - "$scope_mode" "$reference_file" "$scope_resolver_file" "$applicable_scope_file" "$feature_dir/scopes" <<'PY'
@@ -926,29 +1457,54 @@ if [[ "$scope_defined_scenarios" -gt 0 ]]; then
         fi
       done < <(jq -r "$policy_gap_filter" "$manifest_projection_file")
 
-        while IFS=$'\t' read -r manifest_test_kind manifest_test_file manifest_test_exists \
-          manifest_test_path manifest_test_mode manifest_test_device manifest_test_inode \
-          manifest_test_size manifest_test_modified_ns; do
-        [[ -n "$manifest_test_kind" ]] || continue
+      manifest_test_ordinal=0
+      while IFS= read -r manifest_test_record; do
+        [[ -n "$manifest_test_record" ]] || continue
+        manifest_test_ordinal=$((manifest_test_ordinal + 1))
+        manifest_test_kind="$(jq -r '.kind // empty' <<< "$manifest_test_record")"
         if [[ "$manifest_test_kind" == "planned" ]]; then
           manifest_planned_links=$((manifest_planned_links + 1))
           continue
         fi
-        [[ "$manifest_test_kind" == "authored" && -n "$manifest_test_file" ]] || continue
+        [[ "$manifest_test_kind" == "authored" ]] || continue
         manifest_authored_links=$((manifest_authored_links + 1))
-        manifest_test_identity="$manifest_test_path"$'\t'"$manifest_test_mode"$'\t'"$manifest_test_device"$'\t'"$manifest_test_inode"$'\t'"$manifest_test_size"$'\t'"$manifest_test_modified_ns"
-        if [[ "$manifest_test_exists" != "true" ]]; then
-          fail "scenario-manifest.json references missing linked test file: $manifest_test_file"
+        manifest_test_record="$(jq -c --argjson ordinal "$manifest_test_ordinal" '. + {ordinal: $ordinal}' <<< "$manifest_test_record")"
+        if ! linked_test_reference_is_acceptable "$manifest_test_record" "$feature_dir"; then
+          case "$linked_test_reference_status" in
+            control-character|empty-reference|absolute-reference|parent-traversal)
+              fail "scenario-manifest.json rejects linked test reference #$linked_test_reference_ordinal: $linked_test_reference_status"
+              ;;
+            outside-repository|non-regular-target|unstable-target)
+              fail "scenario-manifest.json rejects linked test file: $linked_test_reference_path ($linked_test_reference_status)"
+              ;;
+            missing-target)
+              fail "scenario-manifest.json references missing linked test file: $linked_test_reference_path (missing-target)"
+              ;;
+            *)
+              fail "scenario-manifest.json linked-test projection record is invalid"
+              ;;
+          esac
           manifest_missing_files=$((manifest_missing_files + 1))
-        elif revalidate_manifest_test_path "$manifest_test_identity"; then
-          pass "scenario-manifest.json linked test exists: $manifest_test_file"
-        else
-          fail "scenario-manifest.json linked test identity changed before content-sensitive use: $manifest_test_file"
-          manifest_missing_files=$((manifest_missing_files + 1))
+          continue
         fi
-      done < <(jq -r '.scenarios[].references[] | [.kind, .path, (.exists | tostring), (.canonicalPath // ""), (.identity.mode // ""), (.identity.device // ""), (.identity.inode // ""), (.identity.size // ""), (.identity.modifiedNanoseconds // "")] | @tsv' "$manifest_projection_file")
 
-      manifest_evidence_refs="$(jq -r '[.scenarios[] | select(.evidenceRefs | type == "array")] | length' "$manifest_projection_file")"
+        manifest_test_identity="$(jq -r '
+          if (.identity | type) == "object" then
+            [(.canonicalPath // ""), (.identity.mode // ""), (.identity.device // ""),
+             (.identity.inode // ""), (.identity.size // ""),
+             (.identity.modifiedNanoseconds // "")] | @tsv
+          else empty
+          end
+        ' <<< "$manifest_test_record")"
+        if [[ -n "$manifest_test_identity" ]] && ! revalidate_manifest_test_path "$manifest_test_identity"; then
+          fail "scenario-manifest.json linked test identity changed before content-sensitive use: $linked_test_reference_path"
+          manifest_missing_files=$((manifest_missing_files + 1))
+          continue
+        fi
+        pass "scenario-manifest.json linked test exists: $linked_test_reference_path"
+      done < <(jq -c '.scenarios[].references[]' "$manifest_projection_file")
+
+      manifest_evidence_refs="$(jq -r '[.scenarios[] | select((.evidenceRefs | type) == "array" and (.evidenceRefs | length) > 0)] | length' "$manifest_projection_file")"
       if [[ "$manifest_evidence_refs" -eq "$scenario_manifest_total" ]]; then
         pass "scenario-manifest.json records evidenceRefs for all $scenario_manifest_total scenario contract(s)"
       else
@@ -1150,7 +1706,8 @@ for scope_index in "${!scope_analysis_files[@]}"; do
     existing_path_record=""
     while IFS= read -r candidate; do
       [[ -n "$candidate" ]] || continue
-      if existing_path_record="$(resolve_test_path "$candidate" "$scope_dir")"; then
+      if concrete_test_path_is_acceptable "$candidate" "$scope_dir" \
+        && existing_path_record="$(resolve_test_path "$candidate" "$scope_dir")"; then
         existing_path="${existing_path_record#*$'\t'}"
         existing_path="${existing_path%%$'\t'*}"
         break

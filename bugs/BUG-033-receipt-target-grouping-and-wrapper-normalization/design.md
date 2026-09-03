@@ -91,7 +91,7 @@ single-pass strip would collapse one of them and stop.
 
 ### Closed Grammar
 
-Only an executable whose basename is exactly `timeout` or `gtimeout` is a
+Only a bare command token exactly equal to `timeout` or `gtimeout` is a
 candidate. The parser consumes zero or more options from this set before the
 required duration:
 
@@ -113,6 +113,14 @@ child, attached short value, or unsupported short-option cluster returns the
 original timeout token sequence. The family therefore stays `timeout` or
 `gtimeout`. The parser never scans forward after an error to guess where the
 child begins.
+
+Path qualification is also fail-opaque. The receipt schema stores the command
+string but no resolved executable path, binary digest, device/inode identity,
+or other authenticated execution identity. Consequently `/usr/bin/timeout`
+cannot be trusted more than `/tmp/timeout`: either path could have resolved to
+different bytes at execution time, and Check 43 has no evidence that settles
+that question. Both retain the wrapper identity. Bare `timeout` and `gtimeout`
+are the closed canonical spellings this metadata version permits to normalize.
 
 This deliberately excludes forms such as `-vfp`, `-k.5`, and `-sTERM`. GNU
 timeout may accept more spellings than the identity parser. Identity
@@ -141,6 +149,9 @@ would hide control state and is outside the approved boundary.
   guessed.
 6. **Strip any token named like `*timeout*`.** Rejected: `mytimeout` and
   `timeout-wrapper` are real child identities, not transparent wrappers.
+7. **Trust common absolute paths such as `/usr/bin/timeout`.** Rejected: the
+  receipt does not authenticate path resolution or binary identity. A hardcoded
+  path allow-list would convert a familiar spelling into unsupported trust.
 
 ## Fix Design
 
@@ -170,8 +181,9 @@ The end-to-end cases run the WHOLE guard and live in
 matrix.
 
 For timeout normalization, the focused extractor and whole-guard suite both
-need acceptance cases for bare versus valid timeout wrappers and `-v`. They
-also need opaque cases for malformed values, unknown options, near-miss
-basenames, attached short values, unsupported clusters, missing duration, and
+need acceptance cases for bare versus valid bare canonical timeout/gtimeout
+wrappers and `-v`. They also need opaque cases for malformed values, unknown
+options, near-miss names, path-qualified system and attacker-controlled
+wrappers, attached short values, unsupported clusters, missing duration, and
 missing child. A final adversarial pair must prove that timeout-wrapped `cargo`
 and `npm` remain distinct.

@@ -2,7 +2,21 @@
 
 ## Outcome Contract
 
-`evidence-capture.sh` must format zero-output commands without diagnostics or ambiguous numeric metadata. It must preserve all existing non-empty and exit-status behavior.
+- **Intent**: Make zero-output evidence blocks canonical and trustworthy for successful and failing child commands.
+- **Success Signal**: Both zero-output child classes report `lines: 0` and the empty-stream SHA-256 without arithmetic diagnostics. Normal and verify modes preserve their documented exit contracts.
+- **Hard Constraints**:
+	- Preserve the child status in normal mode.
+	- Preserve verify exits zero for a matching digest and three for a mismatch.
+	- Keep non-empty, bounded, failure-extraction, timeout, signal, and descendant-cleanup behavior unchanged.
+	- Cover every captured output byte with the reported digest, including bytes omitted from bounded display.
+	- Never discard child output or invent command, exit, line-count, digest, or diagnostic metadata.
+- **Failure Condition**: The repair fails if zero output produces malformed metadata or diagnostics. It also fails if any preserved behavior or full-output hash coverage changes.
+
+### Non-Goals
+
+- Change the bounded display policy or failure-line extraction policy.
+- Change timeout, signal, process-group, descendant-cleanup, or capture-file-loss semantics.
+- Change the evidence receipt schema or broaden the helper refactor beyond canonical line counting.
 
 ## Required Behavior
 

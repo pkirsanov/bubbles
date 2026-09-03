@@ -24,7 +24,8 @@
 # after a successful direct-child exit. Cases J-O pin the
 # progress-aware runner:
 # active output extends the idle window, silence and endless output stay bounded,
-# command status is preserved, and timeout/error descendants are reaped.
+# command status is preserved, timeout/error descendants are reaped, and caller
+# interruption cannot orphan the validator process group.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -94,7 +95,8 @@ command() {
 bubbles_run_with_timeout 10 bash -c '
   trap "exit 130" INT
   printf "%s\n" "$$" > "$1"
-  while :; do :; done
+  # Yield so aggregate-suite CPU pressure cannot delay trap dispatch until the deadline.
+  while :; do sleep 1; done
 ' bash "$signal_fifo" >/dev/null 2>&1
 rc=$?
 elapsed=$(($(date +%s) - start))
@@ -307,11 +309,59 @@ else
   fail "lost progress log returned rc=$rc after ${elapsed}s (expected rc=2 within 5s)"
 fi
 
+# --- Case P: caller termination reaps the active validator process group -----
+interrupt_log="$progress_root/interrupt.log"
+interrupt_runner_pid_file="$progress_root/interrupt-runner.pid"
+interrupt_descendant_pid_file="$progress_root/interrupt-descendant.pid"
+(
+  trap - HUP INT TERM
+  bubbles_run_with_progress_timeout 30 60 "$interrupt_log" \
+    bash -c '
+      printf "%s\n" "$$" > "$1"
+      (trap "" TERM; while :; do sleep 1; done) &
+      printf "%s\n" "$!" > "$2"
+      while :; do echo progress; sleep 1; done
+    ' _ "$interrupt_runner_pid_file" "$interrupt_descendant_pid_file"
+) &
+interrupt_caller_pid=$!
+interrupt_ready=0
+for _ in 1 2 3 4 5; do
+  if [ -s "$interrupt_runner_pid_file" ] && [ -s "$interrupt_descendant_pid_file" ]; then
+    interrupt_ready=1
+    break
+  fi
+  sleep 1
+done
+kill -TERM "$interrupt_caller_pid" 2>/dev/null || true
+wait "$interrupt_caller_pid" 2>/dev/null
+interrupt_caller_rc=$?
+interrupt_runner_pid="$(cat "$interrupt_runner_pid_file" 2>/dev/null || true)"
+interrupt_descendant_pid="$(cat "$interrupt_descendant_pid_file" 2>/dev/null || true)"
+interrupt_reaped=0
+for _ in 1 2 3 4 5; do
+  if [ -n "$interrupt_runner_pid" ] && [ -n "$interrupt_descendant_pid" ] &&
+    ! kill -0 "$interrupt_runner_pid" 2>/dev/null &&
+    ! kill -0 "$interrupt_descendant_pid" 2>/dev/null; then
+    interrupt_reaped=1
+    break
+  fi
+  sleep 1
+done
+if [ "$interrupt_ready" -eq 1 ] && [ "$interrupt_caller_rc" -eq 143 ] &&
+  [ "$interrupt_reaped" -eq 1 ]; then
+  pass "caller SIGTERM reaps the active progress-runner process group"
+else
+  fail "caller SIGTERM leaked progress-runner descendants: ready=$interrupt_ready caller_rc=$interrupt_caller_rc runner_pid=${interrupt_runner_pid:-missing} descendant_pid=${interrupt_descendant_pid:-missing}"
+  [ -z "$interrupt_runner_pid" ] || kill -KILL -- "-$interrupt_runner_pid" 2>/dev/null || true
+  [ -z "$interrupt_runner_pid" ] || kill -KILL "$interrupt_runner_pid" 2>/dev/null || true
+  [ -z "$interrupt_descendant_pid" ] || kill -KILL "$interrupt_descendant_pid" 2>/dev/null || true
+fi
+
 if [ "$failures" -ne 0 ]; then
   # portable-ok: selftest verdict label only; no raw timeout command is invoked here.
   printf 'guard-lib timeout selftest: %d failure(s)\n' "$failures"
   exit 1
 fi
 # portable-ok: selftest verdict label only; no raw timeout command is invoked here.
-printf 'guard-lib timeout selftest: OK (15 cases)\n'
+printf 'guard-lib timeout selftest: OK (16 cases)\n'
 exit 0

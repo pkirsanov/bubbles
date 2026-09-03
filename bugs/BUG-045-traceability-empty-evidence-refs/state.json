@@ -1,0 +1,482 @@
+{
+  "version": 3,
+  "bugId": "BUG-045",
+  "featureDir": "bugs/BUG-045-traceability-empty-evidence-refs",
+  "featureName": "Traceability Accepts Empty Evidence Reference Arrays",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "workflowInput": {
+    "primitive": "fix",
+    "tags": [
+      "target:bug",
+      "action:fastlane"
+    ],
+    "resolvedMode": "bugfix-fastlane",
+    "persistence": "workflowMode stores the v5 registry key for guard compatibility"
+  },
+  "packet": "full",
+  "packetResolution": "full packet explicitly required by the operator and appropriate because the repair changes a shared blocking guard and its regression contract",
+  "createdAt": "2026-09-02T04:28:24Z",
+  "updatedAt": "2026-09-02T15:01:52Z",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": [
+    "BUG-037-uservalidation-opt-out-acceptance"
+  ],
+  "originFinding": {
+    "id": "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018",
+    "source": "bugs/BUG-037-uservalidation-opt-out-acceptance",
+    "status": "verified-ready-for-parent-consumption",
+    "parentLedgerMutationAuthorized": false
+  },
+  "workBoundary": {
+    "repositoryRoots": [
+      "bubbles"
+    ],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": [
+      "bugs/BUG-045-traceability-empty-evidence-refs"
+    ],
+    "allowedPaths": [
+      "bugs/BUG-045-traceability-empty-evidence-refs/**",
+      "bubbles/scripts/traceability-guard.sh",
+      "bubbles/scripts/traceability-guard-selftest.sh"
+    ],
+    "forbiddenPaths": [
+      "bugs/BUG-037-uservalidation-opt-out-acceptance/**",
+      "bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization/**",
+      "BUGS.md",
+      "improvements/INDEX.md",
+      "bubbles/release-manifest.json",
+      ".specify/memory/bubbles.session.json",
+      ".specify/runtime/*.flock",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/artifact-lint.sh",
+      "tests/**"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "substate": "implemented",
+    "activeAgent": "bubbles.security",
+    "currentPhase": "security",
+    "currentScope": 1,
+    "runStartedAt": "2026-09-02T04:27:25Z",
+    "completedAt": null,
+    "completedPhaseClaims": [
+      "test",
+      "regression",
+      "simplify",
+      "gaps",
+      "implement",
+      "harden",
+      "stabilize",
+      "devops"
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.bug",
+    "nextRequiredAction": "Create a separate bug packet for linked-test path containment before resuming BUG-045 security and validation.",
+    "findingAccounting": {
+      "addressedFindings": [
+        {
+          "id": "F-B045-IMPLEMENT-G068-DOD-MAPPING-001",
+          "status": "addressed",
+          "evidenceRef": "report.md#independent-packet-gates"
+        },
+        {
+          "id": "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018",
+          "status": "verified-ready-for-parent-consumption",
+          "evidenceRef": "report.md#regression-verification---2026-09-02t071710z"
+        },
+        {
+          "id": "F-B045-SIMPLIFY-TEMP-CLEANUP-001",
+          "status": "addressed",
+          "evidenceRef": "report.md#simplify-verification"
+        },
+        {
+          "id": "F-B045-GAPS-ACTIVE-PACKET-TRUTH-001",
+          "status": "addressed",
+          "evidenceRef": "report.md#planning-active-packet-reconciliation---2026-09-02"
+        },
+        {
+          "id": "F-B045-GAPS-MISSING-IMPLEMENT-PHASE-002",
+          "status": "addressed",
+          "evidenceRef": "report.md#implement-current-byte-re-verification---2026-09-02t074947z"
+        }
+      ],
+      "unresolvedFindings": [
+        {
+          "id": "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001",
+          "status": "route-required",
+          "owner": "bubbles.bug",
+          "evidenceRef": "report.md#blocking-finding"
+        }
+      ]
+    },
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Reject empty evidence reference arrays",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "standard",
+      "provenance": "framework-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "provenance": "bugfix-fastlane-contract"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "provenance": "operator-request"
+    },
+    "lockdown": {
+      "mode": "unlocked",
+      "provenance": "framework-default"
+    },
+    "regression": {
+      "mode": "required",
+      "provenance": "framework-default"
+    },
+    "validation": {
+      "mode": "required",
+      "provenance": "framework-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "event": "packet-created",
+      "phase": "bootstrap",
+      "agent": "bubbles.bug",
+      "at": "2026-09-02T04:28:24Z",
+      "outcome": "route_required",
+      "summary": "Reproduced and root-caused only F-B037-GAPS-TRACEABILITY-EMPTY-REF-018, created the full packet, and routed source repair without editing BUG-037.",
+      "evidence": [
+        ".specify/runtime/tool-calls.jsonl row 455",
+        ".specify/runtime/tool-calls.jsonl row 457",
+        "report.md#pre-fix-minimal-fixture-reproduction"
+      ]
+    },
+    {
+      "event": "implementation-route-required",
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "at": "2026-09-02T06:22:30Z",
+      "outcome": "route_required",
+      "summary": "Implemented the positive-cardinality predicate and focused regression coverage; packet traceability still fails three planning-owned G068 DoD mappings.",
+      "evidence": [
+        "report.md#focused-red",
+        "report.md#focused-green",
+        "report.md#type-only-mutation",
+        "report.md#direct-minimal-fixture"
+      ]
+    },
+    {
+      "event": "planning-g068-reconciled",
+      "phase": "plan",
+      "agent": "bubbles.plan",
+      "at": "2026-09-02T06:41:49Z",
+      "outcome": "route_required",
+      "summary": "Added exact unchecked G068 DoD mappings, restored Markdown and JSON Test Plan parity, and routed independent regression verification to bubbles.test.",
+      "evidence": [
+        "report.md#planning-reconciliation---2026-09-02t064149z"
+      ]
+    },
+    {
+      "event": "independent-test-verified",
+      "phase": "test",
+      "agent": "bubbles.test",
+      "at": "2026-09-02T07:01:02Z",
+      "outcome": "route_required",
+      "summary": "Verified the current positive-cardinality predicate, focused selftest, direct empty/non-empty/mixed fixtures, mutation sensitivity, G068 planning repair, test quality, and packet gates; the parent finding is ready for parent consumption without a parent-ledger edit.",
+      "addressedFindings": [
+        "F-B045-IMPLEMENT-G068-DOD-MAPPING-001",
+        "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018"
+      ],
+      "unresolvedFindings": [],
+      "evidence": [
+        ".specify/runtime/tool-calls.jsonl rows 497-501",
+        ".specify/runtime/tool-calls.jsonl rows 520-526",
+        ".specify/runtime/tool-calls.jsonl rows 529-530",
+        "report.md#independent-test-verification---2026-09-02"
+      ]
+    },
+    {
+      "event": "regression-current-bytes-clean",
+      "phase": "regression",
+      "agent": "bubbles.regression",
+      "at": "2026-09-02T07:17:10Z",
+      "outcome": "route_required",
+      "summary": "Completed the operator-bounded current-byte regression checks for BUG-045 with no regression findings and routed the clean packet to simplify; no repository-wide regression verdict is claimed.",
+      "addressedFindings": [
+        "F-B045-IMPLEMENT-G068-DOD-MAPPING-001",
+        "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018"
+      ],
+      "unresolvedFindings": [],
+      "observations": [
+        "No percentage-coverage command is registered; scenario and assertion deltas were executed instead.",
+        "The first BUG-037 count probe exited 127 on an absent jq path; the complete retry used /usr/bin/jq and exited 0.",
+        "framework-validate and release-check did not run under the operator's explicit phase boundary."
+      ],
+      "evidence": [
+        "report.md#regression-verification---2026-09-02t071710z"
+      ]
+    },
+    {
+      "event": "simplify-no-change-review",
+      "phase": "simplify",
+      "agent": "bubbles.simplify",
+      "at": "2026-09-02T07:24:42Z",
+      "outcome": "route_required",
+      "summary": "Completed a three-pass no-change review; fresh focused fixtures, type-only mutation, G068 traceability, artifact, syntax, ShellCheck, and diff checks preserve the current behavior and route the packet to bubbles.gaps.",
+      "addressedFindings": [
+        "F-B045-IMPLEMENT-G068-DOD-MAPPING-001",
+        "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018",
+        "F-B045-SIMPLIFY-TEMP-CLEANUP-001"
+      ],
+      "unresolvedFindings": [],
+      "observations": [
+        "No production or selftest simplification was justified.",
+        "An initial temp-shim absence assertion failed after the IDE delete left the external file present; bounded rm/rmdir cleanup then completed and final absence passed.",
+        "Framework validation, release checking, release-manifest regeneration, certification, and parent-ledger mutation did not run under the operator's explicit boundary."
+      ],
+      "evidence": [
+        "report.md#simplify-no-change-review---2026-09-02t072212z",
+        "report.md#simplify-verification"
+      ]
+    },
+    {
+      "event": "gaps-current-byte-route-required",
+      "phase": "gaps",
+      "agent": "bubbles.gaps",
+      "at": "2026-09-02T07:34:03Z",
+      "outcome": "route_required",
+      "summary": "Current source and selftest bytes satisfy all BUG-045 behavior, mutation, envelope, and boundary contracts; active packet prose is stale and the required implement phase has no completed claim, so plan and implement ownership are required before harden.",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B045-GAPS-ACTIVE-PACKET-TRUTH-001",
+        "F-B045-GAPS-MISSING-IMPLEMENT-PHASE-002"
+      ],
+      "observations": [
+        {
+          "id": "OBS-B045-GAPS-TEST-ROW-HEADER-001",
+          "severity": "low",
+          "followUpOwner": "bubbles.harden",
+          "followUpAction": "Assess whether the ID-first Test Plan header overcount warrants a separate bug packet; do not widen BUG-045.",
+          "summary": "Canonical Markdown and JSON plans contain five rows, while traceability reports six because it counts the ID-first header. Scenario mapping and BUG-045 behavior remain correct."
+        }
+      ],
+      "evidence": [
+        "report.md#gaps-current-byte-audit---2026-09-02t073403z"
+      ]
+    },
+    {
+      "event": "planning-active-packet-truth-reconciled",
+      "phase": "plan",
+      "agent": "bubbles.plan",
+      "at": "2026-09-02T07:42:31Z",
+      "outcome": "route_required",
+      "summary": "Reconciled active scope and report prose to G068 mapping 3 of 3 with 9 checked and 2 unchecked DoD items; routed the sole remaining missing implement-phase claim to bubbles.implement.",
+      "addressedFindings": [
+        "F-B045-GAPS-ACTIVE-PACKET-TRUTH-001"
+      ],
+      "unresolvedFindings": [
+        "F-B045-GAPS-MISSING-IMPLEMENT-PHASE-002"
+      ],
+      "evidence": [
+        "report.md#planning-active-packet-reconciliation---2026-09-02"
+      ]
+    },
+    {
+      "event": "implementation-current-byte-claim-completed",
+      "phase": "implement",
+      "agent": "bubbles.implement",
+      "at": "2026-09-02T07:50:56Z",
+      "outcome": "route_required",
+      "summary": "Re-verified the current guard and selftest bytes, closed only F-B045-GAPS-MISSING-IMPLEMENT-PHASE-002, and routed current state to bubbles.gaps without production, DoD, status, or certification changes.",
+      "addressedFindings": [
+        "F-B045-GAPS-MISSING-IMPLEMENT-PHASE-002"
+      ],
+      "unresolvedFindings": [],
+      "evidence": [
+        "report.md#implement-current-byte-re-verification---2026-09-02t074947z",
+        ".specify/runtime/tool-calls.jsonl rows 534, 538, 540-542"
+      ]
+    },
+    {
+      "event": "gaps-reaudit-current-bytes-clean",
+      "phase": "gaps",
+      "agent": "bubbles.gaps",
+      "at": "2026-09-02T07:59:30Z",
+      "outcome": "route_required",
+      "summary": "Re-audited current BUG-045 source, tests, artifacts, evidence chronology, findings, boundaries, and state. Both prior gaps findings are addressed, no blocking BUG-045 gap remains, and the packet routes to bubbles.harden.",
+      "addressedFindings": [
+        "F-B045-GAPS-ACTIVE-PACKET-TRUTH-001",
+        "F-B045-GAPS-MISSING-IMPLEMENT-PHASE-002"
+      ],
+      "unresolvedFindings": [],
+      "observations": [
+        {
+          "id": "OBS-B045-GAPS-TEST-ROW-HEADER-001",
+          "severity": "low",
+          "followUpOwner": "bubbles.bug",
+          "followUpAction": "Create a separate bug packet for the ID-first Test Plan header overcount. Do not widen BUG-045.",
+          "summary": "Markdown and JSON contain five Test Plan rows, while traceability reports six because its extractor skips Test Type headers but not ID-first headers. Scenario mapping, G068, evidence resolution, and the BUG-045 verdict remain correct."
+        }
+      ],
+      "evidence": [
+        "report.md#gaps-re-audit-after-plan-and-implement---2026-09-02t075755z",
+        ".specify/runtime/tool-calls.jsonl rows 547-554"
+      ]
+    },
+    {
+      "event": "harden-current-bytes-clean",
+      "phase": "harden",
+      "agent": "bubbles.harden",
+      "at": "2026-09-02T08:09:37Z",
+      "outcome": "route_required",
+      "summary": "Adversarially verified current BUG-045 completeness, fail-closed malformed and missing evidenceRefs behavior, canonical and legacy envelopes, empty/non-empty/mixed cardinality, false-pass resistance, mutation sensitivity, scenario/Test Plan/DoD parity, boundary containment, macOS portability, and evidence integrity. No blocking BUG-045 harden finding remains; route to bubbles.stabilize without source, test, planning, lifecycle, status, user-validation, or certification changes.",
+      "addressedFindings": [],
+      "unresolvedFindings": [],
+      "observations": [
+        {
+          "id": "OBS-B045-GAPS-TEST-ROW-HEADER-001",
+          "severity": "low",
+          "followUpOwner": "bubbles.bug",
+          "followUpAction": "Create a separate bug packet for the ID-first Test Plan header overcount. Do not widen BUG-045.",
+          "summary": "Preserved unchanged and not implemented by harden. Markdown and JSON contain five Test Plan rows while traceability reports six; scenario mapping, G068, evidence resolution, and the BUG-045 verdict remain correct."
+        }
+      ],
+      "evidence": [
+        "report.md#harden-current-byte-verification---2026-09-02t080937z"
+      ]
+    },
+    {
+      "event": "stabilize-current-bytes-clean",
+      "phase": "stabilize",
+      "agent": "bubbles.stabilize",
+      "at": "2026-09-02T08:21:23Z",
+      "outcome": "route_required",
+      "summary": "Verified deterministic focused behavior, direct cardinality cases, bounded timeout cleanup, Bash portability, proportional jq predicate cost, packet coherence, execution state, and strict boundary containment. No blocking BUG-045 stability finding remains; route to bubbles.devops without source, test, planning, lifecycle, status, user-validation, or certification changes.",
+      "addressedFindings": [],
+      "unresolvedFindings": [],
+      "observations": [
+        {
+          "id": "OBS-B045-GAPS-TEST-ROW-HEADER-001",
+          "severity": "low",
+          "followUpOwner": "bubbles.bug",
+          "followUpAction": "Create a separate bug packet for the ID-first Test Plan header overcount. Do not widen BUG-045.",
+          "summary": "Preserved unchanged and not implemented by stabilize. Markdown and JSON contain five Test Plan rows while traceability reports six; scenario mapping, G068, evidence resolution, and the BUG-045 verdict remain correct."
+        }
+      ],
+      "evidence": [
+        "report.md#stabilize-current-byte-verification---2026-09-02t082123z"
+      ]
+    },
+    {
+      "event": "devops-operational-surface-not-applicable",
+      "phase": "devops",
+      "agent": "bubbles.devops",
+      "at": "2026-09-02T14:22:42Z",
+      "outcome": "route_required",
+      "summary": "Classified the current BUG-045 diff as a CLI guard and focused selftest change with no operational delivery surface. The bounded production guard and Bash syntax checks passed, so the packet routes to bubbles.security.",
+      "addressedFindings": [],
+      "unresolvedFindings": [],
+      "observations": [
+        {
+          "id": "OBS-B045-GAPS-TEST-ROW-HEADER-001",
+          "severity": "low",
+          "followUpOwner": "bubbles.bug",
+          "followUpAction": "Create a separate bug packet for the ID-first Test Plan header overcount. Do not widen BUG-045.",
+          "summary": "Preserved unchanged and not implemented by devops. Markdown and JSON contain five Test Plan rows while traceability reports six. Scenario mapping, G068, evidence resolution, and the BUG-045 verdict remain correct."
+        }
+      ],
+      "evidence": [
+        "report.md#devops-operational-classification---2026-09-02t142242z",
+        ".specify/runtime/tool-calls.jsonl rows 557-558"
+      ]
+    },
+    {
+      "event": "security-linked-test-path-traversal",
+      "phase": "security",
+      "agent": "bubbles.security",
+      "at": "2026-09-02T15:01:52Z",
+      "outcome": "route_required",
+      "summary": "The positive-cardinality predicate passed focused security checks, but an independently reproduced linked-test path traversal accepts an external host file and blocks security completion.",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "F-B045-SEC-LINKED-TEST-PATH-TRAVERSAL-001"
+      ],
+      "observations": [
+        {
+          "id": "OBS-B045-GAPS-TEST-ROW-HEADER-001",
+          "severity": "low",
+          "followUpOwner": "bubbles.bug",
+          "followUpAction": "Create a separate bug packet for the ID-first Test Plan header overcount. Do not widen BUG-045.",
+          "summary": "Preserved unchanged and not implemented by security. Markdown and JSON contain five Test Plan rows while traceability reports six. Scenario mapping, G068, evidence resolution, and the BUG-045 cardinality verdict remain correct."
+        }
+      ],
+      "evidence": [
+        "report.md#security-defensive-review---2026-09-02t150152z",
+        ".specify/runtime/tool-calls.jsonl rows 571-575, 577-580"
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [
+    {
+      "id": "F-B037-GAPS-TRACEABILITY-EMPTY-REF-018",
+      "status": "verified-ready-for-parent-consumption",
+      "packet": "bugs/BUG-045-traceability-empty-evidence-refs",
+      "parentLedgerMutationAuthorized": false,
+      "evidence": [
+        "report.md#independent-direct-scenario-matrix",
+        "report.md#independent-mutation-non-vacuity",
+        "report.md#independent-packet-gates"
+      ]
+    }
+  ],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "testPlan": "test-plan.json",
+    "state": "state.json"
+  },
+  "notes": "Packet-only invocation. Current BUG-037 arrays were populated concurrently and remain untouched. No source repair, broad validation, release operation, or parent finding-ledger mutation occurred."
+}

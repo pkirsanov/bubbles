@@ -7,14 +7,22 @@
       "title": "Successful zero-output child",
       "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["TP-B037-001"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-CLI assertion over the canonical zero-line count, empty-content digest, and successful child status.",
+          "satisfiedBy": ["TP-B037-001"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-output-and-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
         "negativeControl": "Restore the two-producer grep fallback expression; the empty capture produces a non-canonical count or diagnostic.",
@@ -30,14 +38,27 @@
       "title": "Failing zero-output child",
       "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["TP-B037-002"],
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-CLI assertion over the canonical zero-line count, empty-content digest, and propagated nonzero child status.",
+          "satisfiedBy": ["TP-B037-002"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named failing-child assertion proves the helper preserves the child status and emits no arithmetic diagnostic or plausible default.",
+          "satisfiedBy": ["TP-B037-002"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-output-and-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
         "negativeControl": "Force the helper to exit zero after a failing silent child; the exit-propagation assertion fails.",
@@ -53,14 +74,27 @@
       "title": "Empty-output verification",
       "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["TP-B037-003"],
+      "behaviorTraits": ["pure-calculation", "degraded-state"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Production-CLI assertions distinguish the matching and changed empty-output digests and their exact exit contracts.",
+          "satisfiedBy": ["TP-B037-003"]
+        },
+        {
+          "trait": "degraded-state",
+          "requiredProof": "Named digest-mismatch assertion proves changed empty output refuses with the established nonzero status rather than accepting a default.",
+          "satisfiedBy": ["TP-B037-003"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-output-and-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
         "negativeControl": "Return zero on an empty-digest mismatch; the mismatch exit assertion fails.",
@@ -74,16 +108,24 @@
     {
       "id": "SCN-B037-004",
       "title": "Non-empty behavior is unchanged",
-      "requiredTestType": "regression",
+      "requiredTestType": "unit",
       "scopeRef": "Scope 1",
-      "behaviorTraits": ["pure-calculation", "shared-consumer"],
+      "testPlanIds": ["TP-B037-004"],
+      "behaviorTraits": ["pure-calculation"],
       "riskTier": "high",
       "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
       "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "obligations": [
+        {
+          "trait": "pure-calculation",
+          "requiredProof": "Persistent production-CLI regression assertions preserve non-empty line counts, bounded formatting, signal handling, and cleanup behavior.",
+          "satisfiedBy": ["TP-B037-004"]
+        }
+      ],
       "testMechanism": {
         "entrypoint": "production-cli",
         "inputOrigin": "synthetic-fixture",
-        "assertionSurface": "process-output-and-exit",
+        "assertionSurface": "returned-value",
         "dependencyPath": "not-applicable",
         "productionOwners": ["bubbles/scripts/evidence-capture.sh"],
         "negativeControl": "Replace the count with a constant zero; existing three-line and bounded-output assertions fail.",

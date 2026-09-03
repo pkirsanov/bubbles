@@ -36,18 +36,18 @@ Corroborating (grep-derived, advisory) numbers:
 
 | Gate | Name | Enforced By (declared) | # Modes | state-transition-guard | framework-validate scripts | CI |
 | --- | --- | --- | --- | --- | --- | --- |
-| G001 | artifact_gate | `mode-required` | 55 | — | 18 | — |
+| G001 | artifact_gate | `mode-required` | 56 | — | 18 | — |
 | G002 | scope_definition_gate | `mode-required` | 23 | — | 10 | — |
 | G003 | test_integrity_gate | `mode-required` | 25 | — | 8 | — |
 | G004 | test_execution_gate | `mode-required` | 25 | — | 4 | — |
 | G005 | evidence_gate | `mode-required` | 25 | — | 3 | — |
-| G006 | docs_sync_gate | `mode-required` | 46 | — | 1 | — |
-| G007 | validation_gate | `mode-required` | 48 | — | 2 | — |
+| G006 | docs_sync_gate | `mode-required` | 47 | — | 1 | — |
+| G007 | validation_gate | `mode-required` | 49 | — | 2 | — |
 | G008 | audit_gate | `mode-required` | 42 | — | 1 | — |
 | G009 | chaos_gate | `mode-required` | 26 | — | 4 | — |
 | G010 | user_validation_gate | `mode-required` | 31 | — | 2 | — |
-| G011 | session_gate | `mode-required` | 55 | — | 1 | — |
-| G012 | final_promotion_gate | `mode-required` | 55 | — | — | — |
+| G011 | session_gate | `mode-required` | 56 | — | 1 | — |
+| G012 | final_promotion_gate | `mode-required` | 56 | — | — | — |
 | G013 | priority_selection_gate | `behavioral:bubbles.workflow` | 3 | — | — | — |
 | G014 | bootstrap_readiness_gate | `mode-required` | 18 | — | — | — |
 | G015 | scenario_depth_gate | `mode-required` | 24 | — | — | — |
@@ -84,7 +84,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G053 | implementation_delta_evidence_gate | `guard-check:13B` | 0 | Check 13B | 4 | guard |
 | G055 | policy_provenance_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3A | 4 | guard |
 | G056 | validate_certification_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3H | 1 | guard |
-| G057 | scenario_manifest_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3C | 4 | guard |
+| G057 | scenario_manifest_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3C | 5 | guard |
 | G058 | lockdown_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 1 | Check 3D | — | guard |
 | G059 | regression_contract_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 25 | Check 3D | 1 | guard |
 | G060 | scenario_tdd_gate | `script:bubbles/scripts/guards/control-plane-checks.sh` | 3 | Check 3E | 5 | guard |
@@ -98,7 +98,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G070 | outcome_contract_gate | `script:bubbles/scripts/goal-fidelity-guard.sh`, `script:bubbles/scripts/scenario-compile-lint.sh` | 0 | — | 4 | — |
 | G071 | execution_only_validation_gate | `unbound` | 0 | — | 3 | — |
 | G072 | evidence_provenance_gate | `guard-check:12` | 0 | Check 40 | 4 | guard |
-| G073 | planning_only_source_edit_lockout_gate | `guard-check:3B` | 30 | Check 3B | 6 | guard |
+| G073 | planning_only_source_edit_lockout_gate | `guard-check:3B` | 31 | Check 3B | 6 | guard |
 | G074 | workflow_mode_consistency_gate | `guard-check:2B` | 3 | ref | — | guard |
 | G075 | scope_index_parity_gate | `guard-check:5B` | 0 | ref | — | guard |
 | G076 | phantom_scope_detection_gate | `guard-check:5C` | 0 | ref | — | guard |
@@ -118,7 +118,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G090 | retro_convergence_health_evidence_gate | `script:bubbles/scripts/retro-convergence-health-selftest.sh`, `script:bubbles/scripts/retro-convergence-health.sh` | 0 | Check 33 | 7 | guard |
 | G091 | planning_workflow_chain_gate | `script:bubbles/scripts/planning-workflow-chain-guard-selftest.sh`, `script:bubbles/scripts/planning-workflow-chain-guard.sh` | 0 | Check 28 | 5 | guard |
 | G092 | strict_terminal_status_gate | `script:bubbles/scripts/strict-terminal-status-guard-selftest.sh`, `script:bubbles/scripts/strict-terminal-status-guard.sh` | 0 | Check 32 | 7 | guard |
-| G093 | delivery_implementation_delta_gate | `script:bubbles/scripts/delivery-implementation-delta-guard-selftest.sh`, `script:bubbles/scripts/delivery-implementation-delta-guard.sh` | 0 | Check 29B | 3 | guard |
+| G093 | delivery_implementation_delta_gate | `script:bubbles/scripts/delivery-implementation-delta-guard-selftest.sh`, `script:bubbles/scripts/delivery-implementation-delta-guard.sh` | 0 | Check 29B | 4 | guard |
 | G094 | capability_foundation_gate | `script:bubbles/scripts/capability-foundation-guard-selftest.sh`, `script:bubbles/scripts/capability-foundation-guard.sh` | 0 | Check 34 | 5 | guard |
 | G095 | discovered_issue_disposition_gate | `script:bubbles/scripts/discovered-issue-disposition-guard-selftest.sh`, `script:bubbles/scripts/discovered-issue-disposition-guard.sh` | 0 | Check 35 | 8 | guard |
 | G097 | requirement_mechanism_correspondence_gate | `script:bubbles/scripts/requirement-mechanism-guard-selftest.sh`, `script:bubbles/scripts/requirement-mechanism-guard.sh` | 0 | Check 36 | 7 | guard |
@@ -126,7 +126,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G099 | observability_opt_out_freshness_gate | `script:bubbles/scripts/observability-opt-out-guard-selftest.sh`, `script:bubbles/scripts/observability-opt-out-guard.sh` | 0 | Check 38 | 10 | guard |
 | G100 | observability_slo_evidence_gate | `script:bubbles/scripts/observability-slo-guard-selftest.sh`, `script:bubbles/scripts/observability-slo-guard.sh` | 0 | Check 39 | 7 | guard |
 | G101 | release_delivery_reconciliation_gate | `script:bubbles/scripts/is-terminal-for-mode.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh`, `script:bubbles/scripts/release-delivery-reconciliation-guard.sh`, `script:bubbles/scripts/scenario-compile-lint.sh` | 0 | — | 10 | — |
-| G110 | release_train_discipline_gate | `script:bubbles/scripts/release-train-guard.sh` | 8 | — | 5 | — |
+| G110 | release_train_discipline_gate | `script:bubbles/scripts/release-train-guard.sh` | 9 | — | 5 | — |
 | G111 | flag_default_off_on_other_trains_gate | `script:bubbles/scripts/release-train-guard.sh` | 5 | — | 2 | — |
 | G112 | backup_evidence_required_gate | `mode-required` | 2 | — | — | — |
 | G113 | restore_drill_evidence_gate | `mode-required` | 2 | — | — | — |
@@ -197,7 +197,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G090 | retro_convergence_health_evidence_gate | Check 33 | 7 | guard | observability-slo-guard-selftest.sh, observability-slo-guard.sh, retro-convergence-health-selftest.sh, retro-convergence-health.sh, scaffold-gate-selftest.sh, state-transition-guard-selftest.sh, +1 more |
 | G091 | planning_workflow_chain_gate | Check 28 | 5 | guard | audit-result-contract-lint-selftest.sh, mode-resolver-selftest.sh, planning-workflow-chain-guard-selftest.sh, planning-workflow-chain-guard.sh, state-transition-guard-selftest.sh |
 | G092 | strict_terminal_status_gate | Check 32 | 7 | guard | inter-spec-dependency-guard-selftest.sh, inter-spec-dependency-guard.sh, post-cert-spec-edit-guard-selftest.sh, post-cert-spec-edit-guard.sh, state-transition-guard-selftest.sh, strict-terminal-status-guard-selftest.sh, +1 more |
-| G093 | delivery_implementation_delta_gate | Check 29B | 3 | guard | delivery-implementation-delta-guard-selftest.sh, delivery-implementation-delta-guard.sh, state-transition-guard-selftest.sh |
+| G093 | delivery_implementation_delta_gate | Check 29B | 4 | guard | delivery-implementation-delta-guard-selftest.sh, delivery-implementation-delta-guard.sh, state-transition-guard-perf-selftest.sh, state-transition-guard-selftest.sh |
 | G094 | capability_foundation_gate | Check 34 | 5 | guard | capability-foundation-guard-selftest.sh, capability-foundation-guard.sh, guard-lib.sh, rapid-tool-delivery-mode-selftest.sh, release-manifest-selftest.sh |
 | G095 | discovered_issue_disposition_gate | Check 35 | 8 | guard | discovered-issue-disposition-guard-selftest.sh, discovered-issue-disposition-guard.sh, evidence-admission-hardening-selftest.sh, framework-validate.sh, gate-bands.sh, goal-fidelity-telemetry-selftest.sh, +2 more |
 | G097 | requirement_mechanism_correspondence_gate | Check 36 | 7 | guard | capability-consumer-freshness.sh, domain-invariant-guard.sh, framework-validate.sh, release-delivery-reconciliation-guard.sh, requirement-mechanism-guard-selftest.sh, requirement-mechanism-guard.sh, +1 more |

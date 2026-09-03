@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-039-traceability-test-plan-header-count",
+  "scope": "Scope 1",
+  "tests": [
+    {
+      "id": "TP-B039-01",
+      "scenarioIds": ["SCN-B039-001"],
+      "type": "persistent-structural-row-regression",
+      "path": "bubbles/scripts/traceability-guard-selftest.sh",
+      "command": "timeout 300 bash bubbles/scripts/traceability-guard-selftest.sh",
+      "expectedProof": "A recognized header and immediate same-width all-valid separator emit zero structural records; valid data rows still emit once."
+    },
+    {
+      "id": "TP-B039-02",
+      "scenarioIds": ["SCN-B039-002"],
+      "type": "g060-red-before-green-exact-aggregate-regression",
+      "path": "bubbles/scripts/traceability-guard-selftest.sh",
+      "command": "timeout 300 bash bubbles/scripts/traceability-guard-selftest.sh",
+      "expectedProof": "Before source repair, a targeted revised-contract assertion fails nonzero and its output is retained. After repair, four six-row tables emit exactly 24 records, with every TP-028 identity observed once. The red evidence must predate the green evidence."
+    },
+    {
+      "id": "TP-B039-03",
+      "scenarioIds": ["SCN-B039-003"],
+      "type": "persistent-closed-vocabulary-regression",
+      "path": "bubbles/scripts/traceability-guard-selftest.sh",
+      "command": "timeout 300 bash bubbles/scripts/traceability-guard-selftest.sh",
+      "expectedProof": "Both exact heading families and all three exact path headings pass; unlisted, duplicate, partial, and mixed headers return parser status 4 with stable diagnostics."
+    },
+    {
+      "id": "TP-B039-04",
+      "scenarioIds": ["SCN-B039-004"],
+      "type": "persistent-malformed-rowless-failure-layer-regression",
+      "path": "bubbles/scripts/traceability-guard-selftest.sh",
+      "command": "timeout 300 bash bubbles/scripts/traceability-guard-selftest.sh",
+      "expectedProof": "Missing, empty, invalid, delayed, narrow, and wide separators; malformed-width rows; empty required cells; and blank, prose, deeper-heading, section-boundary, and EOF rowless terminals return parser status 4, a stable failure class, and the correct visible line before invalid emission. Parser diagnostics remain distinct from the outer Test Plan extraction failed failure, and no structural path uses a bare status-only exit."
+    },
+    {
+      "id": "TP-B039-05",
+      "scenarioIds": ["SCN-B039-005"],
+      "type": "persistent-state-boundary-second-table-regression",
+      "path": "bubbles/scripts/traceability-guard-selftest.sh",
+      "command": "timeout 300 bash bubbles/scripts/traceability-guard-selftest.sh",
+      "expectedProof": "Exact blank, prose, deeper-heading, equal-or-shallower-section, and EOF behavior is covered; adjacent and separated second tables fail at their visible header line in READ_ROWS and DONE, and no second-table row emits."
+    },
+    {
+      "id": "TP-B039-06",
+      "scenarioIds": ["SCN-B039-001", "SCN-B039-002", "SCN-B039-003", "SCN-B039-004", "SCN-B039-005"],
+      "type": "active-shell-syntax-and-portability-review",
+      "paths": ["bubbles/scripts/traceability-guard.sh", "bubbles/scripts/traceability-guard-selftest.sh"],
+      "command": "timeout 30 bash -n bubbles/scripts/traceability-guard.sh && timeout 30 bash -n bubbles/scripts/traceability-guard-selftest.sh",
+      "expectedProof": "Files parse under active Bash. Separate source review confirms the changed classifier remains in Python and introduces no Bash 4-only or GNU/BSD-specific table-classification dependency; syntax alone does not prove Bash 3.2 portability."
+    }
+  ]
+}
