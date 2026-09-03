@@ -2114,6 +2114,9 @@ _scope_context_consume() {
   local record_rest=""
   local record_line=""
   local record_context=""
+  local record_boundary=""
+  local record_column_count=""
+  local record_type_column=""
   local record_bytes=""
   local record_text=""
   local seen_completion=0
@@ -2122,11 +2125,15 @@ _scope_context_consume() {
   local -a staged_locations=()
   local -a staged_dod=()
   local -a staged_test_rows=()
+  local -a staged_test_column_counts=()
+  local -a staged_test_type_columns=()
 
   SCOPE_CONTEXT_ACTIVE_LINES=()
   SCOPE_CONTEXT_ACTIVE_LOCATIONS=()
   SCOPE_CONTEXT_DOD_LINES=()
   SCOPE_CONTEXT_TEST_ROWS=()
+  SCOPE_CONTEXT_TEST_COLUMN_COUNTS=()
+  SCOPE_CONTEXT_TEST_TYPE_COLUMNS=()
   if [[ "${SCOPE_CONTEXT_STATUS[$scope_index]:-error}" != "complete" ]]; then
     _scope_context_report "$scope_index"
     return 2
@@ -2167,17 +2174,30 @@ _scope_context_consume() {
         record_rest="${record#*$'\t'}"
         record_line="${record_rest%%$'\t'*}"
         record_rest="${record_rest#*$'\t'}"
+        record_context="${record_rest%%$'\t'*}"
         record_rest="${record_rest#*$'\t'}"
+        record_boundary="${record_rest%%$'\t'*}"
         record_rest="${record_rest#*$'\t'}"
+        record_column_count="${record_rest%%$'\t'*}"
         record_rest="${record_rest#*$'\t'}"
+        record_type_column="${record_rest%%$'\t'*}"
         record_rest="${record_rest#*$'\t'}"
         record_bytes="${record_rest%%$'\t'*}"
         record_text="${record_rest#*$'\t'}"
-        if [[ ! "$record_line" =~ ^[0-9]+$ || ! "$record_bytes" =~ ^[0-9]+$ ]]; then
+        if [[ ! "$record_line" =~ ^[0-9]+$ || "$record_context" != "test-plan" \
+          || "$record_boundary" != "data" || ! "$record_column_count" =~ ^[0-9]+$ \
+          || ! "$record_type_column" =~ ^[0-9]+$ || ! "$record_bytes" =~ ^[0-9]+$ ]]; then
+          malformed=1
+          break
+        fi
+        if [[ "$record_column_count" -lt 1 || "$record_type_column" -lt 1 \
+          || "$record_type_column" -gt "$record_column_count" ]]; then
           malformed=1
           break
         fi
         staged_test_rows+=("$record_text")
+        staged_test_column_counts+=("$record_column_count")
+        staged_test_type_columns+=("$record_type_column")
         ;;
       F) ;;
       C)
@@ -2200,6 +2220,8 @@ _scope_context_consume() {
   SCOPE_CONTEXT_ACTIVE_LOCATIONS=("${staged_locations[@]}")
   SCOPE_CONTEXT_DOD_LINES=("${staged_dod[@]}")
   SCOPE_CONTEXT_TEST_ROWS=("${staged_test_rows[@]}")
+  SCOPE_CONTEXT_TEST_COLUMN_COUNTS=("${staged_test_column_counts[@]}")
+  SCOPE_CONTEXT_TEST_TYPE_COLUMNS=("${staged_test_type_columns[@]}")
   _scope_context_report "$scope_index"
   return 0
 }
@@ -2218,6 +2240,8 @@ scope_declares_performance_contract() {
 
   SCOPE_PERFORMANCE_CONTRACTS=()
   SCOPE_PERFORMANCE_TEST_ROWS=()
+  SCOPE_PERFORMANCE_TEST_COLUMN_COUNTS=()
+  SCOPE_PERFORMANCE_TEST_TYPE_COLUMNS=()
   SCOPE_PERFORMANCE_DOD_LINES=()
   SCOPE_PERFORMANCE_CONTEXT_ERROR=""
 
@@ -2226,6 +2250,8 @@ scope_declares_performance_contract() {
     return 2
   fi
   SCOPE_PERFORMANCE_TEST_ROWS=("${SCOPE_CONTEXT_TEST_ROWS[@]}")
+  SCOPE_PERFORMANCE_TEST_COLUMN_COUNTS=("${SCOPE_CONTEXT_TEST_COLUMN_COUNTS[@]}")
+  SCOPE_PERFORMANCE_TEST_TYPE_COLUMNS=("${SCOPE_CONTEXT_TEST_TYPE_COLUMNS[@]}")
   SCOPE_PERFORMANCE_DOD_LINES=("${SCOPE_CONTEXT_DOD_LINES[@]}")
   for performance_line in ${SCOPE_CONTEXT_ACTIVE_LINES[@]+"${SCOPE_CONTEXT_ACTIVE_LINES[@]}"}; do
     if ! grep -Eiq "$performance_signal" <<< "$performance_line"; then
@@ -2313,17 +2339,70 @@ _performance_contract_matches_text() {
   return 0
 }
 
+_scope_test_plan_type_cell_is_stress() {
+  local normalized_row="$1"
+  local expected_column_count="$2"
+  local type_column_index="$3"
+
+  LC_ALL=C awk -v expected_columns="$expected_column_count" \
+    -v type_column="$type_column_index" '
+    function trimmed(value) {
+      sub(/^[[:blank:]]+/, "", value)
+      sub(/[[:blank:]]+$/, "", value)
+      return value
+    }
+    function clear_cells(cell_index) {
+      for (cell_index = 1; cell_index <= TABLE_CELL_CAP; cell_index++) delete TABLE_CELLS[cell_index]
+      TABLE_CELL_CAP = 0
+    }
+    function parse_table(text, value, cell_index, character, cell, column_count) {
+      clear_cells()
+      TABLE_COLUMN_COUNT = 0
+      value = trimmed(text)
+      if (substr(value, 1, 1) != "|" || substr(value, length(value), 1) != "|") return 0
+      cell = ""
+      column_count = 0
+      for (cell_index = 2; cell_index < length(value); cell_index++) {
+        character = substr(value, cell_index, 1)
+        if (character == "|" && substr(value, cell_index - 1, 1) != "\\") {
+          column_count++
+          TABLE_CELLS[column_count] = trimmed(cell)
+          cell = ""
+        } else {
+          cell = cell character
+        }
+      }
+      column_count++
+      TABLE_CELLS[column_count] = trimmed(cell)
+      TABLE_CELL_CAP = column_count
+      TABLE_COLUMN_COUNT = column_count
+      return column_count > 0
+    }
+    {
+      if (NR != 1 || expected_columns !~ /^[0-9]+$/ || type_column !~ /^[0-9]+$/ \
+        || expected_columns < 1 || type_column < 1 || type_column > expected_columns) exit 2
+      if (!parse_table($0) || TABLE_COLUMN_COUNT != expected_columns) exit 2
+      exit TABLE_CELLS[type_column] == "stress" ? 0 : 1
+    }
+  ' <<< "$normalized_row"
+}
+
 _scope_has_matching_stress_row() {
   local contract="$1"
+  local row_index=""
   local row=""
   local row_lower=""
-  local stress_row_pattern='^[[:space:]]*\|[[:space:]]*stress[[:space:]]*\|'
+  local expected_column_count=""
+  local type_column_index=""
 
-  for row in ${SCOPE_PERFORMANCE_TEST_ROWS[@]+"${SCOPE_PERFORMANCE_TEST_ROWS[@]}"}; do
+  for row_index in "${!SCOPE_PERFORMANCE_TEST_ROWS[@]}"; do
+    row="${SCOPE_PERFORMANCE_TEST_ROWS[$row_index]}"
+    expected_column_count="${SCOPE_PERFORMANCE_TEST_COLUMN_COUNTS[$row_index]:-}"
+    type_column_index="${SCOPE_PERFORMANCE_TEST_TYPE_COLUMNS[$row_index]:-}"
     row_lower="${row,,}"
     row_lower="${row_lower//\*/}"
     row_lower="${row_lower//\`/}"
-    if [[ "$row_lower" =~ $stress_row_pattern ]] \
+    if _scope_test_plan_type_cell_is_stress "$row_lower" "$expected_column_count" "$type_column_index" \
       && _performance_contract_matches_text "$contract" "$row_lower" yes; then
       return 0
     fi
@@ -4947,20 +5026,6 @@ else
     '
   }
 
-  _g040_print_bounded_fallback() {
-    local source_line="$1"
-    local sanitized_line=""
-    local excerpt_limit=512
-    local LC_ALL=C
-
-    sanitized_line="$(printf '%s' "$source_line" | tr -d '\000-\037\177')"
-    if [[ "${#sanitized_line}" -gt "$excerpt_limit" ]]; then
-      printf '   → %s [truncated]\n' "${sanitized_line:0:$excerpt_limit}"
-    else
-      printf '   → %s\n' "$sanitized_line"
-    fi
-  }
-
   # Strategy (iii): the awk filter strips fenced code AND content between
   # bubbles:g040-skip-begin / bubbles:g040-skip-end sentinel markers.
   # Marker lines themselves are dropped via `next` so they are never fed
@@ -4991,7 +5056,7 @@ else
       while IFS= read -r deferral_line; do
         [[ -n "$deferral_line" ]] || continue
         if ! _g040_print_exact_pair_match "$deferral_line"; then
-          _g040_print_bounded_fallback "$deferral_line"
+          echo "   → $deferral_line"
         fi
         shown_lines=$((shown_lines + 1))
         if [[ "$shown_lines" -ge 5 ]]; then
@@ -5052,7 +5117,7 @@ else
       while IFS= read -r deferral_line; do
         [[ -n "$deferral_line" ]] || continue
         if ! _g040_print_exact_pair_match "$deferral_line"; then
-          _g040_print_bounded_fallback "$deferral_line"
+          echo "   → $deferral_line"
         fi
         shown_lines=$((shown_lines + 1))
         if [[ "$shown_lines" -ge 5 ]]; then
