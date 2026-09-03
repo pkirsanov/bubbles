@@ -1,0 +1,69 @@
+{
+  "version": 3,
+  "bugId": "BUG-061",
+  "sourceFindings": ["F-B061-001", "F-B061-002", "F-B061-003", "F-B061-004", "F-B061-005"],
+  "featureDir": "bugs/BUG-061-shellcheck-zero-warning-gate",
+  "featureName": "Tracked ShellCheck Warnings Break the Zero-Warning Gate",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required by the BUG-050 regression finding-routing node",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-061-shellcheck-zero-warning-gate"],
+    "allowedPaths": [
+      "bugs/BUG-061-shellcheck-zero-warning-gate/**",
+      "BUGS.md",
+      "bubbles/adapters/research/disabled.sh",
+      "bubbles/adapters/research/local-command.sh",
+      "bubbles/adapters/usage/reference-test.sh",
+      "bubbles/scripts/research-run.sh",
+      "bubbles/scripts/scenario-manifest-migrate-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": null,
+    "activeAgent": "bubbles.bug",
+    "currentPhase": "implement",
+    "currentScope": 1,
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.implement",
+    "nextRequiredAction": "Apply only the five planned source repairs, capture focused GREEN and behavior-preservation evidence, preserve both excluded ownership groups, and route independent verification to bubbles.test.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Restore the Tracked Shell Zero-Warning Contract","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"repo-default"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"on","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "BUG-061 is reproduced and fully planned. No source or test repair has run. Status and certification remain in_progress, and implementation ownership is the next route."
+}

@@ -2693,6 +2693,55 @@ digest, no arithmetic diagnostic, and the original child exit.
 inspection in this filing invocation. No RED command was run here.
 ---
 
+## BUG-061 - tracked ShellCheck warnings make the zero-warning framework gate fail
+
+- **Filed:** 2026-09-02
+- **Source findings:** `F-B061-001` through `F-B061-005`, routed from the
+  BUG-050 regression phase.
+- **Disposition:** OPEN in-repository framework defect. The complete packet and
+  exact pre-fix reproduction are recorded. Implementation is routed to
+  `bubbles.implement`; this filing changes no production or test source.
+- **Severity:** high. A required warning-level shell gate cannot reach its
+  zero-finding contract.
+- **Packet:** [`bugs/BUG-061-shellcheck-zero-warning-gate/`](bugs/BUG-061-shellcheck-zero-warning-gate/bug.md)
+- **Affects:** `bubbles/adapters/research/disabled.sh`,
+  `bubbles/adapters/research/local-command.sh`,
+  `bubbles/adapters/usage/reference-test.sh`,
+  `bubbles/scripts/research-run.sh`, and
+  `bubbles/scripts/scenario-manifest-migrate-selftest.sh`.
+
+### Reproduction
+
+A current-session `shellcheck -S warning -f gcc` invocation over exactly the
+five affected files exited 1 and emitted four SC1007 findings plus one SC2034
+finding. The captured 20-line output has SHA-256
+`c7f1dc6cd8750450fbd8d4ca3410e2e3f45da28163207641f4940e715dab9261`.
+
+```text
+bubbles/adapters/research/disabled.sh:4:21: SC1007
+bubbles/adapters/research/local-command.sh:4:21: SC1007
+bubbles/adapters/usage/reference-test.sh:14:1: SC2034
+bubbles/scripts/research-run.sh:4:21: SC1007
+bubbles/scripts/scenario-manifest-migrate-selftest.sh:619:45: SC1007
+```
+
+### Root cause and required repair
+
+Four intentional empty assignments use the warning-producing `NAME= command`
+form. The usage reference adapter also declares an unexported `EMPTY_DIGEST`
+value that it never reads. The bounded repair makes the four empty values
+explicit and removes only the dead assignment. It must not add suppressions,
+lower severity, change behavior, or widen beyond the five source files.
+
+The reference-broker SC2034 remains owned by IMP-056. The three
+release-train-metadata selftest SC2034 findings remain owned by BUG-038. Neither
+ownership group is part of BUG-061.
+
+**Claim Source:** executed for the focused reproduction; interpreted for the
+source-to-warning mapping, grounded by direct source inspection.
+
+---
+
 ## BUG-037 — evidence capture can duplicate the zero line count and feed a non-canonical scalar into arithmetic
 
 - **Filed:** 2026-09-02
