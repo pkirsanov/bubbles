@@ -1,0 +1,229 @@
+{
+  "version": 3,
+  "bugId": "BUG-043",
+  "featureDir": "bugs/BUG-043-state-transition-guard-bash3-parser-compatibility",
+  "featureName": "State Transition Guard Bash 3 Parser Compatibility",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "operator-directed parser compatibility delivery with exact source, test, generated-manifest, and packet boundaries",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": ["BUG-035"],
+  "originFinding": {
+    "id": "F-B019002-REG-B05",
+    "sourceRepository": "knb",
+    "status": "open",
+    "disposition": "promoted_to_canonical_source_bug",
+    "claimSource": "operator-supplied"
+  },
+  "sourceBaseline": {
+    "revision": "830883fd5639ac066cb3d40a2a40a567cc3df22f",
+    "repository": "bubbles",
+    "dirtyMarker": ".bubbles-worktree"
+  },
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": [
+      "bugs/BUG-043-state-transition-guard-bash3-parser-compatibility"
+    ],
+    "allowedPaths": [
+      "bugs/BUG-043-state-transition-guard-bash3-parser-compatibility/**",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/bash-baseline-guard-selftest.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/release-manifest.json"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
+    "currentPhaseStatus": "route_required",
+    "substate": "needs_reverification",
+    "currentScope": 1,
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Independently verify TP-01 through TP-04 on repaired source SHA-256 e2aacaf3627164114c54454c914267a35d5ce4aa87574edd00d3f81ef8b6bc2d while preserving DoD and certification state.",
+    "nextRequiredTarget": "bugs/BUG-043-state-transition-guard-bash3-parser-compatibility",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Restore Dual-Parser Compatibility",
+        "status": "not_started",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {
+      "mode": "off",
+      "provenance": "framework-default"
+    },
+    "tdd": {
+      "mode": "scenario-first",
+      "provenance": "bugfix-fastlane-contract"
+    },
+    "autoCommit": {
+      "mode": "off",
+      "provenance": "operator-request"
+    },
+    "lockdown": {
+      "mode": "unlocked",
+      "provenance": "framework-default"
+    },
+    "regression": {
+      "mode": "required",
+      "provenance": "framework-default"
+    },
+    "validation": {
+      "mode": "required",
+      "provenance": "framework-default"
+    }
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "timestamp": "2026-08-31T22:58:19Z",
+      "agent": "bubbles.bug",
+      "phase": "bug",
+      "outcome": "route_required",
+      "statusBefore": "not_started",
+      "statusAfter": "in_progress",
+      "addressedFindings": [],
+      "unresolvedFindings": ["F-B019002-REG-B05"],
+      "evidenceRefs": [
+        "report.md#operator-supplied-reproduction",
+        "design.md#exact-investigation"
+      ]
+    },
+    {
+      "timestamp": "2026-08-31T23:15:10Z",
+      "agent": "bubbles.design",
+      "phase": "design",
+      "phasesExecuted": ["design"],
+      "outcome": "route_required",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "addressedFindings": ["F-B043-RCA-001"],
+      "unresolvedFindings": ["F-B019002-REG-B05", "F-B043-PLAN-001"],
+      "evidenceRefs": [
+        "design.md#root-cause-analysis",
+        "design.md#adversarial-regression-design",
+        "report.md#design-root-cause-investigation---2026-08-31",
+        "report.md#design-phase-artifact-validation"
+      ]
+    },
+    {
+      "timestamp": "2026-08-31T23:26:00Z",
+      "agent": "bubbles.plan",
+      "phase": "plan",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "addressedFindings": ["F-B043-PLAN-001"],
+      "unresolvedFindings": ["F-B019002-REG-B05"],
+      "evidenceRefs": [
+        "scopes.md#scope-1---restore-dual-parser-compatibility",
+        "test-plan.json",
+        "scenario-manifest.json",
+        "report.md#planning-reconciliation---2026-08-31"
+      ]
+    },
+    {
+      "timestamp": "2026-08-31T23:52:29Z",
+      "agent": "bubbles.implement",
+      "phase": "implement",
+      "phasesExecuted": ["implement"],
+      "outcome": "route_required",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "addressedFindings": [],
+      "unresolvedFindings": ["F-B019002-REG-B05"],
+      "evidenceRefs": [
+        "report.md#dual-parser-syntax-and-static-boundary",
+        "report.md#tp-01-through-tp-03-green-receipt",
+        "report.md#implementation-routing"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-B019002-REG-B05",
+      "status": "open",
+      "owner": "bubbles.test",
+      "summary": "A double-quoted command substitution makes Bash 3.2 misparse the apostrophe in the Check 7C quoted-heredoc comment.",
+      "nextAction": "Independently verify the repaired source through TP-01 through TP-04 before resolving the finding."
+    },
+    {
+      "id": "F-B043-RCA-001",
+      "status": "resolved",
+      "owner": "bubbles.design",
+      "summary": "The exact parser origin, introducing revision, and two-character portable repair are confirmed.",
+      "evidenceRef": "report.md#design-root-cause-investigation---2026-08-31"
+    },
+    {
+      "id": "F-B043-PLAN-001",
+      "status": "resolved",
+      "owner": "bubbles.plan",
+      "summary": "The planning packet does not yet require sentinel execution beyond the former parser boundary and names a different negative control.",
+      "resolution": "Scopes, structured tests, scenario obligations, and DoD now require the exact two-quote restoration mutant and the source-derived post-boundary sentinel matrix.",
+      "resolvedAt": "2026-08-31T23:26:00Z",
+      "evidenceRef": "report.md#planning-reconciliation---2026-08-31"
+    }
+  ],
+  "activeBugs": ["BUG-043"],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "testPlan": "test-plan.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": [
+      "not_started",
+      "in_progress",
+      "blocked",
+      "specs_hardened",
+      "docs_updated",
+      "validated",
+      "done"
+    ],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "bugDoneRequires": "Both real parsers accept source and installed bytes, adversarial regression passes, guard semantics remain stable, human acceptance is recorded, and bubbles.validate certifies promotion."
+  },
+  "notes": "The scenario-first RED and implementation-owned TP-01 through TP-03 GREEN receipts are recorded. Independent testing, propagation, aggregate validation, acceptance, and certification remain unclaimed."
+}
