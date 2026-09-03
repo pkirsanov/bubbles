@@ -4,6 +4,15 @@ Links: [scopes.md](scopes.md) | [uservalidation.md](uservalidation.md)
 
 ## Summary
 
+- Made the three research `CDPATH` assignments and the migration fixture's
+  `XDG_RUNTIME_DIR` assignment explicitly empty without changing their commands.
+- Removed only the unread `EMPTY_DIGEST` assignment from the usage reference
+  adapter.
+- Passed the combined five-file ShellCheck command, T1-T8, and T10 on the final
+  source bytes. Environment-sensitive T7/T8 attempts are retained below.
+- Ran T9 and observed exactly four SC2034 findings in the two excluded owner
+  files. No assigned BUG-061 finding remains in the canonical gate output.
+- Regenerated and checked the release manifest after the source checks.
 - Allocated BUG-061 after a canonical-path scan of every local ref, live remote
   ref, registered worktree, source bug directory, and `BUGS.md` heading.
 - Reproduced exactly four SC1007 findings and one SC2034 finding on the five
@@ -16,9 +25,10 @@ Links: [scopes.md](scopes.md) | [uservalidation.md](uservalidation.md)
 
 ## Completion Statement
 
-This report records bug identification, current-session reproduction, root-cause
-localization, and planning artifacts only. It makes no source repair, GREEN
-test, framework-validation, release-readiness, audit, or certification claim.
+The implementation phase owns the five bounded source repairs and the evidence
+recorded below. The bug and scope remain `in_progress`: T9 exits 1 on the four
+excluded-owner warnings, and independent test execution, T11
+`framework-validate`, audit, and validate-owned certification are not claimed.
 
 ## Test Evidence
 
@@ -279,6 +289,257 @@ mechanism vocabulary and one primary Test Plan row per scenario.
 
 **Result:** PASS. Planning-level traceability is coherent. This does not prove
 the source repair or any GREEN behavior.
+
+### Focused ShellCheck GREEN
+
+**Executed:** YES (current session)
+**Phase:** implement
+**Commands:** the exact combined five-file command followed by T1-T5 in packet order
+**Exit Codes:** 0 for the combined command and 0 for each T1-T5 command
+**Claim Source:** executed
+
+```text
+# BUG-061 focused five-file ShellCheck GREEN
+$ shellcheck -S warning -f gcc bubbles/adapters/research/disabled.sh bubbles/adapters/research/local-command.sh bubbles/adapters/usage/reference-test.sh bubbles/scripts/research-run.sh bubbles/scripts/scenario-manifest-migrate-selftest.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+--- output ---
+# BUG-061 T1 disabled adapter ShellCheck
+$ shellcheck -S warning -f gcc bubbles/adapters/research/disabled.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+# BUG-061 T2 local-command adapter ShellCheck
+$ shellcheck -S warning -f gcc bubbles/adapters/research/local-command.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+# BUG-061 T3 usage reference adapter ShellCheck
+$ shellcheck -S warning -f gcc bubbles/adapters/usage/reference-test.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+# BUG-061 T4 research runner ShellCheck
+$ shellcheck -S warning -f gcc bubbles/scripts/research-run.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+# BUG-061 T5 migration fixture ShellCheck
+$ shellcheck -S warning -f gcc bubbles/scripts/scenario-manifest-migrate-selftest.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+```
+
+**Result:** PASS. All five assigned files are warning-clean individually and
+together at the unchanged `warning` severity floor.
+
+### Behavior Preservation
+
+**Executed:** YES (current session)
+**Phase:** implement
+**Commands:** T6 research admission, T7 usage adapter v2, and T8 scenario-manifest migration selftests
+**Final Exit Codes:** 0, 0, 0
+**Claim Source:** executed
+
+```text
+# BUG-061 T6 research admission behavior preservation
+$ bash bubbles/scripts/research-admission-cli-selftest.sh
+exit: 0
+lines: 49
+sha256: 105bf8196416b890f33e7de5927799542da0cfbef74a9169efaf0b72af67e93b
+research-admission-cli-selftest: PASS=48 FAIL=0
+# BUG-061 T7 initial default-macOS-temp attempt
+exit: 4
+lines: 7
+sha256: 25bec14db2bab42e0af50b3dfc45389786af3a53bc957fedcaac0786f6ac974b
+security-authority: usage-receipt authority path cannot contain symlinks and must be readable
+# BUG-061 T7 usage adapter v2 behavior preservation with physical TMPDIR
+$ bash bubbles/scripts/usage-adapter-v2-selftest.sh
+exit: 0
+lines: 10
+sha256: aa32006dcd2b633db64d3b7b16c83c335dfb73e329f4ad0d42471ed4ecdc4516
+usage-adapter-v2-selftest: PASS (9 checks)
+# BUG-061 T8 optional-dependency attempt
+exit: 0
+lines: 1
+sha256: 8135e5d5f90ce5b98b41e20976aae69b1a4b341aa2adec635e7fcad526278c05
+scenario-manifest-migrate-selftest: SKIP (jsonschema not installed)
+# BUG-061 T8 jsonschema-only compatibility attempt
+exit: 1
+lines: 124
+sha256: 35aed29ebad2772cfaa452c28a14ad1816f4404e575b707652f5dcf21b840bbb
+PASS: precreated fallback lock directory with hostile mode refuses
+# BUG-061 T8 scenario-manifest migration behavior preservation with provisioned compatibility tools
+$ bash bubbles/scripts/scenario-manifest-migrate-selftest.sh
+exit: 0
+lines: 117
+sha256: ac0c5d5c923cced5dbf31fdf66e8efc4c757980593720ad207aeaeffc4ba60f2
+PASS: precreated fallback lock directory with hostile mode refuses
+scenario-manifest-migrate-selftest: PASS
+```
+
+The T7 rerun used the existing physical repository runtime directory because
+the authority contract rejects macOS's symlinked default temp path. The final T8
+rerun used the installed `jsonschema` interpreter and GNU `mktemp` compatibility
+path so every assertion executed. No tracked test or runtime file changed for
+either rerun.
+
+**Result:** PASS on the final provisioned execution environment. Research
+admission, usage adapter v2, and scenario-manifest migration behavior remain
+unchanged.
+
+### Full Tracked Shell Gate Classification
+
+**Executed:** YES (current session)
+**Phase:** implement
+**Command:** `bash bubbles/scripts/shellcheck-lint.sh`
+**Exit Code:** 1
+**Output SHA-256:** `bc970170aeb59a6715e92a1c3495f153de0190ab67583fe9819471a4d30d5262`
+**Claim Source:** executed
+
+```text
+/private/tmp/bubbles-ozhiva-transition-unblock-ca550392/bubbles/adapters/dispatch/reference-broker.sh:76:3: warning: argv appears unused. Verify use (or export if used externally). [SC2034]
+/private/tmp/bubbles-ozhiva-transition-unblock-ca550392/bubbles/scripts/release-train-metadata-assign-selftest.sh:11:1: warning: ALIASES_FILE appears unused. Verify use (or export if used externally). [SC2034]
+/private/tmp/bubbles-ozhiva-transition-unblock-ca550392/bubbles/scripts/release-train-metadata-assign-selftest.sh:14:1: warning: OWNERSHIP_FILE appears unused. Verify use (or export if used externally). [SC2034]
+/private/tmp/bubbles-ozhiva-transition-unblock-ca550392/bubbles/scripts/release-train-metadata-assign-selftest.sh:413:3: warning: drift_before appears unused. Verify use (or export if used externally). [SC2034]
+shellcheck-lint: FAIL — 4 finding(s) at -S warning across 605 script(s)
+```
+
+**Interpretation:** The full gate is not a zero-warning pass. Its four findings
+are exactly the one IMP-056 and three BUG-038 warnings excluded by this packet;
+none is in a BUG-061 implementation file.
+
+### Portability GREEN
+
+**Executed:** YES (current session)
+**Phase:** implement
+**Command:** `bash bubbles/scripts/macos-portability-guard.sh bubbles/adapters/research/disabled.sh bubbles/adapters/research/local-command.sh bubbles/adapters/usage/reference-test.sh bubbles/scripts/research-run.sh bubbles/scripts/scenario-manifest-migrate-selftest.sh`
+**Exit Code:** 0
+**Output SHA-256:** `bb7ff668e143da447782c30a36c945f2c447ca41635b703b80811323b492d3ae`
+**Claim Source:** executed
+
+```text
+== macOS portability guard -- scanning 5 file(s) ==
+ok   class-1 raw-timeout: none
+ok   class-2 in-place-sed: none
+ok   class-3 date-d-parse: none
+ok   class-4 stat-c-mtime: none
+ok   class-5 readlink-f-absolutize: none
+ok   class-6 grep-pcre: none
+ok   class-7 bracket-v-isset: none
+ok   class-8 mapfile-readarray: none
+ok   class-9 mktemp-suffix: none
+ok   class-10 df-output: none
+ok   class-11 bin-true-false: none
+ok   class-12 paste-no-stdin-operand: none
+ok   class-13 date-nanoseconds: none
+ok   class-14 mktemp-parent-dir: none
+ok   class-15 mktemp-nontrailing-x: none
+ok   class-16 awk-3arg-match: none
+
+PASS: the scanned surface is WSL+macOS portable.
+```
+
+### Implementation Source Boundary
+
+**Executed:** YES (current session)
+**Phase:** implement
+**Command:** bounded source-path inventory, `git diff --check`, exact construct checks, excluded-owner blob comparison, and full five-file diff
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+SOURCE_BOUNDARY_PATHS_BEGIN
+bubbles/adapters/research/disabled.sh
+bubbles/adapters/research/local-command.sh
+bubbles/adapters/usage/reference-test.sh
+bubbles/scripts/research-run.sh
+bubbles/scripts/scenario-manifest-migrate-selftest.sh
+SOURCE_BOUNDARY_PATHS_END
+EXCLUDED_OWNER_BEFORE_BEGIN
+c13ab195a7e3d67f011c4e327192abdfafa0c0f0 bubbles/adapters/dispatch/reference-broker.sh
+bb30e0bb8fe03e56a2ba82eea87111b1bf615b88 bubbles/scripts/release-train-metadata-assign-selftest.sh
+EXCLUDED_OWNER_BEFORE_END
+EXCLUDED_OWNER_AFTER_BEGIN
+c13ab195a7e3d67f011c4e327192abdfafa0c0f0 bubbles/adapters/dispatch/reference-broker.sh
+bb30e0bb8fe03e56a2ba82eea87111b1bf615b88 bubbles/scripts/release-train-metadata-assign-selftest.sh
+EXCLUDED_OWNER_AFTER_END
+SOURCE_BOUNDARY_CHECK=PASS
+```
+
+**Result:** PASS. The source delta contains only the five planned edits, and
+both excluded ownership blobs are byte-identical.
+
+### Release Manifest
+
+**Executed:** YES (current session)
+**Phase:** implement
+**Commands:** `bash bubbles/scripts/generate-release-manifest.sh`, `bash bubbles/scripts/generate-release-manifest.sh --check`, release-manifest selftest, and purity selftest
+**Exit Codes:** 0, 0, 0, 0
+**Claim Source:** executed
+
+```text
+# BUG-061 regenerate release manifest from validated source bytes
+exit: 0
+lines: 1
+sha256: 9dba3ba137c0c0a6ad997d8dc69483ae6a2ed8fea003e3a934a02bba19728899
+Updated release manifest: 7.29.0 (980 managed files)
+# BUG-061 check regenerated release manifest
+exit: 0
+lines: 1
+sha256: 3107222d9960d0b8e46679a81e1503f39d2f87de4b0abd2998fdd55aad7a221b
+Release manifest is current: 7.29.0 (980 managed files)
+# BUG-061 release manifest focused selftest
+exit: 0
+lines: 42
+sha256: dccd9228ddb8abdbe983c704cf626b56d04b9a9eb9b8fbf0e1937b6058d0eb28
+release-manifest selftest passed.
+# BUG-061 release manifest purity selftest
+exit: 0
+lines: 7
+sha256: 57d8bb32b6247af62d10f1c656311336c3bc00594930600ac580a62f70e2b36d
+release-manifest-purity-selftest: PASS
+```
+
+### Implement Profile Checks
+
+**Executed:** YES (current session)
+**Phase:** implement
+**Commands:** scenario obligation lint, test mechanism lint, scenario test resolution, traceability guard, and implementation reality scan
+**Exit Codes:** 0, 0, 0, 0, 0
+**Claim Source:** executed
+
+```text
+# BUG-061 scenario obligation lint after implementation
+exit: 0
+lines: 1
+sha256: 65e1b9b55671e52df5fed6a395b47468d622b2bb17d21810f7249b8748d81a93
+[scenario-obligation-lint] OK — 5 scenario(s) with a coherent derived obligation matrix
+# BUG-061 test mechanism lint after implementation
+exit: 0
+lines: 2
+sha256: 370b60628b444d257236d9a3e0e601fcf14a74e2f94a1923e0a5475c66555cb3
+[test-mechanism-lint] OK — 5 declared mechanism(s) coherent with their scenario traits
+# BUG-061 scenario test resolution after implementation
+exit: 0
+lines: 1
+sha256: e0daf01726a62f3aef3f58a3620e3700e3fe0fd1ecb3d5bba7c3bd2a7039f5ec
+[scenario-test-resolve] OK — 10 reference(s) resolved via literal-scan
+# BUG-061 delivery traceability after implementation
+exit: 0
+lines: 67
+sha256: bbf305bdf187bae50d20e4c0ad139aa2fb6f2cce26fc44fc15a471a834e4f046
+RESULT: PASSED (0 warnings)
+# BUG-061 implementation reality scan
+exit: 0
+lines: 36
+sha256: 2061bb11dd26ecdf2ca2c0522622100a6202ca8ff6639cb15dea9ce24bb65b77
+Files scanned: 5
+Violations: 0
+Warnings: 0
+```
 
 ## Validation Evidence
 

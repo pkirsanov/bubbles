@@ -100,84 +100,29 @@ changing the canonical inner command.
 
 - [x] The exact five-warning pre-fix subset is reproduced on current bytes. -> Evidence: [Exact five-warning before fix](report.md#exact-five-warning-before-fix) (**Phase:** bug; **Claim Source:** executed)
 - [x] Every warning is mapped one-to-one to an in-scope source construct. -> Evidence: [Source occurrence inventory](report.md#source-occurrence-inventory) (**Phase:** bug; **Claim Source:** interpreted)
-- [ ] SCN-B061-001 passes with explicit empty `CDPATH` and unchanged disabled-adapter behavior.
-  > **Uncertainty Declaration**
-  > **What was attempted:** Pre-fix ShellCheck reproduction only.
-  > **What was observed:** `disabled.sh:4:21` emits SC1007.
-  > **Why this is uncertain:** No source repair or post-change adapter check belongs to packet filing.
-  > **What would resolve this:** Apply the bounded source repair, run T1 and T6, and record both exits.
-- [ ] SCN-B061-002 passes with explicit empty `CDPATH` and unchanged local-command behavior.
-  > **Uncertainty Declaration**
-  > **What was attempted:** Pre-fix ShellCheck reproduction only.
-  > **What was observed:** `local-command.sh:4:21` emits SC1007.
-  > **Why this is uncertain:** No source repair or post-change adapter check belongs to packet filing.
-  > **What would resolve this:** Apply the bounded source repair, run T2 and T6, and record both exits.
-- [ ] SCN-B061-003 passes with no unread `EMPTY_DIGEST` assignment and unchanged usage behavior.
-  > **Uncertainty Declaration**
-  > **What was attempted:** Source inspection plus pre-fix ShellCheck reproduction.
-  > **What was observed:** `reference-test.sh:14:1` emits SC2034.
-  > **Why this is uncertain:** The assignment has not been removed and usage behavior has not been re-executed.
-  > **What would resolve this:** Apply the bounded removal, then run T3 and T7.
-- [ ] SCN-B061-004 passes with explicit empty `CDPATH` and unchanged research dispatch.
-  > **Uncertainty Declaration**
-  > **What was attempted:** Pre-fix ShellCheck reproduction only.
-  > **What was observed:** `research-run.sh:4:21` emits SC1007.
-  > **Why this is uncertain:** No source repair or post-change runtime check belongs to packet filing.
-  > **What would resolve this:** Apply the bounded source repair, run T4 and T6, and record both exits.
-- [ ] SCN-B061-005 passes with explicit empty `XDG_RUNTIME_DIR` and unchanged fallback assertion.
-  > **Uncertainty Declaration**
-  > **What was attempted:** Pre-fix ShellCheck reproduction only.
-  > **What was observed:** `scenario-manifest-migrate-selftest.sh:619:45` emits SC1007.
-  > **Why this is uncertain:** No source repair or post-change migration selftest belongs to packet filing.
-  > **What would resolve this:** Apply the bounded source repair, then run T5 and T8.
-- [ ] No inline disable, allowlist, severity downgrade, or bypass hides any finding.
-  > **Uncertainty Declaration**
-  > **What was attempted:** The design rejects each suppression path.
-  > **What was observed:** Production bytes are unchanged during filing.
-  > **Why this is uncertain:** The implementation diff does not exist yet.
-  > **What would resolve this:** Scan the final five-file diff and run the canonical warning gate.
-- [ ] The combined five-file command exits zero with no findings.
-  > **Uncertainty Declaration**
-  > **What was attempted:** The same command ran before source changes.
-  > **What was observed:** It exited 1 with exactly five findings.
-  > **Why this is uncertain:** No post-change command has run.
-  > **What would resolve this:** Re-run the exact command after all five repairs.
-- [ ] Affected behavior-preservation selftests pass.
-  > **Uncertainty Declaration**
-  > **What was attempted:** No behavior suite was run because filing cannot implement or validate source fixes.
-  > **What was observed:** No behavior result is claimed.
-  > **Why this is uncertain:** Static warning removal alone cannot prove command behavior.
-  > **What would resolve this:** Run T6, T7, and T8 after the source delta.
+- [x] SCN-B061-001 passes with explicit empty `CDPATH` and unchanged disabled-adapter behavior. -> Evidence: [Focused ShellCheck GREEN](report.md#focused-shellcheck-green) and [Behavior Preservation](report.md#behavior-preservation) (**Phase:** implement; **Claim Source:** executed)
+- [x] SCN-B061-002 passes with explicit empty `CDPATH` and unchanged local-command behavior. -> Evidence: [Focused ShellCheck GREEN](report.md#focused-shellcheck-green) and [Behavior Preservation](report.md#behavior-preservation) (**Phase:** implement; **Claim Source:** executed)
+- [x] SCN-B061-003 passes with no unread `EMPTY_DIGEST` assignment and unchanged usage behavior. -> Evidence: [Focused ShellCheck GREEN](report.md#focused-shellcheck-green) and [Behavior Preservation](report.md#behavior-preservation) (**Phase:** implement; **Claim Source:** executed)
+- [x] SCN-B061-004 passes with explicit empty `CDPATH` and unchanged research dispatch. -> Evidence: [Focused ShellCheck GREEN](report.md#focused-shellcheck-green) and [Behavior Preservation](report.md#behavior-preservation) (**Phase:** implement; **Claim Source:** executed)
+- [x] SCN-B061-005 passes with explicit empty `XDG_RUNTIME_DIR` and unchanged fallback assertion. -> Evidence: [Focused ShellCheck GREEN](report.md#focused-shellcheck-green) and [Behavior Preservation](report.md#behavior-preservation) (**Phase:** implement; **Claim Source:** executed)
+- [x] No inline disable, allowlist, severity downgrade, or bypass hides any finding. -> Evidence: [Implementation Source Boundary](report.md#implementation-source-boundary) (**Phase:** implement; **Claim Source:** executed)
+- [x] The combined five-file command exits zero with no findings. -> Evidence: [Focused ShellCheck GREEN](report.md#focused-shellcheck-green) (**Phase:** implement; **Claim Source:** executed)
+- [x] Affected behavior-preservation selftests pass. -> Evidence: [Behavior Preservation](report.md#behavior-preservation) (**Phase:** implement; **Claim Source:** executed)
 - [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior
   > **Uncertainty Declaration**
-  > **What was attempted:** Five scenario contracts and focused commands were authored.
-  > **What was observed:** Only the pre-fix combined command has executed.
-  > **Why this is uncertain:** GREEN scenario evidence does not exist.
-  > **What would resolve this:** Execute T1 through T10 after implementation.
+  > **What was attempted:** T1 through T10 executed sequentially after the source repair.
+  > **What was observed:** T1-T8 and T10 passed on the final provisioned environment. T9 exited 1 with exactly the four foreign-owned SC2034 warnings.
+  > **Why this is uncertain:** The aggregate repository gate is nonzero, and independent test-owner replay has not run.
+  > **What would resolve this:** `bubbles.test` independently replays the packet matrix and classifies the four excluded warnings without weakening the gate.
 - [ ] Broader E2E regression suite passes
   > **Uncertainty Declaration**
-  > **What was attempted:** The broader framework command was deliberately not run by this filing owner.
-  > **What was observed:** No broad-suite result is claimed.
-  > **Why this is uncertain:** T11 belongs to the test and validation phases.
-  > **What would resolve this:** Run T11 after focused GREEN evidence exists.
-- [ ] GNU/Linux and macOS portability checks pass for all changed shell surfaces.
-  > **Uncertainty Declaration**
-  > **What was attempted:** Cross-platform syntax constraints were recorded in design.md.
-  > **What was observed:** No source delta exists to validate.
-  > **Why this is uncertain:** Portability must be checked on final bytes.
-  > **What would resolve this:** Run T10 and shell syntax checks after implementation.
-- [ ] Change Boundary is respected and both excluded ownership groups remain byte-unchanged.
-  > **Uncertainty Declaration**
-  > **What was attempted:** The exact allowed and excluded paths were recorded.
-  > **What was observed:** Filing changes only packet and registry paths.
-  > **Why this is uncertain:** The later source diff has not been produced.
-  > **What would resolve this:** Classify every final changed path and compare excluded file digests.
-- [ ] Release manifest is regenerated from validated source bytes.
-  > **Uncertainty Declaration**
-  > **What was attempted:** No manifest generation is warranted before source changes.
-  > **What was observed:** The manifest remains untouched by filing.
-  > **Why this is uncertain:** Generated inventory must reflect the eventual source delta.
-  > **What would resolve this:** Regenerate and check the manifest after focused validation.
+  > **What was attempted:** T11 was deliberately not run under this implement-phase assignment.
+  > **What was observed:** No `framework-validate` result is claimed.
+  > **Why this is uncertain:** T11 and independent broader regression belong to `bubbles.test`.
+  > **What would resolve this:** `bubbles.test` runs T11 from the committed source SHA and records its actual result.
+- [x] GNU/Linux and macOS portability checks pass for all changed shell surfaces. -> Evidence: [Portability GREEN](report.md#portability-green) (**Phase:** implement; **Claim Source:** executed)
+- [x] Change Boundary is respected and both excluded ownership groups remain byte-unchanged. -> Evidence: [Implementation Source Boundary](report.md#implementation-source-boundary) (**Phase:** implement; **Claim Source:** executed)
+- [x] Release manifest is regenerated from validated source bytes. -> Evidence: [Release Manifest](report.md#release-manifest) (**Phase:** implement; **Claim Source:** executed)
 - [ ] `bubbles.validate` certifies the packet transition.
   > **Uncertainty Declaration**
   > **What was attempted:** No certification action was requested from the bug filing owner.

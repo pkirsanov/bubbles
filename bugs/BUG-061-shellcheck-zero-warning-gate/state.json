@@ -31,13 +31,14 @@
   "requiresRevalidation": false,
   "execution": {
     "goalContractRef": null,
-    "activeAgent": "bubbles.bug",
+    "activeAgent": "bubbles.implement",
     "currentPhase": "implement",
     "currentScope": 1,
-    "completedPhaseClaims": [],
+    "substate": "implemented",
+    "completedPhaseClaims": ["implement"],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.implement",
-    "nextRequiredAction": "Apply only the five planned source repairs, capture focused GREEN and behavior-preservation evidence, preserve both excluded ownership groups, and route independent verification to bubbles.test.",
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Independently replay BUG-061 T1-T10 from the committed source SHA, retain and classify the four excluded-owner T9 warnings, and run T11 framework-validate without weakening the gate.",
     "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
   },
   "certification": {
@@ -59,11 +60,26 @@
   },
   "transitionRequests": [],
   "reworkQueue": [],
-  "executionHistory": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-restore-tracked-shell-zero-warning-contract",
+      "phasesExecuted": ["implement"],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-03T05:32:23Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-061-shellcheck-zero-warning-gate/report.md#focused-shellcheck-green",
+      "addressedFindings": ["F-B061-001", "F-B061-002", "F-B061-003", "F-B061-004", "F-B061-005"],
+      "unresolvedFindings": []
+    }
+  ],
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
+  "lastUpdatedAt": "2026-09-03T05:32:23Z",
   "scopeLayout": "single-file",
   "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
-  "notes": "BUG-061 is reproduced and fully planned. No source or test repair has run. Status and certification remain in_progress, and implementation ownership is the next route."
+  "notes": "Implementation repaired the five assigned warnings and recorded T1-T10 evidence. T9 remains nonzero only for the four excluded-owner warnings. Independent test, T11, and certification remain unclaimed."
 }

@@ -616,7 +616,7 @@ echo "PASS: symlink advisory lock directory refuses"
 mkdir -m 700 "$WORK/hostile-temp"
 mkdir -m 0770 "$WORK/hostile-temp/bubbles-scenario-manifest-migrate-$(id -u)"
 set +e
-TMPDIR="$WORK/hostile-temp" XDG_RUNTIME_DIR= python3 "$MIGRATOR" --check "$WORK/v1.json"
+TMPDIR="$WORK/hostile-temp" XDG_RUNTIME_DIR='' python3 "$MIGRATOR" --check "$WORK/v1.json"
 hostile_directory_rc=$?
 set -e
 [[ "$hostile_directory_rc" -eq 2 ]] || { echo "FAIL: group-accessible fallback lock directory must refuse"; exit 1; }
