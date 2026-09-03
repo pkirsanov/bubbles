@@ -4099,6 +4099,9 @@ echo ""
 #        <!-- bubbles:g040-skip-end --> HTML-comment markers is excluded
 #        from the scan, letting governance docs / post-mortems quote
 #        follow-up narrative inline without flipping spec status.
+#   (iv) The literal label token `Exposure-Deferred:` — mandated in scope
+#        bodies by vertical-delivery-plan-guard.sh — is stripped from each
+#        scope line before the scan. The reason written after it remains.
 # =============================================================================
 echo "--- Check 18: Deferral Language Scan (Gate G040) ---"
 
@@ -4157,7 +4160,10 @@ else
     /^```/ || /^    ```/ { in_block = !in_block; next }
     /<!-- bubbles:g040-skip-begin -->/ { skip = 1; next }
     /<!-- bubbles:g040-skip-end -->/ { skip = 0; next }
-    !in_block && !skip { print }
+    !in_block && !skip {
+      gsub(/(-[[:space:]]*)?[*]*[Ee][Xx][Pp][Oo][Ss][Uu][Rr][Ee]-[Dd][Ee][Ff][Ee][Rr][Rr][Ee][Dd][[:space:]]*:[*]*/, " ")
+      print
+    }
   '
 
   for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
