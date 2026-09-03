@@ -2043,3 +2043,63 @@ remained unused.
 first-probe failure. It did not run post-deletion artifact checks and did not
 route BUG-054 to `bubbles.test` because the old-path absence precondition did
 not pass.
+
+## Clean Continuation Identity Adjudication - 2026-09-02
+
+### Clean Checkpoint Identity Evidence
+
+**Phase:** bug
+**Command:** bounded process-local Zsh exact-set and canonical-ID assertion in
+`/private/tmp/bubbles-bug054-session-scope-r2`
+**Exit Code:** 0
+**Claim Source:** executed
+
+```text
+BUG054_CLEAN_CHECKPOINT_IDENTITY_BEGIN
+HEAD=851881e7b945c20d865b2894c60fde385851756c
+OLD_PATH=absent
+ARTIFACT_ROOT=bugs/BUG-054-session-cap-cross-session-attribution ENTRY_COUNT=9
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=bug.md type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=design.md type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=report.md type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=scenario-manifest.json type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=scopes.md type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=spec.md type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=state.json type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=test-plan.json type=regular
+ARTIFACT root=bugs/BUG-054-session-cap-cross-session-attribution file=uservalidation.md type=regular
+ARTIFACT_ROOT=bugs/_superseded-draft-037-session-cap-cross-session-attribution ENTRY_COUNT=9
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=bug.md type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=design.md type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=report.md type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=scenario-manifest.json type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=scopes.md type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=spec.md type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=state.json type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=test-plan.json type=regular
+ARTIFACT root=bugs/_superseded-draft-037-session-cap-cross-session-attribution file=uservalidation.md type=regular
+CANONICAL_DIRECTORY=bugs/BUG-032-planning-maturity-guard-false-positives ID=BUG-032
+CANONICAL_DIRECTORY=bugs/BUG-033-receipt-target-grouping-and-wrapper-normalization ID=BUG-033
+CANONICAL_DIRECTORY=bugs/BUG-035-validation-control-plane-churn-and-scope-overreach ID=BUG-035
+CANONICAL_DIRECTORY=bugs/BUG-036-completed-scopes-count-format-sensitive ID=BUG-036
+CANONICAL_DIRECTORY=bugs/BUG-054-session-cap-cross-session-attribution ID=BUG-054
+DUPLICATE_CANONICAL_ID_COUNT=0
+IDENTITY_FAILURES=0
+BUG054_CLEAN_CHECKPOINT_IDENTITY_END
+```
+
+### ID-DELETE-001 Disposition And Route
+
+The clean checkpoint candidate satisfies the required physical old-path
+absence. It preserves the nine-file superseded archive outside the canonical
+namespace. `ID-DELETE-001` is closed as an identity-routing blocker.
+
+The earlier dirty-worktree probes remain valid historical evidence. Their
+pre-adjudication receipt labels and failed deletion results remain unchanged.
+This adjudication supersedes only their blocked routing conclusion for this
+clean checkpoint candidate.
+
+No Scope 4 test command ran during this adjudication. Scope 4 remains
+unverified. The next required owner is `bubbles.test`, which must run only
+`TP-04-02` in isolation. Scope 5 remains unstarted. Release metadata and
+certification remain unchanged.

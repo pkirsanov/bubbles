@@ -29,20 +29,20 @@ underscore prefix keeps it outside the canonical `bugs/BUG-*` namespace. This
 copy is a superseded draft archive. It is not a canonical bug or delivery
 evidence.
 
-A prior reconciliation recorded `ID-DELETE-001` as closed by candidate
-exclusion after three IDE deletion attempts left every original entry
-unchanged. The inherited `bubbles-close-bug-054` goal node requires physical
-old-path absence, so candidate exclusion does not satisfy this invocation.
+The report preserves the dirty-worktree reconciliation and failed IDE deletion
+probes as historical evidence. Those probes correctly describe their prior
+worktree. They do not describe this clean checkpoint candidate.
 
-The current retry revalidated all nine original/archive pairs, then used only
-the permitted IDE patch surface. That surface again reported deletion without
-unlinking the original files. A one-file acquisition probe was restored, and
-all nine pairs returned to byte-identical state.
+A current-session bounded assertion on committed checkpoint
+`851881e7b945c20d865b2894c60fde385851756c` found the old path physically
+absent. The assertion also confirmed both retained packets contain exactly the
+nine required regular files. Exactly one direct canonical `BUG-054` directory
+exists, and the canonical bug IDs are unique.
 
-`ID-DELETE-001` therefore remains open. The original directory remains
-untracked local residue, the superseded archive remains unchanged, and routing
-must stay with `bubbles.bug` until an IDE file surface proves physical
-old-path absence. Only then may the packet return to `bubbles.test`.
+`ID-DELETE-001` is closed for identity adjudication. The superseded archive
+remains preserved outside the canonical namespace. This closure does not
+verify Scope 4. Route Scope 4 to `bubbles.test` for isolated `TP-04-02`
+execution. Scope 5 remains unstarted, and certification remains unchanged.
 
 ## Packet Route
 

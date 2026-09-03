@@ -58,9 +58,9 @@
     "completedAt": "2026-09-02T14:43:48Z",
     "completedPhaseClaims": ["implement"],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.bug",
-    "nextRequiredAction": "ID-DELETE-001 is blocked. The required exact IDE Delete File probe reported success, but the immediate check found the original bug.md path still present. Do not retry or target the remaining eight files in this invocation. Routing to bubbles.test remains withheld.",
-    "currentEvidenceRef": "bugs/BUG-054-session-cap-cross-session-attribution/report.md#goal-node-exact-single-file-deletion-probe---2026-09-02",
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Run only Scope 4 TP-04-02 in isolation on the clean checkpoint candidate. Do not infer Scope 4 verification from implementation receipts. Scope 5 remains unstarted.",
+    "currentEvidenceRef": "bugs/BUG-054-session-cap-cross-session-attribution/report.md#clean-continuation-identity-adjudication---2026-09-02",
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
@@ -267,5 +267,5 @@
     "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
     "bugDoneRequires": "All eight scenarios pass adversarial regressions, all cap values and history are preserved, framework validation and release readiness pass, human acceptance is recorded, and bubbles.validate certifies promotion."
   },
-  "notes": "PLAN-B054-001 is reconciled. Production source, tests, certification fields, delivery DoD, and human acceptance remain unchanged by this bug-owned identity retry. ID-DELETE-001 created a byte-identical nine-file archive at bugs/_superseded-draft-037-session-cap-cross-session-attribution. The archive is not a canonical bug and not delivery evidence. The inherited goal node requires physical old-path absence. On 2026-09-02, the required exact bug.md-only IDE deletion probe reported success, but its immediate path check found the original file still present. The invocation stopped without retrying or targeting the remaining eight originals. ID-DELETE-001 remains open, and routing stays with bubbles.bug."
+  "notes": "PLAN-B054-001 is reconciled. Production source, tests, certification fields, delivery DoD, and human acceptance remain unchanged by this bug-owned identity adjudication. ID-DELETE-001 created a byte-identical nine-file archive at bugs/_superseded-draft-037-session-cap-cross-session-attribution. The archive is not a canonical bug and not delivery evidence. The inherited goal node requires physical old-path absence. The clean continuation checkpoint at 851881e7b945c20d865b2894c60fde385851756c satisfies that condition. The old path is absent, both retained packets contain exactly nine required files, one canonical BUG-054 directory exists, and no canonical bug ID is duplicated. ID-DELETE-001 is closed. No Scope 4 test ran during adjudication. Routing passes to bubbles.test for isolated TP-04-02 execution. Scope 5 remains unstarted, and certification remains unchanged."
 }
