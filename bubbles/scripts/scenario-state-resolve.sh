@@ -289,16 +289,48 @@ def binding_ok(entry, binding):
     if not ok:
         return False
     if source_revision and binding['sourceRevision'] != source_revision:
+        if binding['phase'] == 'red':
+            return True
         refuse('SCS-REVISION-DRIFT', sid,
                'receipt cites source revision %s but the resolved revision is %s'
                % (binding['sourceRevision'][:12], source_revision[:12]))
         return False
     return True
 
-by_scenario = {}
-bound_receipts = []
+candidate_receipts = []
 for entry, binding in receipts:
     if not binding_ok(entry, binding):
+        continue
+    candidate_receipts.append((entry, binding))
+
+def has_current_matching_implement(red_entry, red_binding):
+    red_ts = red_entry.get('ts') or ''
+    for entry, binding in candidate_receipts:
+        if binding.get('phase') != 'implement' or entry.get('exitCode') != 0:
+            continue
+        if source_revision and binding.get('sourceRevision') != source_revision:
+            continue
+        if binding.get('scenarioId') != red_binding.get('scenarioId'):
+            continue
+        if binding.get('testIdentity') != red_binding.get('testIdentity'):
+            continue
+        if binding.get('negativeControl') != red_binding.get('negativeControl'):
+            continue
+        if (entry.get('ts') or '') <= red_ts:
+            continue
+        return True
+    return False
+
+by_scenario = {}
+bound_receipts = []
+for entry, binding in candidate_receipts:
+    if (source_revision
+            and binding.get('phase') == 'red'
+            and binding.get('sourceRevision') != source_revision
+            and not has_current_matching_implement(entry, binding)):
+        refuse('SCS-REVISION-DRIFT', binding['scenarioId'],
+               'receipt cites source revision %s but the resolved revision is %s'
+               % (binding['sourceRevision'][:12], source_revision[:12]))
         continue
     bound_receipts.append((entry, binding))
     by_scenario.setdefault(binding['scenarioId'], []).append((entry, binding))

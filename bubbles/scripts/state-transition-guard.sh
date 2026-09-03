@@ -577,6 +577,7 @@ detect_scope_layout() {
 }
 
 combined_scopes_tmp=""
+c43_admitted_tmp_dir=""
 scope_section_tmp_files=()
 
 build_scope_analysis_units() {
@@ -636,6 +637,10 @@ scope_analysis_label() {
 cleanup_tmp_artifacts() {
   if [[ -n "$combined_scopes_tmp" ]] && [[ -f "$combined_scopes_tmp" ]]; then
     rm -f "$combined_scopes_tmp"
+  fi
+
+  if [[ -n "$c43_admitted_tmp_dir" ]] && [[ -d "$c43_admitted_tmp_dir" ]]; then
+    rm -rf "$c43_admitted_tmp_dir"
   fi
 
   if [[ ${#scope_section_tmp_files[@]} -gt 0 ]]; then
@@ -4775,28 +4780,45 @@ echo "--- Check 43: Evidence Receipt Staleness (IMP-027 SCOPE-3) ---"
 c43_repo_root="$(cd "$feature_dir" && git rev-parse --show-toplevel 2>/dev/null || pwd)"
 c43_log="$c43_repo_root/.specify/runtime/tool-calls.jsonl"
 c43_checker="$SCRIPT_DIR/evidence-receipt-check.sh"
+c43_bridge="$SCRIPT_DIR/evidence-tool-log-bridge.sh"
 if [[ ! -f "$c43_log" ]]; then
   info "No tool-call receipt log at .specify/runtime/tool-calls.jsonl; receipt staleness not applicable (markdown evidence rail)"
 elif [[ ! -x "$c43_checker" && ! -f "$c43_checker" ]]; then
   info "evidence-receipt-check.sh not present; skipping receipt staleness"
+elif [[ ! -x "$c43_bridge" && ! -f "$c43_bridge" ]]; then
+  fail "Evidence receipt admission bridge is unavailable; Check 43 cannot resolve the transition-local evidence set"
 else
-  c43_out=""
-  c43_rc=0
-  c43_out="$(bash "$c43_checker" --log "$c43_log" --repo-root "$c43_repo_root" --strict 2>&1)" || c43_rc=$?
-  case "$c43_rc" in
-    0)
-      pass "Evidence receipts consulted; no stale receipt backs this transition"
-      ;;
-    1)
-      fail "Evidence receipt(s) are STALE — an input file changed after the evidence was captured, so the recorded result no longer describes the current tree. Re-run the affected command(s) to refresh the receipt. Detail: $(printf '%s' "$c43_out" | tr '\n' ' ' | head -c 400)"
-      ;;
-    *)
-      info "evidence-receipt-check.sh could not produce a report (exit $c43_rc); receipt staleness not evaluated this run"
-      ;;
-  esac
+  c43_admitted_tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-check43-admitted.XXXXXX" 2>/dev/null || true)"
+  if [[ -z "$c43_admitted_tmp_dir" ]]; then
+    fail "Evidence receipt admission could not create a secure temporary projection directory"
+  else
+    c43_admitted_log="$c43_admitted_tmp_dir/admitted.jsonl"
+    c43_projection_err="$c43_admitted_tmp_dir/admission.err"
+    c43_projection_rc=0
+    bash "$c43_bridge" "$feature_dir" --log "$c43_log" --format=admitted-jsonl \
+      > "$c43_admitted_log" 2> "$c43_projection_err" || c43_projection_rc=$?
+    if [[ "$c43_projection_rc" -ne 0 ]]; then
+      c43_projection_detail=""
+      IFS= read -r c43_projection_detail < "$c43_projection_err" || true
+      fail "Evidence receipt admission failed (exit $c43_projection_rc); Check 43 cannot adjudicate an unresolved transition-local set. Detail: ${c43_projection_detail:-no diagnostic}"
+    else
+      c43_out=""
+      c43_rc=0
+      c43_out="$(bash "$c43_checker" --log "$c43_admitted_log" --repo-root "$c43_repo_root" --strict 2>&1)" || c43_rc=$?
+      case "$c43_rc" in
+        0)
+          pass "Evidence receipts consulted; no stale receipt backs this transition"
+          ;;
+        1)
+          fail "Evidence receipt(s) are STALE — an input file changed after the evidence was captured, so the recorded result no longer describes the current tree. Re-run the affected command(s) to refresh the receipt. Detail: $(printf '%s' "$c43_out" | tr '\n' ' ' | head -c 400)"
+          ;;
+        *)
+          info "evidence-receipt-check.sh could not produce a report (exit $c43_rc); receipt staleness not evaluated this run"
+          ;;
+      esac
 
-  # IMP-027 SCOPE-8 (EV-3): clone detection by receipt hash plus execution
-  # identity, not text similarity alone.
+      # IMP-027 SCOPE-8 (EV-3): clone detection by receipt hash plus execution
+      # identity, not text similarity alone.
   #
   # Check 20 (G021) answers "is this evidence a copy of that evidence?" with an
   # 80%-similarity score over prose. That is a proxy: legitimately similar
@@ -4811,7 +4833,7 @@ else
   # agree while target/input closure and execution provenance are all present
   # and distinct. A substantive collision across incompatible command families
   # or categories still identifies one result backing unrelated claims.
-  if command -v jq >/dev/null 2>&1; then
+      if command -v jq >/dev/null 2>&1; then
     # An EMPTY stdout is excluded, and that exclusion is what makes the rule
     # correct rather than merely narrow. Every command that writes nothing to
     # stdout hashes to e3b0c442… — the SHA-256 of the empty string — so a
@@ -4859,7 +4881,7 @@ else
     # case that is now the only reachable one; it just cannot, alone, allege
     # forgery when command identity is single.
     c43_empty_stdout_sha256="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-    c43_analysis="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
+      c43_analysis="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
       # BUG-033 facet 2: unwrap every TRANSPARENT prefix, not just a bare
       # leading `bash`/`sh`. A shell invoked with `-c`, an `env` prefix, and
       # leading `VAR=value` assignments do not change WHICH program ran, so
@@ -5002,18 +5024,20 @@ else
             and (deterministic_siblings | not)
           )) | map({hash: .[0].stdoutHash, identities: map(identity_detail)}))
         }
-    ' "$c43_log" 2>/dev/null || true)"
-    c43_sibling_count="$(printf '%s' "$c43_analysis" | jq -r '.siblings | length' 2>/dev/null || echo 0)"
-    c43_clones="$(printf '%s' "$c43_analysis" | jq -r '
+        ' "$c43_admitted_log" 2>/dev/null || true)"
+        c43_sibling_count="$(printf '%s' "$c43_analysis" | jq -r '.siblings | length' 2>/dev/null || echo 0)"
+        c43_clones="$(printf '%s' "$c43_analysis" | jq -r '
       .clones[]?
       | "\(.hash[0:12])… reused across incompatible or unproven identities: \(.identities | join(" AND "))"
-    ' 2>/dev/null || true)"
-    if [[ -n "$c43_clones" ]]; then
-      fail "Evidence receipt CLONE — one substantive stdout is cited across incompatible command/category identities or receipts that cannot prove independent target/execution provenance: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 800)"
-    elif [[ "$c43_sibling_count" -gt 0 ]]; then
-      pass "No receipt clones ($c43_sibling_count deterministic sibling hash collision(s) accepted by compatible family/category/exit plus distinct target and execution provenance)"
-    else
-      pass "No receipt clones (no substantive stdout hash shared across incompatible or unproven receipt identities)"
+        ' 2>/dev/null || true)"
+        if [[ -n "$c43_clones" ]]; then
+          fail "Evidence receipt CLONE — one substantive stdout is cited across incompatible command/category identities or receipts that cannot prove independent target/execution provenance: $(printf '%s' "$c43_clones" | tr '\n' ';' | head -c 800)"
+        elif [[ "$c43_sibling_count" -gt 0 ]]; then
+          pass "No receipt clones ($c43_sibling_count deterministic sibling hash collision(s) accepted by compatible family/category/exit plus distinct target and execution provenance)"
+        else
+          pass "No receipt clones (no substantive stdout hash shared across incompatible or unproven receipt identities)"
+        fi
+      fi
     fi
   fi
 fi

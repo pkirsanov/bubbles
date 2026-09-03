@@ -278,6 +278,44 @@ else
   printf '  output: %s\n' "$d2_out"
 fi
 
+# BUG-050 SCN-B050-005: RED is historical ordering proof. It may cite the
+# pre-implementation source revision, while implement and GREEN remain bound to
+# the current candidate. The old RED cannot itself buy GREEN.
+historical_red_log="$TMP_DIR/bug050-historical-red-current-green.jsonl"
+receipt red 1 "2026-09-02T08:30:00Z" "SCN-999-001" \
+  "tests/e2e/checkout.spec.ts::coupon recomputes total" \
+  "drop the coupon multiplier; the asserted total stops changing" "$OTHER_REV" > "$historical_red_log"
+receipt implement 0 "2026-09-02T08:31:00Z" >> "$historical_red_log"
+receipt green 0 "2026-09-02T08:32:00Z" >> "$historical_red_log"
+historical_red_out="$(resolve "$life_dir" "$historical_red_log")"
+historical_red_rc=$?
+historical_red_states="$(json_get "$historical_red_out" '.scenarios[0].derivedStates | join(" ")')"
+if [[ "$historical_red_rc" -eq 0 && "$historical_red_states" == "PLANNED RED_VERIFIED IMPLEMENTED GREEN_TARGETED" ]]; then
+  pass "SCN-B050-005 historical RED plus current implement/GREEN derives the ordered proof chain"
+else
+  fail "SCN-B050-005 expected historical RED and current GREEN (exit $historical_red_rc states=[$historical_red_states])"
+  printf '  output: %s\n' "$historical_red_out"
+fi
+
+stale_green_log="$TMP_DIR/bug050-historical-red-stale-green.jsonl"
+receipt red 1 "2026-09-02T08:40:00Z" "SCN-999-001" \
+  "tests/e2e/checkout.spec.ts::coupon recomputes total" \
+  "drop the coupon multiplier; the asserted total stops changing" "$OTHER_REV" > "$stale_green_log"
+receipt implement 0 "2026-09-02T08:41:00Z" >> "$stale_green_log"
+receipt green 0 "2026-09-02T08:42:00Z" "SCN-999-001" \
+  "tests/e2e/checkout.spec.ts::coupon recomputes total" \
+  "drop the coupon multiplier; the asserted total stops changing" "$OTHER_REV" >> "$stale_green_log"
+stale_green_out="$(resolve "$life_dir" "$stale_green_log")"
+stale_green_rc=$?
+stale_green_states="$(json_get "$stale_green_out" '.scenarios[0].derivedStates | join(" ")')"
+if [[ "$stale_green_rc" -eq 0 && "$stale_green_states" == "PLANNED RED_VERIFIED IMPLEMENTED" ]] &&
+  [[ "$(json_get "$stale_green_out" '[.refusals[] | select(.code == "SCS-REVISION-DRIFT")] | length')" -eq 1 ]]; then
+  pass "SCN-B050-005 stale post-fix GREEN stays excluded while historical RED remains valid"
+else
+  fail "SCN-B050-005 stale GREEN was admitted or historical RED was lost (exit $stale_green_rc states=[$stale_green_states])"
+  printf '  output: %s\n' "$stale_green_out"
+fi
+
 # A genuine refusal alongside drift must still block, so the exemption is scoped
 # to SCS-REVISION-DRIFT and did not neutralise the other codes.
 d3_log="$TMP_DIR/drift-plus-blocking.jsonl"

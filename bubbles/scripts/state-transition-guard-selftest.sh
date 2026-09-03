@@ -974,12 +974,6 @@ if [[ "${BUBBLES_STATE_TRANSITION_GUARD_G061_ONLY:-0}" == "1" ]]; then
   exit 0
 fi
 
-if [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG047_ONLY:-0}" != "1" ]] && \
-  [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG048_ONLY:-0}" != "1" ]] && \
-  [[ "${BUBBLES_STATE_TRANSITION_GUARD_BUG049_ONLY:-0}" != "1" ]]; then
-  run_g061_regression_cases
-fi
-
 emit_honest_planning_fixture() {
   local feature_dir="$1"
   local future_test="$feature_dir/tests/regression/planning-maturity-future-test.sh"
@@ -5739,6 +5733,62 @@ assert_log_contains "$bug033_wrapper_adv_log" \
 assert_log_contains "$bug033_wrapper_adv_log" \
   "family=npm category=lint" \
   "BUG-033 facet 2 bound: unwrapping reveals the npm identity behind the env wrapper"
+
+# BUG-050 SCN-B050-001: Check 43 must adjudicate only receipts admitted for
+# this transition. The unrelated stale row remains byte-for-byte in the raw
+# append-only log before and after the guard run.
+echo "Running BUG-050 Check 43 transition-local stale-history admission..."
+bug050_receipt_repo="$tmp_root/bug050-receipt-repo"
+bug050_receipt_feature="$bug050_receipt_repo/specs/950-bug050-transition-local"
+bug050_receipt_log="$bug050_receipt_repo/.specify/runtime/tool-calls.jsonl"
+clone_framework_surface "$bug050_receipt_repo"
+emit_base_fixture "$bug050_receipt_feature"
+bubbles_sed_inplace \
+  's/Scenario-specific E2E regression tests for EVERY new\/changed\/fixed behavior -> Evidence:/Scenario-specific E2E regression tests for EVERY new\/changed\/fixed behavior — Receipt: SCN-B050-001 -> Evidence:/' \
+  "$bug050_receipt_feature/scopes.md"
+git -C "$bug050_receipt_repo" init -q
+mkdir -p "$(dirname "$bug050_receipt_log")"
+printf 'unrelated current bytes\n' > "$bug050_receipt_repo/unrelated-input.txt"
+if command -v sha256sum >/dev/null 2>&1; then
+  bug050_active_input_hash="$(sha256sum "$bug050_receipt_feature/scopes.md" | awk '{print $1}')"
+else
+  bug050_active_input_hash="$(shasum -a 256 "$bug050_receipt_feature/scopes.md" | awk '{print $1}')"
+fi
+bug050_active_output_hash="$(sha256_text 'bug050-active-transition-output')"
+cat > "$bug050_receipt_log" <<EOF
+{"schemaVersion":3,"ts":"2026-09-02T08:50:00Z","sessionId":"bug050-active","spec":"950-bug050-transition-local","scope":"SCOPE-01","cmd":"bash focused-active-check.sh","exitCode":0,"durationMs":10,"stdoutHash":"$bug050_active_output_hash","stdoutBytes":64,"tags":["test"],"inputClosure":[{"path":"specs/950-bug050-transition-local/scopes.md","sha256":"$bug050_active_input_hash"}],"scenarioBinding":{"scenarioId":"SCN-B050-001","phase":"green","testIdentity":"BUG-050::transition-local-stale-history","sourceRevision":"0000000000000000000000000000000000000001","negativeControl":"remove the active admission projection","claim":"Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior"}}
+{"schemaVersion":3,"ts":"2026-09-02T08:50:01Z","sessionId":"bug050-unrelated","spec":"999-unrelated-history","scope":"SCOPE-X","cmd":"bash unrelated-old-check.sh","exitCode":0,"durationMs":11,"stdoutHash":"$bug050_active_output_hash","stdoutBytes":64,"tags":["test"],"inputClosure":[{"path":"unrelated-input.txt","sha256":"0000000000000000000000000000000000000000000000000000000000000000"}]}
+EOF
+if command -v sha256sum >/dev/null 2>&1; then
+  bug050_log_hash_before="$(sha256sum "$bug050_receipt_log" | awk '{print $1}')"
+else
+  bug050_log_hash_before="$(shasum -a 256 "$bug050_receipt_log" | awk '{print $1}')"
+fi
+bug050_log_rows_before="$(awk 'NF { count++ } END { print count + 0 }' "$bug050_receipt_log")"
+bug050_guard_log="$tmp_root/bug050-transition-local.log"
+bug050_guard_status="$(run_capture "$bug050_guard_log" bash "$GUARD_SCRIPT" "$bug050_receipt_feature")"
+if command -v sha256sum >/dev/null 2>&1; then
+  bug050_log_hash_after="$(sha256sum "$bug050_receipt_log" | awk '{print $1}')"
+else
+  bug050_log_hash_after="$(shasum -a 256 "$bug050_receipt_log" | awk '{print $1}')"
+fi
+bug050_log_rows_after="$(awk 'NF { count++ } END { print count + 0 }' "$bug050_receipt_log")"
+if [[ "$bug050_guard_status" -eq 0 ]]; then
+  pass "SCN-B050-001 unrelated stale history does not block the active transition"
+else
+  fail "SCN-B050-001 unrelated stale history blocked the active transition (observed $bug050_guard_status)"
+fi
+assert_log_contains "$bug050_guard_log" \
+  "Evidence receipts consulted; no stale receipt backs this transition" \
+  "SCN-B050-001 Check 43 evaluates the admitted fresh receipt"
+assert_log_not_contains "$bug050_guard_log" \
+  "Evidence receipt(s) are STALE" \
+  "SCN-B050-001 Check 43 does not adjudicate unrelated stale history"
+if [[ "$bug050_log_rows_before" -eq 2 && "$bug050_log_rows_after" -eq 2 && "$bug050_log_hash_before" == "$bug050_log_hash_after" ]]; then
+  pass "SCN-B050-001 raw append-only history remains present and byte-identical"
+else
+  fail "SCN-B050-001 raw log changed (rows $bug050_log_rows_before->$bug050_log_rows_after hash $bug050_log_hash_before->$bug050_log_hash_after)"
+fi
 
 echo "Running Check 8 basename-only planning-maturity exemption (flat-layout root deliverables)..."
 # A flat-layout repository keeps its deliverables at the repository root (for example

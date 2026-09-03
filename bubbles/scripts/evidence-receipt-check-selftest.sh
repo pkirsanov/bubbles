@@ -156,6 +156,24 @@ else
   fail "T10 expected scope-isolated valid=1 stale=1 (rc=$rc, out=$out)"
 fi
 
+# BUG-050 SCN-B050-002: once the transition has admitted a receipt, strict
+# freshness remains fail-closed. The transition-local projection narrows the
+# input set; it must not weaken this checker's verdict for a stale row inside it.
+admitted_path="$d/admitted.txt"
+printf 'captured input\n' > "$admitted_path"
+admitted_hash="$(sha "$admitted_path")"
+printf 'changed after capture\n' > "$admitted_path"
+admitted_stale_log="$d/admitted-stale.jsonl"
+printf '{"schemaVersion":3,"ts":"2026-09-02T08:00:00Z","sessionId":"bug050-stale","spec":"BUG-050","scope":"SCOPE-01","cmd":"bash focused-admitted-stale.sh","exitCode":0,"inputClosure":[{"path":"admitted.txt","sha256":"%s"}],"scenarioBinding":{"scenarioId":"SCN-B050-002","phase":"green","testIdentity":"BUG-050::admitted-stale","sourceRevision":"0000000000000000000000000000000000000001","negativeControl":"change the admitted input closure","claim":"admitted stale receipt blocks"}}\n' \
+  "$admitted_hash" > "$admitted_stale_log"
+out="$(bash "$CHECK" --log "$admitted_stale_log" --repo-root "$d" --strict)" && rc=0 || rc=$?
+if [[ "$rc" -eq 1 && "$(field "$out" current)" -eq 1 && "$(field "$out" stale)" -eq 1 ]] &&
+  [[ "$(field "$out" 'staleReceipts[0].reason' 2>/dev/null || true)" == "input hash differs: admitted.txt" ]]; then
+  pass "SCN-B050-002 admitted stale receipt remains blocking under strict freshness"
+else
+  fail "SCN-B050-002 expected one named admitted stale receipt (rc=$rc, out=$out)"
+fi
+
 echo
 if [[ "$FAILURES" -gt 0 ]]; then
   echo "evidence-receipt-check-selftest FAILED with $FAILURES issue(s)."
