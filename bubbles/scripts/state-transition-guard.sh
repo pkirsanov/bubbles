@@ -2170,6 +2170,7 @@ _scope_context_consume() {
         record_rest="${record_rest#*$'\t'}"
         record_rest="${record_rest#*$'\t'}"
         record_rest="${record_rest#*$'\t'}"
+        record_rest="${record_rest#*$'\t'}"
         record_bytes="${record_rest%%$'\t'*}"
         record_text="${record_rest#*$'\t'}"
         if [[ ! "$record_line" =~ ^[0-9]+$ || ! "$record_bytes" =~ ^[0-9]+$ ]]; then

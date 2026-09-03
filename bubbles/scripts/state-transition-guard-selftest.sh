@@ -7003,7 +7003,7 @@ EOF
     test-plan)
       cat <<'EOF' >> "$check8b_scn020_dir/scopes.md"
 
-### Fixture Test Plan
+### Test Plan
 
 | Test Type | Description | Expected Result |
 | --- | --- | --- |
@@ -9290,7 +9290,7 @@ EOF
     test-plan)
       cat <<'EOF' >> "$bug032_scn021_dir/scopes.md"
 
-### Fixture Test Plan
+### Test Plan
 
 | Test Type | Description | Expected Result |
 | --- | --- | --- |
@@ -9402,7 +9402,7 @@ if ! bug032_insert_before_exact_line \
 fi
 if ! bug032_insert_before_exact_line \
   "$bug032_scn022_control_dir/scopes.md" \
-  '### Definition of Done' \
+  "| Regression E2E | \`e2e-ui\` | $positive_feature_dir/tests/docs-broader-regression.e2e.spec.ts | Broader regression row required by the guard. | \`selftest:broader-regression\` | Yes |" \
   "| Stress | \`stress\` | $bug032_scn022_control_dir/tests/docs-scenario-regression.e2e.spec.ts | Exercise the active p95 latency budget under pressure. | \`selftest:stress-regression\` | No |"; then
   bug032_scn022_control_setup_failures=$((bug032_scn022_control_setup_failures + 1))
 fi
