@@ -4,7 +4,7 @@ Links: [spec.md](spec.md) | [design.md](design.md) | [report.md](report.md) | [u
 
 ## Scope 1 - Transition-Local Receipt Admission
 
-**Status:** Not Started
+**Status:** In Progress
 **Priority:** P1
 **Depends On:** None
 **Consumer Surface:** Transition guard CLI command `bash bubbles/scripts/state-transition-guard.sh <feature-dir>`
@@ -129,13 +129,19 @@ the projection additive until every consumer uses the same admitted set.
 ### Definition of Done
 
 - [ ] SCN-B050-001 and SCN-B050-003 pre-fix regressions reproduce unrelated-history blocking.
-- [ ] SCN-B050-001 one transition-local admitted evidence projection feeds Check 43.
+- [x] SCN-B050-001 one transition-local admitted evidence projection feeds Check 43. -> Evidence: [Check 43 admitted-view GREEN](report.md#check-43-admitted-view-green)
+  - **Phase:** implement
+  - **Claim Source:** executed
 - [ ] SCN-B050-001 and SCN-B050-003 immutable unrelated history remains present and non-blocking.
 - [ ] SCN-B050-002 actively admitted stale receipts still block with exact detail.
-- [ ] SCN-B050-004 admitted incompatible clones still block with BUG-033 identity detail.
+- [x] SCN-B050-004 admitted incompatible clones still block with BUG-033 identity detail. -> Evidence: [Admitted clone identity GREEN](report.md#admitted-clone-identity-green)
+  - **Phase:** implement
+  - **Claim Source:** executed
 - [ ] SCN-B050-005 historical RED remains valid without satisfying current GREEN proof.
 - [ ] SCN-B050-006 historical killed-mutant proof remains valid and restoration stays strict.
-- [ ] Independent canary suite for shared fixture/bootstrap contracts passes before broad suite reruns
+- [x] Independent canary suite for shared fixture/bootstrap contracts passes before broad suite reruns -> Evidence: [Admission bridge canary](report.md#admission-bridge-canary)
+  - **Phase:** implement
+  - **Claim Source:** executed
 - [ ] Rollback or restore path for shared infrastructure changes is documented and verified
 - [ ] Scenario-specific E2E regression tests for EVERY new/changed/fixed behavior
 - [ ] Broader E2E regression suite passes

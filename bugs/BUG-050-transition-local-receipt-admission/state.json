@@ -40,14 +40,14 @@
   "requiresRevalidation": false,
   "execution": {
     "goalContractRef": null,
-    "activeAgent": "bubbles.plan",
-    "currentPhase": "bootstrap",
+    "activeAgent": "bubbles.implement",
+    "currentPhase": "implement",
     "currentScope": 1,
     "runStartedAt": "2026-09-02T07:39:33Z",
     "completedPhaseClaims": [],
     "pendingTransitionRequests": [],
     "nextRequiredOwner": "bubbles.implement",
-    "nextRequiredAction": "Execute Scope 1 via bubbles.implement. Capture the four planned admission RED fixtures before production changes; preserve BUG-033 wrapper, target, program, and execution provenance, append-only history, historical RED semantics, mutation restoration integrity, and the documented rollback path.",
+    "nextRequiredAction": "Execute SCN-B050-005 scenario-state ordering in isolation. Keep SCN-B050-006 and full T9 unstarted.",
     "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
   },
   "certification": {
@@ -95,7 +95,7 @@
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
-  "lastUpdatedAt": "2026-09-02T07:43:11Z",
+  "lastUpdatedAt": "2026-09-03T02:58:18Z",
   "scopeLayout": "single-file",
   "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
   "notes": "Planner readiness metadata is reconciled. The exact implementation inventory, G057 scenario identifiers, test-plan ownership, change-boundary labels, and transition-guard CLI consumer surface now align with the planning guards. No implementation, RED execution, GREEN result, audit verdict, or certification claim is recorded."
