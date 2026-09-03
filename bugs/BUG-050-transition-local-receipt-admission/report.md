@@ -190,6 +190,36 @@ Commit `511d63efe89fcb20988f3d97a2a2fa0162f3128b` changes only the Check 43
 guard path and its focused receipt selftest. The normal push updated
 `origin/fix/ozhiva-transition-unblock` to the same SHA.
 
+## Uncertainty Declarations
+
+### T1 transition-guard regression
+
+**Executed:** NO completed current-source result recorded
+**Command:** `bash bubbles/scripts/state-transition-guard-selftest.sh`
+**Test File:** `bubbles/scripts/state-transition-guard-selftest.sh`
+**Claim Source:** not-run
+
+The recorded broad attempt exited 124 before BUG-050. The independent T1 run
+has no completed result recorded in this packet.
+
+### T5 ordered scenario-state proof
+
+**Executed:** NO
+**Command:** `bash bubbles/scripts/scenario-state-resolve-selftest.sh`
+**Test File:** `bubbles/scripts/scenario-state-resolve-selftest.sh`
+**Claim Source:** not-run
+
+No completed T5 resolver result is recorded in this packet.
+
+### T6 historical mutation proof
+
+**Executed:** NO
+**Command:** `bash bubbles/scripts/mutation-receipt-selftest.sh`
+**Test File:** `bubbles/scripts/mutation-receipt-selftest.sh`
+**Claim Source:** not-run
+
+No completed T6 mutation result is recorded in this packet.
+
 ## Validation Evidence
 
 **Executed:** NO

@@ -114,25 +114,26 @@ the projection additive until every consumer uses the same admitted set.
 
 ### Test Plan
 
-| ID | Scenario | Test | Type | File/Location | Command | Live System |
-| --- | --- | --- | --- | --- | --- | --- |
-| T1 | SCN-B050-001 | Regression E2E: unrelated stale receipts remain present but inert | functional | `bubbles/scripts/state-transition-guard-selftest.sh` | `bash bubbles/scripts/state-transition-guard-selftest.sh` | No |
-| T2 | SCN-B050-002 | Adversarial actively admitted stale receipt still blocks | functional | `bubbles/scripts/evidence-receipt-check-selftest.sh` | `bash bubbles/scripts/evidence-receipt-check-selftest.sh` | No |
-| T3 | SCN-B050-003 | Unrelated incompatible clone group remains inert | functional | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
-| T4 | SCN-B050-004 | Adversarial admitted incompatible clone preserves BUG-033 refusal | functional | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
-| T5 | SCN-B050-005 | Historical RED plus current GREEN derive the ordered scenario states | functional | `bubbles/scripts/scenario-state-resolve-selftest.sh` | `bash bubbles/scripts/scenario-state-resolve-selftest.sh` | No |
-| T6 | SCN-B050-006 | Historical killed mutant remains valid while failed restoration blocks | functional | `bubbles/scripts/mutation-receipt-selftest.sh` | `bash bubbles/scripts/mutation-receipt-selftest.sh` | No |
-| T7 | Aggregate | Canary: semantic DoD admission selects the same active receipts | functional | `bubbles/scripts/evidence-tool-log-bridge-selftest.sh` | `bash bubbles/scripts/evidence-tool-log-bridge-selftest.sh` | No |
-| T8 | Aggregate | BUG-007, BUG-028, BUG-032, and BUG-033 receipt identity protections remain green | regression | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
-| T9 | Aggregate | Full source framework regression | Regression E2E | `bubbles/scripts/cli.sh` | `bash bubbles/scripts/cli.sh framework-validate` | No |
+| Test ID | Scenario ID | Description | Test Type | Category | File/Location | Command | Live System |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| T1 | SCN-B050-001 | Regression E2E: unrelated stale receipts remain present but inert | functional | regression | `bubbles/scripts/state-transition-guard-selftest.sh` | `bash bubbles/scripts/state-transition-guard-selftest.sh` | No |
+| T2 | SCN-B050-002 | Adversarial actively admitted stale receipt still blocks | functional | adversarial | `bubbles/scripts/evidence-receipt-check-selftest.sh` | `bash bubbles/scripts/evidence-receipt-check-selftest.sh` | No |
+| T3 | SCN-B050-003 | Unrelated incompatible clone group remains inert | functional | regression | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
+| T4 | SCN-B050-004 | Adversarial admitted incompatible clone preserves BUG-033 refusal | functional | adversarial | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
+| T5 | SCN-B050-005 | Historical RED plus current GREEN derive the ordered scenario states | functional | regression | `bubbles/scripts/scenario-state-resolve-selftest.sh` | `bash bubbles/scripts/scenario-state-resolve-selftest.sh` | No |
+| T6 | SCN-B050-006 | Historical killed mutant remains valid while failed restoration blocks | functional | regression | `bubbles/scripts/mutation-receipt-selftest.sh` | `bash bubbles/scripts/mutation-receipt-selftest.sh` | No |
+| T7 | Aggregate | Canary: semantic DoD admission selects the same active receipts | functional | canary | `bubbles/scripts/evidence-tool-log-bridge-selftest.sh` | `bash bubbles/scripts/evidence-tool-log-bridge-selftest.sh` | No |
+| T8 | Aggregate | BUG-007, BUG-028, BUG-032, and BUG-033 receipt identity protections remain green | regression | regression | `bubbles/scripts/receipt-identity-selftest.sh` | `bash bubbles/scripts/receipt-identity-selftest.sh` | No |
+| T9 | Aggregate | Full source framework regression | Regression E2E | regression | `bubbles/scripts/cli.sh` | `bash bubbles/scripts/cli.sh framework-validate` | No |
 
 ### Definition of Done
 
-- [ ] SCN-B050-001 and SCN-B050-003 pre-fix regressions reproduce unrelated-history blocking.
-- [x] SCN-B050-001 one transition-local admitted evidence projection feeds Check 43. -> Evidence: [Check 43 admitted-view GREEN](report.md#check-43-admitted-view-green)
+- [ ] Pre-fix regressions reproduce unrelated-history blocking for the stale-receipt and incompatible-clone discriminators.
+- [x] One transition-local admitted evidence projection feeds Check 43. -> Evidence: [Check 43 admitted-view GREEN](report.md#check-43-admitted-view-green)
   - **Phase:** implement
   - **Claim Source:** executed
-- [ ] SCN-B050-001 and SCN-B050-003 immutable unrelated history remains present and non-blocking.
+- [ ] SCN-B050-001 unrelated stale receipt history remains present and does not block the active transition.
+- [ ] SCN-B050-003 unrelated incompatible clone history remains present and does not block the active transition.
 - [ ] SCN-B050-002 actively admitted stale receipts still block with exact detail.
 - [x] SCN-B050-004 admitted incompatible clones still block with BUG-033 identity detail. -> Evidence: [Admitted clone identity GREEN](report.md#admitted-clone-identity-green)
   - **Phase:** implement
