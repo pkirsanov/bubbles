@@ -1051,9 +1051,9 @@ if [[ -z "$policy_workflow_mode" ]]; then
 elif [[ -z "$state_workflow_mode" ]]; then
   info "Top-level workflowMode missing — skipping consistency check"
 elif [[ "$state_workflow_mode" != "$policy_workflow_mode" ]]; then
-  fail "workflowMode contradiction: top-level='$state_workflow_mode' vs policySnapshot='$policy_workflow_mode' — at least one was fabricated"
+  fail "workflowMode contradiction: top-level='$state_workflow_mode' vs policySnapshot='$policy_workflow_mode' — at least one was fabricated (Gate G074)"
 else
-  pass "workflowMode consistent across top-level and policySnapshot ($state_workflow_mode)"
+  pass "workflowMode consistent across top-level and policySnapshot ($state_workflow_mode) (Gate G074)"
 fi
 echo ""
 
@@ -1291,7 +1291,7 @@ if [[ -x "$framework_ownership_lint_script" || -f "$framework_ownership_lint_scr
   if [[ "$_c3g_rc" -eq 124 ]]; then
     fail "Framework ownership lint TIMED OUT after 30s (BUG-001 guard) — G042/G063 not certified. Inspect $framework_ownership_lint_script for an unbounded walk."
   elif [[ "$_c3g_rc" -eq 0 ]]; then
-    pass "Framework ownership lint passed — artifact ownership enforcement and concrete result contract are internally consistent (${_c3g_elapsed}s)"
+    pass "Framework ownership lint passed — artifact ownership enforcement and concrete result contract are internally consistent (${_c3g_elapsed}s) (G042/G063)"
   else
     fail "Framework ownership lint failed — G042/G063 cannot be certified during state transition"
     while IFS= read -r lint_line; do
@@ -1911,9 +1911,9 @@ for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
   if scope_declares_performance_contract "$scope_path"; then
     sla_scope_count=$((sla_scope_count + 1))
     if grep -Eq '^\|[[:space:]]*Stress[[:space:]]*\|' "$scope_path" || grep -Eiq 'stress' "$scope_path"; then
-      pass "SLA-sensitive scope includes stress coverage: ${scope_path#$feature_dir/}"
+      pass "SLA-sensitive scope includes stress coverage: ${scope_path#$feature_dir/} (Gate G026)"
     else
-      fail "SLA-sensitive scope is missing explicit stress coverage: ${scope_path#$feature_dir/}"
+      fail "SLA-sensitive scope is missing explicit stress coverage: ${scope_path#$feature_dir/} (Gate G026)"
     fi
   fi
 done
@@ -5434,7 +5434,7 @@ fi
 if [[ -x "$SCRIPT_DIR/claim-source-lint.sh" ]]; then
   echo "--- Check 40: Claim-Source provenance (G072) ---"
   if bash "$SCRIPT_DIR/claim-source-lint.sh" "$feature_dir"; then
-    pass "Claim-Source provenance: execution-evidence blocks carry a valid tag (or advisory)"
+    pass "Claim-Source provenance: execution-evidence blocks carry a valid tag (or advisory) (G072)"
   else
     fail "Claim-Source provenance findings under claimSourceProvenanceGuard: block (G072)"
   fi

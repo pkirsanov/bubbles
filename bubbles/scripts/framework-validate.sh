@@ -953,6 +953,17 @@ fi
 if [[ -x "$SCRIPT_DIR/gate-retirement.sh" ]]; then
   run_check_self_only "Gate retirement criteria recorded (IMP-027 SCOPE-11)" bash "$SCRIPT_DIR/gate-retirement.sh" lint
 fi
+# IMP-058 SCOPE-3 / COV-24: a preventionEvidence criterion is only honest if
+# the gate carrying it can actually accumulate the telemetry it depends on.
+# Refuses the exact defect class this scope found and fixed (a gate's own id
+# missing from its pass/fail message text), without requiring every
+# modelCompensation gate to be telemetry-capable today.
+if [[ -x "$SCRIPT_DIR/gate-telemetry-capability-lint-selftest.sh" ]]; then
+  run_check "Gate telemetry capability lint selftest (IMP-058 SCOPE-3)" bash "$SCRIPT_DIR/gate-telemetry-capability-lint-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/gate-telemetry-capability-lint.sh" ]]; then
+  run_check_self_only "Gate telemetry capability (IMP-058 SCOPE-3)" bash "$SCRIPT_DIR/gate-telemetry-capability-lint.sh"
+fi
 # IMP-027 SCOPE-4 / SEC-3: G034 was a businessInvariant gate with no enforcer
 # and no agent reference — its entire enforcement was "appears in a mode's
 # requiredGates list". These give it a mechanical surface.
