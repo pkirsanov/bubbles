@@ -25,6 +25,8 @@ Usage: bash bubbles/scripts/state-snapshot.sh \
          --phase <name> [--scope-id <id>] [--note <string>] [--mode <start|end>] \
          [--posture <autonomy>] \
          [--context-boundary <kind>[:<checkpointId>]] \
+         [--mbe-posture <off|shadow|advisory|reference-enforce> \
+          --mbe-store-root <path> --mbe-epoch-context <path>] \
          [--decision <text> [--decision-principle <name>] [--decision-chose <option>] \
           [--decision-considered <csv>]] \
          [--convergence-iteration <N> --spec-dir <path>] \
@@ -126,6 +128,10 @@ SESSION_CONTROL_FILE=""
 BINDING_PACKET_FILE=""
 SCENARIO_FILE=""
 NODE_ID=""
+MBE_POSTURE="off"
+MBE_STORE_ROOT=""
+MBE_EPOCH_CONTEXT=""
+MBE_EPOCH_JSON=""
 
 if [[ $# -eq 0 ]]; then
   usage >&2
@@ -188,6 +194,21 @@ while [[ $# -gt 0 ]]; do
         echo "state-snapshot: --context-boundary host-checkpoint requires a checkpoint id (host-checkpoint:<id>)" >&2
         exit 2
       fi
+      shift 2
+      ;;
+    --mbe-posture)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --mbe-posture requires a value" >&2; exit 2; }
+      MBE_POSTURE="$2"
+      shift 2
+      ;;
+    --mbe-store-root)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --mbe-store-root requires a value" >&2; exit 2; }
+      MBE_STORE_ROOT="$2"
+      shift 2
+      ;;
+    --mbe-epoch-context)
+      [[ $# -ge 2 ]] || { echo "state-snapshot: --mbe-epoch-context requires a value" >&2; exit 2; }
+      MBE_EPOCH_CONTEXT="$2"
       shift 2
       ;;
     --decision)
@@ -293,6 +314,21 @@ case "$MODE" in
     exit 2
     ;;
 esac
+
+case "$MBE_POSTURE" in
+  off | shadow | advisory | reference-enforce) ;;
+  *) echo "state-snapshot: --mbe-posture must be off, shadow, advisory, or reference-enforce (got: $MBE_POSTURE)" >&2; exit 2 ;;
+esac
+if [[ "$MBE_POSTURE" != "off" && -n "$MBE_STORE_ROOT" && -n "$MBE_EPOCH_CONTEXT" ]]; then
+  MBE_EPOCH_JSON="$(python3 "$SCRIPT_DIR/mbe-reference-verify.py" \
+    --store-root "$MBE_STORE_ROOT" --context "$MBE_EPOCH_CONTEXT" --purpose epoch 2>/dev/null || true)"
+fi
+if [[ "$MBE_POSTURE" == "reference-enforce" ]]; then
+  [[ -n "$CONTEXT_BOUNDARY_KIND" ]] || { echo "state-snapshot: reference-enforce requires --context-boundary" >&2; exit 3; }
+  [[ -n "$MBE_STORE_ROOT" && -d "$MBE_STORE_ROOT" ]] || { echo "state-snapshot: reference-enforce requires an existing --mbe-store-root" >&2; exit 3; }
+  [[ -n "$MBE_EPOCH_CONTEXT" && -f "$MBE_EPOCH_CONTEXT" ]] || { echo "state-snapshot: reference-enforce requires an existing --mbe-epoch-context" >&2; exit 3; }
+  [[ -n "$MBE_EPOCH_JSON" ]] || { echo "state-snapshot: reference-enforce requires a verified MBE epoch" >&2; exit 3; }
+fi
 
 # Record the posture that produced this turn, so an audit never has to
 # reconstruct the operator's shell environment. A resolver failure (e.g. an
@@ -700,6 +736,8 @@ jq \
   --arg posture "$POSTURE" \
   --arg cbKind "$CONTEXT_BOUNDARY_KIND" \
   --arg cbId "$CONTEXT_BOUNDARY_ID" \
+  --arg mbePosture "$MBE_POSTURE" \
+  --argjson mbeEpoch "${MBE_EPOCH_JSON:-null}" \
   --arg decision "$DECISION" \
   --arg dprinciple "$DECISION_PRINCIPLE" \
   --arg dchose "$DECISION_CHOSE" \
@@ -729,15 +767,17 @@ jq \
           note: (if $note == "" then null else $note end),
           agent: $agent,
           hostSessionId: (if $host_session == "" then null else $host_session end),
-          goalRef: $goalRef
+          goalRef: $goalRef,
+          mbeEpoch: $mbeEpoch
         }
       ])),
       autonomyPosture: (if $posture == "" then ($root.autonomyPosture // null) else $posture end),
       contextBoundary: (
         if $cbKind == "" then ($root.contextBoundary // null)
-        else { kind: $cbKind,
-               checkpointId: (if $cbId == "" then null else $cbId end),
-               at: $timestamp }
+        else ({ kind: $cbKind,
+                checkpointId: (if $cbId == "" then null else $cbId end),
+                at: $timestamp }
+              + (if $mbeEpoch == null then {} else { mbeEpoch: $mbeEpoch } end))
         end
       ),
       autonomyDecisions: (
@@ -756,6 +796,7 @@ jq \
         end
       )
     })
+    + (if $mbePosture == "off" then {} else { mbeRolloutPosture: $mbePosture } end)
   ' "$SESSION_FILE" > "$TMP_FILE"
 
 mv "$TMP_FILE" "$SESSION_FILE"

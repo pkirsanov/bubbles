@@ -54,13 +54,13 @@ Feature: Scenario evidence-reference cardinality
 
 ### Test Plan
 
-| ID | Scenario | Test Type | Category | Command | Expected | Live System |
-| --- | --- | --- | --- | --- | --- | --- |
-| B045-T1 | SCN-B045-001 | Functional regression | functional | `bash bubbles/scripts/traceability-guard-selftest.sh` | Empty-array case expects non-zero guard result and exact `only 0 of 1` diagnostic | No |
-| B045-T2 | SCN-B045-002 | Unit control | unit | `bash bubbles/scripts/traceability-guard-selftest.sh` | Existing non-empty-array case remains green | No |
-| B045-T3 | SCN-B045-003 | Regression E2E (CLI) | functional | `bash bubbles/scripts/traceability-guard-selftest.sh` | Public CLI path rejects the mixed manifest and reports `only 1 of 2` | No |
-| B045-T4 | SCN-B045-001, SCN-B045-003 | Mutation | functional | Restore the type-only predicate, then run `bash bubbles/scripts/traceability-guard-selftest.sh` | New assertions fail; positive control remains green; mutation is reverted by edit | No |
-| B045-T5 | Packet | Artifact lint | unit | `bash bubbles/scripts/artifact-lint.sh bugs/BUG-045-traceability-empty-evidence-refs` | Exit 0 | No |
+| ID | Scenario | Type | Category | File/Location | Command | Expected | Live System |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| B045-T1 | SCN-B045-001 | Functional regression | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `bash bubbles/scripts/traceability-guard-selftest.sh` | Empty-array case expects non-zero guard result and exact `only 0 of 1` diagnostic | No |
+| B045-T2 | SCN-B045-002 | Unit control | unit | `bubbles/scripts/traceability-guard-selftest.sh` | `bash bubbles/scripts/traceability-guard-selftest.sh` | Existing non-empty-array case remains green | No |
+| B045-T3 | SCN-B045-003 | Regression E2E (CLI) | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `bash bubbles/scripts/traceability-guard-selftest.sh` | Public CLI path rejects the mixed manifest and reports `only 1 of 2` | No |
+| B045-T4 | Mutation control | Mutation | functional | `bubbles/scripts/traceability-guard-selftest.sh` | Restore the type-only predicate, then run `bash bubbles/scripts/traceability-guard-selftest.sh` | New assertions fail; positive control remains green; mutation is reverted by edit | No |
+| B045-T5 | Packet | Artifact lint | unit | `bubbles/scripts/artifact-lint.sh` | `bash bubbles/scripts/artifact-lint.sh bugs/BUG-045-traceability-empty-evidence-refs` | Exit 0 | No |
 
 No integration service, HTTP API, rendered UI, mutable store, latency contract,
 or deploy path exists for this CLI parser. The full public CLI invocation in
@@ -91,7 +91,7 @@ this planning reconciliation.
 - [x] `SCN-B045-001`: the production guard rejects a valid one-scenario manifest with `evidenceRefs: []`, exits non-zero, and reports `only 0 of 1` → Evidence: [Independent direct scenario matrix](report.md#independent-direct-scenario-matrix)
 - [x] `SCN-B045-002`: the same valid one-scenario fixture with one report evidence reference passes the evidence-reference cross-check and preserves the remaining traceability verdict → Evidence: [Independent direct scenario matrix](report.md#independent-direct-scenario-matrix)
 - [x] `SCN-B045-003`: the production guard rejects a valid two-scenario mixed manifest, exits non-zero, and reports `only 1 of 2` → Evidence: [Independent direct scenario matrix](report.md#independent-direct-scenario-matrix)
-- [x] Mutation and non-vacuity proof restores the type-only predicate, makes the `SCN-B045-001` and `SCN-B045-003` assertions fail while the `SCN-B045-002` positive control remains green, then restores the current guard bytes → Evidence: [Independent mutation non-vacuity](report.md#independent-mutation-non-vacuity)
+- [x] Mutation and non-vacuity proof restores the type-only predicate, makes the empty-array and mixed-array assertions fail while the non-empty positive control remains green, then restores the current guard bytes → Evidence: [Independent mutation non-vacuity](report.md#independent-mutation-non-vacuity)
 - [x] The focused selftest passes with zero failed assertions and no skip, bailout, or silent-pass path → Evidence: [Independent focused suite and test quality](report.md#independent-focused-suite-and-test-quality)
 - [x] Bug-packet artifact lint passes → Evidence: [Independent packet gates](report.md#independent-packet-gates)
 - [x] The change boundary contains only this packet, `bubbles/scripts/traceability-guard.sh`, and `bubbles/scripts/traceability-guard-selftest.sh`; every excluded path remains unchanged → Evidence: [Independent change boundary](report.md#independent-change-boundary)

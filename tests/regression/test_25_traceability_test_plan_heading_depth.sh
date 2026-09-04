@@ -175,31 +175,76 @@ run_guard_with_system_bash() {
   printf '%s\n' "--- $label exit=$RUN_STATUS ---"
 }
 
-run_guard_with_awk_failure() {
+run_guard_with_parser_failure() {
   local feature_dir="$1"
   local label="$2"
   local output_file
-  local shim_dir="$WORKSPACE/awk-failure-bin"
-  local real_awk
+  local shim_dir="$WORKSPACE/parser-failure-bin"
+  local real_python
 
-  real_awk="$(command -v awk)"
+  real_python="$(command -v python3)"
   mkdir -p "$shim_dir"
-  cat > "$shim_dir/awk" <<'SHIM'
+  cat > "$shim_dir/python3" <<'SHIM'
 #!/usr/bin/env bash
 set -u
 
-: "${BUG018_REAL_AWK:?missing real awk path}"
-case "${1:-}" in
-  *without_html_comments*) exit 42 ;;
-esac
-exec "$BUG018_REAL_AWK" "$@"
+: "${BUG018_REAL_PYTHON:?missing real python path}"
+if [[ "${1:-}" == "-" && "${2:-}" == */scope.md ]]; then
+  exit 42
+fi
+exec "$BUG018_REAL_PYTHON" "$@"
 SHIM
-  chmod +x "$shim_dir/awk"
+  chmod +x "$shim_dir/python3"
 
   RUN_COUNT=$((RUN_COUNT + 1))
   output_file="$WORKSPACE/run-${RUN_COUNT}.log"
   RUN_STATUS=0
-  if PATH="$shim_dir:$PATH" BUG018_REAL_AWK="$real_awk" \
+  if PATH="$shim_dir:$PATH" BUG018_REAL_PYTHON="$real_python" \
+    bash "$GUARD" "$feature_dir" >"$output_file" 2>&1; then
+    RUN_STATUS=0
+  else
+    RUN_STATUS=$?
+  fi
+  RUN_OUTPUT="$(cat "$output_file")"
+  printf '%s\n' "--- $label production output ---"
+  printf '%s\n' "$RUN_OUTPUT"
+  printf '%s\n' "--- $label exit=$RUN_STATUS ---"
+}
+
+run_guard_with_identity_mode_operation() {
+  local feature_dir="$1"
+  local label="$2"
+  local target="$3"
+  local operation="$4"
+  local output_file
+  local shim_dir="$WORKSPACE/identity-rewrite-bin"
+  local real_python
+
+  real_python="$(command -v python3)"
+  mkdir -p "$shim_dir"
+  cat > "$shim_dir/python3" <<'SHIM'
+#!/usr/bin/env bash
+set -u
+: "${IDENTITY_REAL_PYTHON:?missing real python path}"
+: "${IDENTITY_TARGET:?missing rewrite target}"
+: "${IDENTITY_OPERATION:?missing identity operation}"
+capture="$(mktemp)"
+trap 'rm -f "$capture"' EXIT INT TERM
+status=0
+"$IDENTITY_REAL_PYTHON" "$@" >"$capture" || status=$?
+if [[ "$status" -eq 0 && "${1:-}" == "-" && "${4:-}" == "tests/traceability-heading.e2e.sh" ]]; then
+  current_mode="$(stat -c '%a' "$IDENTITY_TARGET" 2>/dev/null || stat -f '%Lp' "$IDENTITY_TARGET")"
+  if [[ "$IDENTITY_OPERATION" == "change" ]]; then chmod 600 "$IDENTITY_TARGET"; else chmod "$current_mode" "$IDENTITY_TARGET"; fi
+fi
+cat "$capture"
+exit "$status"
+SHIM
+  chmod +x "$shim_dir/python3"
+
+  RUN_COUNT=$((RUN_COUNT + 1))
+  output_file="$WORKSPACE/run-${RUN_COUNT}.log"
+  RUN_STATUS=0
+  if PATH="$shim_dir:$PATH" IDENTITY_REAL_PYTHON="$real_python" IDENTITY_TARGET="$target" IDENTITY_OPERATION="$operation" \
     bash "$GUARD" "$feature_dir" >"$output_file" 2>&1; then
     RUN_STATUS=0
   else
@@ -256,14 +301,15 @@ build_equivalent_feature() {
   local scenario_manifest
 
   scenario_manifest='{
+  "schemaVersion": 1,
   "scenarios": [
     {
-      "scenarioId": "SCN-BUG018-LEVEL-A",
+      "scenarioId": "SCN-BUG018-LEVEL-01",
       "linkedTests": [{"file": "scopes/01-heading/tests/traceability-heading.e2e.sh"}],
       "evidenceRefs": ["scopes/01-heading/report.md#test-evidence"]
     },
     {
-      "scenarioId": "SCN-BUG018-LEVEL-B",
+      "scenarioId": "SCN-BUG018-LEVEL-02",
       "linkedTests": [{"file": "scopes/01-heading/tests/traceability-heading.e2e.sh"}],
       "evidenceRefs": ["scopes/01-heading/report.md#test-evidence"]
     }
@@ -278,12 +324,12 @@ build_equivalent_feature() {
 
 ### Gherkin Scenarios
 
-Scenario: SCN-BUG018-LEVEL-A alpha heading maps normally
+Scenario: SCN-BUG018-LEVEL-01 alpha heading maps normally
   Given an exact Test Plan heading
   When traceability runs
   Then alpha maps to a concrete test row
 
-Scenario: SCN-BUG018-LEVEL-B beta heading maps normally
+Scenario: SCN-BUG018-LEVEL-02 beta heading maps normally
   Given an exact Test Plan heading
   When traceability runs
   Then beta maps to a concrete test row
@@ -292,13 +338,13 @@ $test_plan_heading
 
 | Test Type | Test ID | Scenario | File / Location | Exact behavior |
 | --- | --- | --- | --- | --- |
-| regression E2E | T-LEVEL-A | SCN-BUG018-LEVEL-A | tests/traceability-heading.e2e.sh | alpha heading maps normally |
-| regression E2E | T-LEVEL-B | SCN-BUG018-LEVEL-B | tests/traceability-heading.e2e.sh | beta heading maps normally |
+| regression E2E | T-LEVEL-A | SCN-BUG018-LEVEL-01 | tests/traceability-heading.e2e.sh | alpha heading maps normally |
+| regression E2E | T-LEVEL-B | SCN-BUG018-LEVEL-02 | tests/traceability-heading.e2e.sh | beta heading maps normally |
 
 ### Definition of Done
 
-- [ ] SCN-BUG018-LEVEL-A alpha heading maps normally
-- [ ] SCN-BUG018-LEVEL-B beta heading maps normally
+- [ ] SCN-BUG018-LEVEL-01 alpha heading maps normally
+- [ ] SCN-BUG018-LEVEL-02 beta heading maps normally
 MARKDOWN
 }
 
@@ -308,9 +354,10 @@ build_invalid_feature() {
   local scenario_manifest
 
   scenario_manifest='{
+  "schemaVersion": 1,
   "scenarios": [
     {
-      "scenarioId": "SCN-BUG018-INVALID",
+      "scenarioId": "SCN-BUG018-INVALID-01",
       "linkedTests": [{"file": "scopes/01-heading/tests/traceability-heading.e2e.sh"}],
       "evidenceRefs": ["scopes/01-heading/report.md#test-evidence"]
     }
@@ -325,7 +372,7 @@ build_invalid_feature() {
 
 ### Gherkin Scenarios
 
-Scenario: SCN-BUG018-INVALID invalid Test Plan input fails with a diagnostic
+Scenario: SCN-BUG018-INVALID-01 invalid Test Plan input fails with a diagnostic
   Given malformed planning input
   When traceability runs
   Then it reaches the normal summary
@@ -334,7 +381,7 @@ $test_plan_content
 
 ### Definition of Done
 
-- [ ] SCN-BUG018-INVALID invalid Test Plan input fails with a diagnostic
+- [ ] SCN-BUG018-INVALID-01 invalid Test Plan input fails with a diagnostic
 MARKDOWN
 }
 
@@ -343,9 +390,10 @@ build_false_heading_feature() {
   local scenario_manifest
 
   scenario_manifest='{
+  "schemaVersion": 1,
   "scenarios": [
     {
-      "scenarioId": "SCN-BUG018-FALSE-HEADINGS",
+      "scenarioId": "SCN-BUG018-FALSE-01",
       "linkedTests": [{"file": "scopes/01-heading/tests/traceability-heading.e2e.sh"}],
       "evidenceRefs": ["scopes/01-heading/report.md#test-evidence"]
     }
@@ -360,7 +408,7 @@ build_false_heading_feature() {
 
 ### Gherkin Scenarios
 
-Scenario: SCN-BUG018-FALSE-HEADINGS unsupported headings remain unrecognized
+Scenario: SCN-BUG018-FALSE-01 unsupported headings remain unrecognized
   Given only unsupported Test Plan lookalikes
   When traceability runs
   Then it reports a missing exact section
@@ -369,27 +417,27 @@ Scenario: SCN-BUG018-FALSE-HEADINGS unsupported headings remain unrecognized
 
 | Test Type | Test ID | Scenario | File / Location | Exact behavior |
 | --- | --- | --- | --- | --- |
-| regression E2E | T-DEPTH-FOUR | SCN-BUG018-FALSE-HEADINGS | tests/traceability-heading.e2e.sh | depth four is unsupported |
+| regression E2E | T-DEPTH-FOUR | SCN-BUG018-FALSE-01 | tests/traceability-heading.e2e.sh | depth four is unsupported |
 
 ### Test Planning
 
 | Test Type | Test ID | Scenario | File / Location | Exact behavior |
 | --- | --- | --- | --- | --- |
-| regression E2E | T-PLANNING | SCN-BUG018-FALSE-HEADINGS | tests/traceability-heading.e2e.sh | Test Planning is not Test Plan |
+| regression E2E | T-PLANNING | SCN-BUG018-FALSE-01 | tests/traceability-heading.e2e.sh | Test Planning is not Test Plan |
 
 ```text
 ## Test Plan
-| regression E2E | T-FENCED | SCN-BUG018-FALSE-HEADINGS | tests/traceability-heading.e2e.sh | fenced heading is inert |
+| regression E2E | T-FENCED | SCN-BUG018-FALSE-01 | tests/traceability-heading.e2e.sh | fenced heading is inert |
 ```
 
 <!--
 ### Test Plan
-| regression E2E | T-COMMENTED | SCN-BUG018-FALSE-HEADINGS | tests/traceability-heading.e2e.sh | commented heading is inert |
+| regression E2E | T-COMMENTED | SCN-BUG018-FALSE-01 | tests/traceability-heading.e2e.sh | commented heading is inert |
 -->
 
 ### Definition of Done
 
-- [ ] SCN-BUG018-FALSE-HEADINGS unsupported headings remain unrecognized
+- [ ] SCN-BUG018-FALSE-01 unsupported headings remain unrecognized
 MARKDOWN
 }
 
@@ -401,9 +449,10 @@ build_boundary_feature() {
   local scenario_manifest
 
   scenario_manifest='{
+  "schemaVersion": 1,
   "scenarios": [
     {
-      "scenarioId": "SCN-BUG018-BOUNDARY",
+      "scenarioId": "SCN-BUG018-BOUNDARY-01",
       "linkedTests": [{"file": "scopes/01-heading/tests/traceability-heading.e2e.sh"}],
       "evidenceRefs": ["scopes/01-heading/report.md#test-evidence"]
     }
@@ -418,7 +467,7 @@ build_boundary_feature() {
 
 ### Gherkin Scenarios
 
-Scenario: SCN-BUG018-BOUNDARY heading depth boundaries retain nested rows and exclude later siblings
+Scenario: SCN-BUG018-BOUNDARY-01 heading depth boundaries retain nested rows and exclude later siblings
   Given nested Test Plan content
   When traceability runs
   Then only the nested row remains eligible
@@ -429,7 +478,7 @@ $nested_heading
 
 | Test Type | Test ID | Scenario | File / Location | Exact behavior |
 | --- | --- | --- | --- | --- |
-| adversarial regression E2E | T-NESTED | SCN-BUG018-BOUNDARY | tests/traceability-heading.e2e.sh | nested row remains eligible |
+| adversarial regression E2E | T-NESTED | SCN-BUG018-BOUNDARY-01 | tests/traceability-heading.e2e.sh | nested row remains eligible |
 
 $sibling_heading
 
@@ -439,14 +488,14 @@ $sibling_heading
 
 #### Definition of Done
 
-- [ ] SCN-BUG018-BOUNDARY heading depth boundaries retain nested rows and exclude later siblings
+- [ ] SCN-BUG018-BOUNDARY-01 heading depth boundaries retain nested rows and exclude later siblings
 MARKDOWN
 }
 
 build_no_scenario_feature() {
   local feature_dir="$1"
 
-  write_feature_scaffold "$feature_dir" '{"scenarios": []}'
+  write_feature_scaffold "$feature_dir" '{"schemaVersion": 1, "scenarios": []}'
   cat > "$feature_dir/scopes/01-heading/scope.md" <<'MARKDOWN'
 # Scope 01: No Scenario
 
@@ -497,9 +546,10 @@ JSON
 
   cat > "$feature_dir/scenario-manifest.json" <<'JSON'
 {
+  "schemaVersion": 1,
   "scenarios": [
     {
-      "scenarioId": "SCN-BUG018-RESEARCH-LAB",
+      "scenarioId": "SCN-BUG018-RESEARCH-01",
       "linkedTests": [{"file": "tests/technical-analysis-decision-lab.spec.mjs"}],
       "evidenceRefs": ["scopes/01-capability-foundation/report.md#test-evidence"]
     }
@@ -514,7 +564,7 @@ JSON
 
 ### Gherkin Scenarios
 
-Scenario: SCN-BUG018-RESEARCH-LAB canonical source resolves owner-root linked test
+Scenario: SCN-BUG018-RESEARCH-01 canonical source resolves owner-root linked test
   Given a Research-Lab-shaped packet with an owner-root test path
   When the canonical source guard runs from the owning repository root
   Then traceability resolves the packet and linked test inside that checkout
@@ -523,11 +573,11 @@ Scenario: SCN-BUG018-RESEARCH-LAB canonical source resolves owner-root linked te
 
 | Test Type | Test ID | Scenario | File / Location | Exact behavior |
 | --- | --- | --- | --- | --- |
-| regression E2E | T-RESEARCH-LAB | SCN-BUG018-RESEARCH-LAB | tests/technical-analysis-decision-lab.spec.mjs | canonical source resolves owner-root linked test |
+| regression E2E | T-RESEARCH-LAB | SCN-BUG018-RESEARCH-01 | tests/technical-analysis-decision-lab.spec.mjs | canonical source resolves owner-root linked test |
 
 ### Definition of Done
 
-- [ ] SCN-BUG018-RESEARCH-LAB canonical source resolves owner-root linked test
+- [ ] SCN-BUG018-RESEARCH-01 canonical source resolves owner-root linked test
 MARKDOWN
 
   cat > "$scope_dir/report.md" <<'MARKDOWN'
@@ -551,8 +601,8 @@ LEVEL2_FEATURE="$WORKSPACE/level-2"
 build_equivalent_feature "$LEVEL2_FEATURE" '## Test Plan'
 run_guard "$LEVEL2_FEATURE" 'T-BUG-018-01 level-2'
 assert_status 0 'level-2 packet exits zero'
-assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-LEVEL-A alpha heading maps normally' 'level-2 maps alpha'
-assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-LEVEL-B beta heading maps normally' 'level-2 maps beta'
+assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-LEVEL-01 alpha heading maps normally' 'level-2 maps alpha'
+assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-LEVEL-02 beta heading maps normally' 'level-2 maps beta'
 assert_contains 'RESULT: PASSED (0 warnings)' 'level-2 reaches successful final summary'
 assert_not_contains 'has no recognized Test Plan section' 'level-2 is not reported missing'
 LEVEL2_OUTPUT="$RUN_OUTPUT"
@@ -594,6 +644,40 @@ assert_nonzero_status 'unsupported heading packet exits nonzero'
 assert_occurrences 1 'has no recognized Test Plan section (expected exact ## Test Plan or ### Test Plan)' 'depth-four, Test Planning, fenced, and commented headings remain unrecognized'
 assert_contains 'RESULT: FAILED (' 'unsupported heading packet reaches final failed summary'
 
+printf '%s\n' '=== T-BUG-018-15 Regression: duplicate visible exact Test Plan sections fail closed ==='
+DUPLICATE_SECTION_FEATURE="$WORKSPACE/duplicate-visible-sections"
+build_equivalent_feature "$DUPLICATE_SECTION_FEATURE" '## Test Plan'
+cat >>"$DUPLICATE_SECTION_FEATURE/scopes/01-heading/scope.md" <<'MARKDOWN'
+
+### Test Plan
+
+| Test Type | File / Location | Exact behavior |
+| --- | --- | --- |
+| regression E2E | tests/traceability-heading.e2e.sh | duplicate visible section is ambiguous |
+MARKDOWN
+run_guard "$DUPLICATE_SECTION_FEATURE" 'T-BUG-018-15 duplicate visible sections'
+assert_nonzero_status 'duplicate visible level-2/level-3 sections exit nonzero'
+assert_occurrences 1 'has multiple visible exact Test Plan sections; exactly one ## Test Plan or ### Test Plan is applicable' 'duplicate visible sections report structural ambiguity once'
+
+printf '%s\n' '=== T-BUG-018-16 Regression: fenced, commented, and depth-four headings do not count as duplicates ==='
+HIDDEN_DUPLICATE_FEATURE="$WORKSPACE/hidden-duplicate-sections"
+build_equivalent_feature "$HIDDEN_DUPLICATE_FEATURE" '## Test Plan'
+cat >>"$HIDDEN_DUPLICATE_FEATURE/scopes/01-heading/scope.md" <<'MARKDOWN'
+
+```markdown
+### Test Plan
+```
+
+<!--
+## Test Plan
+-->
+
+#### Test Plan
+MARKDOWN
+run_guard "$HIDDEN_DUPLICATE_FEATURE" 'T-BUG-018-16 hidden duplicate lookalikes'
+assert_status 0 'fenced, commented, and depth-four headings leave exactly one applicable Test Plan'
+assert_not_contains 'multiple visible exact Test Plan sections' 'hidden duplicate lookalikes remain non-counting'
+
 printf '%s\n' '=== T-BUG-018-04 Regression: recognized empty, header-only, and separator-only Test Plans report rowless and reach final summary ==='
 EMPTY_FEATURE="$WORKSPACE/empty-section"
 build_invalid_feature "$EMPTY_FEATURE" '### Test Plan'
@@ -617,19 +701,69 @@ assert_nonzero_status 'header-only recognized section exits nonzero'
 assert_occurrences 1 'has no concrete Test Plan rows to trace' 'header-only section reports rowless once'
 assert_contains 'RESULT: FAILED (' 'header-only section reaches final summary'
 
-run_guard_with_awk_failure "$LEVEL3_FEATURE" 'T-BUG-018-04 extractor failure'
+run_guard_with_parser_failure "$LEVEL3_FEATURE" 'T-BUG-018-04 extractor failure'
 assert_nonzero_status 'extractor failure exits nonzero'
 assert_occurrences 1 'Test Plan extraction failed' 'extractor failure reports its distinct diagnostic once'
 assert_not_contains 'has no recognized Test Plan section' 'extractor failure is not reported missing'
 assert_not_contains 'has no concrete Test Plan rows to trace' 'extractor failure is not reported rowless'
 assert_contains 'RESULT: FAILED (' 'extractor failure reaches final summary'
 
+printf '%s\n' '=== T-BUG-018-08 Regression: required Test Plan headers may be reordered ==='
+REORDERED_FEATURE="$WORKSPACE/reordered-headers"
+build_invalid_feature "$REORDERED_FEATURE" $'### Test Plan\n\n| Exact behavior | File / Location | Scenario | Test Type |\n| --- | --- | --- | --- |\n| invalid Test Plan input fails with a diagnostic | tests/traceability-heading.e2e.sh | SCN-BUG018-INVALID-01 | regression E2E |'
+run_guard "$REORDERED_FEATURE" 'T-BUG-018-08 reordered headers'
+assert_status 0 'reordered required headers exit zero'
+assert_contains 'scenario maps to concrete test file: scopes/01-heading/tests/traceability-heading.e2e.sh' 'reordered File/Location column owns the concrete path'
+
+printf '%s\n' '=== T-BUG-018-09 Regression: duplicate required headers fail closed ==='
+DUPLICATE_FEATURE="$WORKSPACE/duplicate-headers"
+build_invalid_feature "$DUPLICATE_FEATURE" $'### Test Plan\n\n| Test Type | File / Location | Test Type | Exact behavior |\n| --- | --- | --- | --- |\n| regression E2E | tests/traceability-heading.e2e.sh | e2e-ui | invalid Test Plan input fails with a diagnostic |'
+run_guard "$DUPLICATE_FEATURE" 'T-BUG-018-09 duplicate headers'
+assert_nonzero_status 'duplicate required header exits nonzero'
+assert_occurrences 1 'Test Plan extraction failed' 'duplicate required header reports extraction failure once'
+
+printf '%s\n' '=== T-BUG-018-10 Regression: unrelated tables inside Test Plan are ignored ==='
+UNRELATED_FEATURE="$WORKSPACE/unrelated-table"
+build_invalid_feature "$UNRELATED_FEATURE" $'### Test Plan\n\n| Owner | Review State |\n| --- | --- |\n| test-team | ready |\n\n| Exact behavior | File / Location | Test Type |\n| --- | --- | --- |\n| invalid Test Plan input fails with a diagnostic | tests/traceability-heading.e2e.sh | regression E2E |'
+run_guard "$UNRELATED_FEATURE" 'T-BUG-018-10 unrelated table'
+assert_status 0 'unrelated table before valid Test Plan table exits zero'
+assert_contains 'summary: scenarios=1 test_rows=1' 'unrelated table contributes no concrete test row'
+
+printf '%s\n' '=== T-BUG-018-13 Regression: escaped pipes and code spans preserve Test Plan cells ==='
+ESCAPED_PIPE_FEATURE="$WORKSPACE/escaped-pipe-code-span"
+build_invalid_feature "$ESCAPED_PIPE_FEATURE" $'### Test Plan\n\n| Exact behavior | File / Location | Test Type |\n| --- | --- | --- |\n| invalid Test Plan input fails with a diagnostic and preserves alpha \\| beta | `tests/traceability-heading.e2e.sh` | regression E2E |'
+run_guard "$ESCAPED_PIPE_FEATURE" 'T-BUG-018-13 escaped pipe and code span'
+assert_status 0 'escaped pipe and code-span packet exits zero'
+assert_contains 'scenario maps to concrete test file: scopes/01-heading/tests/traceability-heading.e2e.sh' 'code-span path resolves without escaped-pipe column drift'
+assert_contains 'summary: scenarios=1 test_rows=1' 'escaped pipe remains in one Test Plan row'
+
+printf '%s\n' '=== T-BUG-018-14 Regression: permission-mode identity is revalidated ==='
+IDENTITY_FEATURE="$WORKSPACE/identity-in-place-rewrite"
+build_invalid_feature "$IDENTITY_FEATURE" $'### Test Plan\n\n| Exact behavior | File / Location | Test Type |\n| --- | --- | --- |\n| invalid Test Plan input fails with a diagnostic | tests/traceability-heading.e2e.sh | regression E2E |'
+run_guard_with_identity_mode_operation "$IDENTITY_FEATURE" 'T-BUG-018-14 chmod-only identity change' "$IDENTITY_FEATURE/scopes/01-heading/tests/traceability-heading.e2e.sh" change
+if [[ "$RUN_STATUS" -ne 0 ]] && printf '%s\n' "$RUN_OUTPUT" | grep -Fq -- 'mapped test file identity changed before evidence use'; then
+  pass 'mode/device/inode/size/mtime identity detects chmod-only mutation and exits nonzero'
+else
+  fail 'mode/device/inode/size/mtime identity did not reject chmod-only mutation'
+fi
+chmod 644 "$IDENTITY_FEATURE/scopes/01-heading/tests/traceability-heading.e2e.sh"
+run_guard_with_identity_mode_operation "$IDENTITY_FEATURE" 'T-BUG-018-14 unchanged-mode positive' "$IDENTITY_FEATURE/scopes/01-heading/tests/traceability-heading.e2e.sh" same
+assert_status 0 'unchanged-mode operation remains accepted'
+
+printf '%s\n' '=== T-BUG-018-11 Regression: Command cannot substitute for File/Location ==='
+COMMAND_ONLY_FEATURE="$WORKSPACE/command-only-path"
+build_invalid_feature "$COMMAND_ONLY_FEATURE" $'### Test Plan\n\n| Test Type | Scenario | Command | Exact behavior |\n| --- | --- | --- | --- |\n| regression E2E | SCN-BUG018-INVALID-01 | bubbles/scripts/traceability-guard.sh | invalid Test Plan input fails with a diagnostic |'
+run_guard "$COMMAND_ONLY_FEATURE" 'T-BUG-018-11 command column isolation'
+assert_nonzero_status 'missing File/Location path exits nonzero even when Command exists'
+assert_contains 'Test Plan extraction failed' 'missing File/Location header is diagnosed'
+assert_not_contains 'scenario maps to concrete test file: bubbles/scripts/traceability-guard.sh' 'Command path never impersonates the test file'
+
 printf '%s\n' '=== T-BUG-018-05 Regression: heading-depth boundaries retain nested rows and exclude later siblings ==='
 BOUNDARY2_FEATURE="$WORKSPACE/boundary-level-2"
 build_boundary_feature "$BOUNDARY2_FEATURE" '## Test Plan' '### Nested Cases' '## Later Same-Depth Section'
 run_guard "$BOUNDARY2_FEATURE" 'T-BUG-018-05 level-2 boundary'
 assert_status 0 'level-2 boundary packet exits zero'
-assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-BOUNDARY heading depth boundaries retain nested rows and exclude later siblings' 'level-2 nested row remains eligible'
+assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-BOUNDARY-01 heading depth boundaries retain nested rows and exclude later siblings' 'level-2 nested row remains eligible'
 assert_contains 'summary: scenarios=1 test_rows=1' 'level-2 later same-depth sibling row is excluded'
 assert_not_contains 'should-not-leak.e2e.sh' 'level-2 sibling path never reaches a diagnostic'
 
@@ -637,7 +771,7 @@ BOUNDARY3_FEATURE="$WORKSPACE/boundary-level-3"
 build_boundary_feature "$BOUNDARY3_FEATURE" '### Test Plan' '#### Nested Cases' '### Later Same-Depth Section'
 run_guard "$BOUNDARY3_FEATURE" 'T-BUG-018-05 level-3 boundary'
 assert_status 0 'level-3 boundary packet exits zero'
-assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-BOUNDARY heading depth boundaries retain nested rows and exclude later siblings' 'level-3 nested row remains eligible'
+assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-BOUNDARY-01 heading depth boundaries retain nested rows and exclude later siblings' 'level-3 nested row remains eligible'
 assert_contains 'summary: scenarios=1 test_rows=1' 'level-3 later same-depth sibling row is excluded'
 assert_not_contains 'should-not-leak.e2e.sh' 'level-3 sibling path never reaches a diagnostic'
 
@@ -665,7 +799,7 @@ RESEARCH_LAB_ROOT="$(cd "$RESEARCH_LAB_ROOT" && pwd)"
 run_guard_from_root "$RESEARCH_LAB_ROOT" "$RESEARCH_LAB_FEATURE" 'T-BUG-018-12 Research Lab fixture'
 assert_status 0 'Research-Lab-shaped packet exits zero'
 assert_contains "Feature: $RESEARCH_LAB_ROOT/$RESEARCH_LAB_FEATURE" 'relative feature path resolves inside the fixture owner root'
-assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-RESEARCH-LAB canonical source resolves owner-root linked test' 'Research Lab scenario maps through canonical source'
+assert_contains 'scenario mapped to Test Plan row: SCN-BUG018-RESEARCH-01 canonical source resolves owner-root linked test' 'Research Lab scenario maps through canonical source'
 assert_contains 'scenario maps to concrete test file: tests/technical-analysis-decision-lab.spec.mjs' 'owner-root linked test resolves inside the fixture'
 assert_contains 'report references concrete test evidence: tests/technical-analysis-decision-lab.spec.mjs' 'fixture report binds owner-root test evidence'
 assert_contains 'RESULT: PASSED (0 warnings)' 'Research-Lab-shaped packet reaches successful final summary'

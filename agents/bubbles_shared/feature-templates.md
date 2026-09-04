@@ -143,6 +143,14 @@ Links: [spec.md](spec.md) | [design.md](design.md) | [uservalidation.md](userval
 ### Test Plan
 Use the Test Plan table from scope-workflow.md and map each Gherkin scenario to a test entry that validates the exact use case behavior.
 
+Traceability discovers one visible section headed exactly `## Test Plan` or
+`### Test Plan`. Its test table must contain exactly one `Test Type` header and
+exactly one `File/Location` header. Header comparison ignores case and embedded
+whitespace, and column order is irrelevant. The concrete test path comes only
+from the `File/Location` cell. A path in `Command` does not substitute for a
+missing `File/Location`, and neither `File/Location` nor `Command` contributes
+semantic text when a scenario is matched to a row.
+
 **E2E rows MUST be scenario-specific:** list the actual test file, actual `test()` title, and specific scenario ID. Generic E2E placeholders are FORBIDDEN — see agent-common.md → "ACTUAL E2E TEST SPECIFICITY".
 
 **Every feature/fix/change MUST include explicit regression E2E planning:** for every new/changed/fixed behavior, add at least one persistent `Regression:` E2E row tied to the exact scenario or bug behavior it protects. A broad "existing E2E suite" row does not satisfy this requirement by itself.
@@ -343,13 +351,13 @@ Rules:
 
 ```json
 {
-  "version": 1,
-  "featureDir": "specs/NNN-feature-name",
+  "schemaVersion": 2,
+  "spec": "specs/NNN-feature-name",
   "generatedAt": "YYYY-MM-DDTHH:MM:SSZ",
   "scenarios": [
     {
-      "scenarioId": "SCN-NNN-001",
-      "scope": "01-scope-name",
+      "id": "SCN-IMP-126-SCOPE-7-001",
+      "scopeRef": "01-scope-name",
       "title": "User-visible or externally observable behavior",
       "gherkin": {
         "given": "precondition",
@@ -365,11 +373,19 @@ Rules:
       "linkedTests": [
         {
           "file": "path/to/live-system-test.spec.ts",
+          "type": "e2e-ui",
           "testId": "exact-test-name"
         }
       ],
+      "plannedTests": [
+        {
+          "path": "path/to/not-yet-authored-test.spec.ts",
+          "title": "Exact behavior the future test will prove",
+          "type": "e2e-ui"
+        }
+      ],
       "evidenceRefs": [
-        "report.md#scenario-scn-nnn-001"
+        "report.md#scenario-scn-imp-126-scope-7-001"
       ],
       "replacedBy": null,
       "invalidatedBy": null
@@ -377,6 +393,82 @@ Rules:
   ]
 }
 ```
+
+Version 2 is the sole format for new producer output. Each `linkedTests` entry
+names an authored test with `file` and canonical `type`. `testId` is optional.
+Every linked path must resolve to an existing regular repository file before it
+can satisfy lifecycle coverage policy.
+
+Version 2 is closed at the envelope, scenario, and every nested object. Unknown
+members are invalid rather than extension points. The compatibility reader and
+migrator also reject duplicate JSON member names at parse time, including
+duplicates in the envelope, a scenario, or a test-reference object. This is
+different from compatibility aliases: two differently named version 1 aliases
+may coexist only when their normalized semantic values agree.
+
+`scopeRef` is optional in version 2. When present, it is the only permitted
+scope-identity field and MUST be a trimmed, control-free, nonblank JSON string.
+Version 2 rejects integer, float, boolean, null, leading/trailing-whitespace,
+`scope`, and `scopeId` forms. Producers omit `scopeRef` when no scope identity
+is authored; they never emit `null` or derive a value from state.
+
+Put an unauthored test plan in `plannedTests`. Each plan requires a nonblank
+`path`, `title`, and canonical `type`. Planning acceptance does not establish
+implementation or completion coverage. Version 2 permits an empty
+`linkedTests` array during planning for this reason.
+
+Version 1 objects, bare arrays, strings, sentinels, path aliases, and
+`testState` objects are compatibility inputs only. Migrate them with
+`python3 bubbles/scripts/scenario-manifest-migrate.py --check specs/<feature>/scenario-manifest.json`
+before writing. Exit `0` means the file is already valid version 2, exit `1`
+means migration is required, and exit `2` means migration is refused. After an
+exit `1`, run
+`python3 bubbles/scripts/scenario-manifest-migrate.py --write specs/<feature>/scenario-manifest.json`.
+Migration preserves every contracted value or refuses without changing the
+source bytes. It also refuses if another process replaces or changes the source
+between the initial snapshot and atomic replacement. Never invent a title, test
+type, path, or extension value to make migration succeed.
+
+For version 1 authored string references, the first `#` separates the repository
+path from `testId`; later `#` characters remain part of `testId`. A bare path
+remains a bare authored file reference. A blank path or blank fragment is
+ambiguous and refuses without mutation. Compatible `scopeId` and
+`linkedTestContracts` aliases become canonical `scopeRef` and `linkedTests` only
+when duplicate aliases agree after insignificant leading and trailing whitespace
+is removed. The same reconciliation rule applies to `id`/`scenarioId`,
+`file`/`path`, and `title`/`testId`/`name`. Identical `linkedTests` and
+`linkedTestContracts` lists become one canonical `linkedTests` projection.
+Version 1 `scopeRef`, `scope`, and `scopeId` compatibility values
+accept only a control-free nonblank string or a positive exact JSON integer.
+Strings are trimmed and preserve their remaining bytes; positive integers become
+decimal strings. Thus integer `7` agrees with string `"7"`, but not with string
+`"07"`. Zero, negative integers, floats, booleans, null, arrays, objects, blank
+strings, and control-bearing strings refuse. The reader projects every accepted
+scope identity as a string. The migrator stores normalized `scopeRef`, `file`/`path`, and
+`title`/`testId`/`name` semantic values. Genuine post-normalization conflicts
+still refuse without mutation. Version 2 repository paths are already canonical
+and reject leading or trailing whitespace rather than normalizing it.
+
+Migration takes a non-blocking advisory lock keyed by the canonical destination
+path and holds it across snapshot, validation, destination recheck, and atomic
+replacement. It prefers a private, current-user-owned, non-symlink
+`XDG_RUNTIME_DIR` and otherwise creates and verifies a private per-user fallback
+directory. The lock file must be a current-user-owned regular file with private
+permissions and is opened with no-follow and close-on-exec flags where the host
+supports them, relative to an opened and reverified directory descriptor. This
+serializes cooperating migrators. Immediately before
+replace, the migrator rechecks destination identity and bytes, which detects
+observed changes by non-cooperating writers. The advisory lock is not a kernel
+compare-and-swap against arbitrary writers; an arbitrary writer can still race
+after the final recheck and before replacement.
+
+The `date-time` fields use a canonical, interoperable RFC 3339 subset. They
+accept uppercase or lowercase `T`/`Z`, seconds from `00` through `59`, optional
+fractional seconds, and numeric offsets through `23:59`. They reject leap
+seconds because the standard library and JSON Schema runtime cannot verify
+authoritative leap insertion dates reliably. They also reject invalid calendar
+dates, local times without an offset, out-of-range clock fields, and offsets
+beyond `23:59`.
 
 ## state.json Template
 

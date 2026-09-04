@@ -117,7 +117,7 @@ assert_blocks_with() {
   local log_file
   log_file="$tmp_root/$(basename "$feature_dir").log"
   local status
-  status="$(run_capture "$log_file" env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$GUARD_SCRIPT" "$feature_dir")"
+  status="$(run_capture "$log_file" command -p env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$GUARD_SCRIPT" "$feature_dir")"
   assert_resolved "$log_file" "$label" || return 0
   if [[ "$status" -eq 0 ]]; then
     fail "$label — guard PASSED but must BLOCK" "$log_file"
@@ -136,7 +136,7 @@ assert_passes() {
   local log_file
   log_file="$tmp_root/$(basename "$feature_dir").log"
   local status
-  status="$(run_capture "$log_file" env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$GUARD_SCRIPT" "$feature_dir")"
+  status="$(run_capture "$log_file" command -p env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$GUARD_SCRIPT" "$feature_dir")"
   assert_resolved "$log_file" "$label" || return 0
   if [[ "$status" -ne 0 ]]; then
     fail "$label — guard BLOCKED but must PASS" "$log_file"
@@ -170,7 +170,7 @@ assert_check9_covers() {
   local feature_dir="$1" label="$2"
   local log_file
   log_file="$tmp_root/$(basename "$feature_dir").log"
-  run_capture "$log_file" env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$GUARD_SCRIPT" "$feature_dir" >/dev/null
+  run_capture "$log_file" command -p env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$GUARD_SCRIPT" "$feature_dir" >/dev/null
   assert_resolved "$log_file" "$label" || return 0
   if log_has "$log_file" "has NO evidence block"; then
     fail "$label — Check 9 emitted 'has NO evidence block' (the valid tool-log entry was NOT accepted)" "$log_file"
@@ -190,7 +190,7 @@ assert_old_guard_passes() {
   local log_file
   log_file="$tmp_root/$(basename "$feature_dir").oldguard.log"
   local status
-  status="$(run_capture "$log_file" env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$OLD_GUARD" "$feature_dir")"
+  status="$(run_capture "$log_file" command -p env BUBBLES_STATE_TRANSITION_GUARD_SELFTEST_FAST=1 bash "$OLD_GUARD" "$feature_dir")"
   if log_has "$log_file" "E009-" || log_has "$log_file" "workflowMode: UNRESOLVED"; then
     fail "$label — OLD guard did not resolve the contract (E009/UNRESOLVED); teeth-proof invalid" "$log_file"
     return 0

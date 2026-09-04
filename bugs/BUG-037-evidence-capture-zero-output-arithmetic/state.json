@@ -1,0 +1,101 @@
+{
+  "version": 3,
+  "bugId": "BUG-037",
+  "featureDir": "bugs/BUG-037-evidence-capture-zero-output-arithmetic",
+  "featureName": "Evidence Capture Zero-Output Arithmetic",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full packet required because the shared evidence helper changes observable output across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "relatedBugs": ["BUG-007", "BUG-035"],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-037-evidence-capture-zero-output-arithmetic"],
+    "allowedPaths": [
+      "bugs/BUG-037-evidence-capture-zero-output-arithmetic/**",
+      "BUGS.md",
+      "bubbles/scripts/evidence-capture.sh",
+      "bubbles/scripts/evidence-capture-selftest.sh",
+      "bubbles/release-manifest.json"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": {
+      "goalId": "gc:vscode-ddcadf12da845e696b1170714b10e13b:1",
+      "revision": 1,
+      "sourceRequestDigest": "sha256:38d0707d2f0aa8ab35f867d708243076c2eb2ebd32996db45b6b4a84a7098583"
+    },
+    "substate": "planning_coherence_repaired_pending_test",
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "bootstrap",
+    "currentScope": 1,
+    "completedPhaseClaims": [],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Re-verify the repaired planning metadata, scenario-to-test mapping, and focused helper regression contract before routing aggregate and certification work to bubbles.validate.",
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Canonical Zero-Output Metadata",
+        "status": "in_progress",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {"mode": "off", "provenance": "operator-request"},
+    "tdd": {"mode": "scenario-first", "provenance": "bugfix-fastlane-contract"},
+    "autoCommit": {"mode": "off", "provenance": "operator-request"},
+    "lockdown": {"mode": "unlocked", "provenance": "framework-default"},
+    "regression": {"mode": "required", "provenance": "framework-default"},
+    "validation": {"mode": "required", "provenance": "framework-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "scopeLayout": "single-file",
+  "artifacts": {
+    "bug": "bug.md",
+    "spec": "spec.md",
+    "design": "design.md",
+    "scopes": "scopes.md",
+    "report": "report.md",
+    "uservalidation": "uservalidation.md",
+    "scenarioManifest": "scenario-manifest.json",
+    "state": "state.json"
+  },
+  "statusDiscipline": {
+    "validStatuses": ["not_started", "in_progress", "blocked", "specs_hardened", "docs_updated", "validated", "done"],
+    "scopePickupRule": "All dependsOn scopes must be Done. Pick the lowest-numbered eligible scope.",
+    "bugDoneRequires": "All four scenarios pass adversarial regression, framework validation and release readiness pass, human acceptance is recorded, and bubbles.validate certifies promotion."
+  },
+  "notes": "Implementation and independent focused test evidence are recorded. Aggregate framework validation, release readiness, manifest work, and certification are not claimed."
+}

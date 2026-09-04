@@ -127,97 +127,39 @@ scanned=0
 while IFS= read -r sf; do
   [[ -n "$sf" ]] || continue
   scanned=$((scanned + 1))
+  state_phases="$(python3 - "$sf" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    document = json.load(handle)
+
+def walk(value):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in ("currentPhase", "phase") and isinstance(child, str):
+                print(child)
+            elif key in ("phasesExecuted", "completedPhaseClaims") and isinstance(child, list):
+                for phase in child:
+                    if isinstance(phase, str):
+                        print(phase)
+            walk(child)
+    elif isinstance(value, list):
+        for child in value:
+            walk(child)
+
+walk(document)
+PY
+  )" || {
+    printf 'phase-name-enum-lint: invalid state JSON: %s\n' "$sf" >&2
+    exit 1
+  }
   while IFS= read -r raw; do
     [[ -n "$raw" ]] || continue
     observed="$observed$raw"$'\n'
-  done < <(grep -oE '"(currentPhase|phase)"[[:space:]]*:[[:space:]]*"[^"]*"' "$sf" 2>/dev/null |
-    sed 's/.*:[[:space:]]*"//; s/"$//')
-  while IFS= read -r raw; do
-    [[ -n "$raw" ]] || continue
-    observed="$observed$raw"$'\n'
-  # An entry in these arrays is EITHER a bare phase string ("implement") OR a
-  # dict claim record ({"phase": "implement", "agent": ..., "evidenceSections":
-  # [...]}). Emitting every quoted token inside the array — the previous
-  # behaviour — reported a dict record's KEYS ("agent", "dodChecked") and its
-  # nested evidence refs ("E-I1") as phase names, so the first packet to carry a
-  # populated dict claim list failed the lint on values that are not phases at
-  # all. Parse elements structurally and resolve each the way
-  # state-transition-guard.sh's _phase_name() does: a string is itself; a dict
-  # yields its `phase` (else `name`) value; anything else is skipped.
-  done < <(awk '
-    function close_idx(s,   i, L, c, depth, in_str, esc) {
-      depth = 0; in_str = 0; esc = 0; L = length(s)
-      for (i = 1; i <= L; i++) {
-        c = substr(s, i, 1)
-        if (in_str) {
-          if (esc) { esc = 0 }
-          else if (c == "\\") { esc = 1 }
-          else if (c == "\"") { in_str = 0 }
-          continue
-        }
-        if (c == "\"") { in_str = 1; continue }
-        if (c == "[" || c == "{") { depth++; continue }
-        if (c == "}") { depth--; continue }
-        if (c == "]") { if (depth == 0) return i; depth--; continue }
-      }
-      return 0
-    }
-    function dict_phase(d, key,   m, re) {
-      re = "\"" key "\"[ \t\r\n]*:[ \t\r\n]*\"[^\"]*\""
-      if (match(d, re)) {
-        m = substr(d, RSTART, RLENGTH)
-        sub(/^[^:]*:[ \t\r\n]*"/, "", m)
-        sub(/"$/, "", m)
-        return m
-      }
-      return ""
-    }
-    function flush_elem(e,   p) {
-      gsub(/^[ \t\r\n]+|[ \t\r\n]+$/, "", e)
-      if (e == "") return
-      if (substr(e, 1, 1) == "{") {
-        p = dict_phase(e, "phase")
-        if (p == "") p = dict_phase(e, "name")
-        if (p != "") print p
-        return
-      }
-      if (substr(e, 1, 1) == "\"") {
-        p = e
-        sub(/^"/, "", p); sub(/"$/, "", p)
-        if (p != "") print p
-      }
-    }
-    function emit_elems(arr,   i, L, c, depth, in_str, esc, cur) {
-      depth = 0; in_str = 0; esc = 0; cur = ""; L = length(arr)
-      for (i = 1; i <= L; i++) {
-        c = substr(arr, i, 1)
-        if (in_str) {
-          cur = cur c
-          if (esc) { esc = 0 }
-          else if (c == "\\") { esc = 1 }
-          else if (c == "\"") { in_str = 0 }
-          continue
-        }
-        if (c == "\"") { in_str = 1; cur = cur c; continue }
-        if (c == "{" || c == "[") { depth++; cur = cur c; continue }
-        if (c == "}" || c == "]") { depth--; cur = cur c; continue }
-        if (c == "," && depth == 0) { flush_elem(cur); cur = ""; continue }
-        cur = cur c
-      }
-      flush_elem(cur)
-    }
-    { buf = buf $0 "\n" }
-    END {
-      s = buf
-      while (match(s, /"(phasesExecuted|completedPhaseClaims)"[ \t\r\n]*:[ \t\r\n]*\[/)) {
-        s = substr(s, RSTART + RLENGTH)
-        ci = close_idx(s)
-        if (ci == 0) break
-        emit_elems(substr(s, 1, ci - 1))
-        s = substr(s, ci + 1)
-      }
-    }
-  ' "$sf" 2>/dev/null)
+  done <<EOF
+$state_phases
+EOF
 done <<EOF
 $state_files
 EOF

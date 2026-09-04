@@ -4425,6 +4425,9 @@ echo ""
 #        <!-- bubbles:g040-skip-end --> HTML-comment markers is excluded
 #        from the scan, letting governance docs / post-mortems quote
 #        follow-up narrative inline without flipping spec status.
+#   (iv) The literal label token `Exposure-Deferred:` — mandated in scope
+#        bodies by vertical-delivery-plan-guard.sh — is stripped from each
+#        scope line before the scan. The reason written after it remains.
 # =============================================================================
 echo "--- Check 18: Deferral Language Scan (Gate G040) ---"
 
@@ -4483,7 +4486,10 @@ else
     /^```/ || /^    ```/ { in_block = !in_block; next }
     /<!-- bubbles:g040-skip-begin -->/ { skip = 1; next }
     /<!-- bubbles:g040-skip-end -->/ { skip = 0; next }
-    !in_block && !skip { print }
+    !in_block && !skip {
+      gsub(/(-[[:space:]]*)?[*]*[Ee][Xx][Pp][Oo][Ss][Uu][Rr][Ee]-[Dd][Ee][Ff][Ee][Rr][Rr][Ee][Dd][[:space:]]*:[*]*/, " ")
+      print
+    }
   '
 
   for scope_path in ${scope_files[@]+"${scope_files[@]}"}; do
@@ -4927,29 +4933,75 @@ else
     c43_analysis_rc=0
     c43_analysis="$(jq -rs --arg empty_sha "$c43_empty_stdout_sha256" '
       # BUG-033 facet 2: unwrap every TRANSPARENT prefix, not just a bare
-      # leading `bash`/`sh`. A shell invoked with `-c`, an `env` prefix, and
-      # leading `VAR=value` assignments do not change WHICH program ran, so
-      # three ordinary spellings of one command must resolve to one family.
+      # leading `bash`/`sh`. A shell invoked with `-c`, an `env` prefix, a
+      # leading `VAR=value` assignment, and a bare canonical
+      # `timeout`/`gtimeout` wrapper do not change WHICH program ran, so
+      # ordinary spellings of one command must resolve to one family. Receipt
+      # metadata cannot authenticate the executable behind a path-qualified
+      # timeout token, so those forms retain their wrapper identity.
       # Before this, `node -e x`, `env P=1 node -e x` and `zsh -c node -e x`
       # resolved to `node`, `env` and `zsh`, and the group was refused as a
       # multi-identity collision — the re-spelling case the rule above promises
       # to tolerate. `bash -c x` was worse still: it stripped `bash` and left
       # `-c`, so the family was a flag. The recursion is what makes composed
       # prefixes (`env A=1 zsh -c ...`) collapse rather than half-collapse.
+      # BUG-033 facet 3 merge note: two independent fixes for the same
+      # bounded-launcher gap landed on divergent branches -- one taught the
+      # guard the timeout command closed option grammar (--kill-after,
+      # --signal, -k, -s, -v, --preserve-status, --foreground, --verbose,
+      # --), the other taught it the exact portable Perl alarm launcher
+      # (perl -e alarm-shift-exec, see below). Neither supersedes the other.
+      # normalize_tokens is now the single source of truth for both, plus
+      # the wrapper-name accumulation command_normalization needs;
+      # strip_wrappers derives from it so the two can never diverge.
+      def executable_basename:
+        split("/") | last;
+      def timeout_duration:
+        test("^[+]?(([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?|0[xX]([0-9A-Fa-f]+([.][0-9A-Fa-f]*)?|[.][0-9A-Fa-f]+)[pP][+-]?[0-9]+|[iI][nN][fF]([iI][nN][iI][tT][yY])?)[smhd]?$");
+      def timeout_signal:
+        test("^([0-9]+|(SIG)?(HUP|INT|QUIT|ILL|TRAP|ABRT|IOT|BUS|FPE|KILL|USR1|SEGV|USR2|PIPE|ALRM|TERM|STKFLT|CHLD|CLD|CONT|STOP|TSTP|TTIN|TTOU|URG|XCPU|XFSZ|VTALRM|PROF|WINCH|IO|POLL|PWR|SYS|INFO|EMT|RTMIN([+][0-9]+)?|RTMAX(-[0-9]+)?))$"; "i");
+      # Consume only the closed BUG-033 option grammar. An unknown, attached,
+      # clustered, or incomplete option returns null, leaving the timeout
+      # invocation as the program identity instead of guessing where its
+      # command begins.
+      def strip_timeout_options:
+        if length == 0 then null
+        elif .[0] == "--" then .[1:]
+        elif (.[0] | test("^(--preserve-status|--foreground|--verbose)$")) then
+          .[1:] | strip_timeout_options
+        elif (.[0] | test("^--kill-after=.+$")) then
+          if (.[0] | sub("^--kill-after="; "") | timeout_duration)
+            then .[1:] | strip_timeout_options else null end
+        elif (.[0] | test("^--signal=.+$")) then
+          if (.[0] | sub("^--signal="; "") | timeout_signal)
+            then .[1:] | strip_timeout_options else null end
+        elif (.[0] | test("^(--kill-after|-k)$")) then
+          if length >= 2 and (.[1] | timeout_duration)
+            then .[2:] | strip_timeout_options else null end
+        elif (.[0] | test("^(--signal|-s)$")) then
+          if length >= 2 and (.[1] | timeout_signal)
+            then .[2:] | strip_timeout_options else null end
+        elif .[0] == "-v" then .[1:] | strip_timeout_options
+        elif (.[0] | startswith("-")) then null
+        else . end;
       def normalize_tokens:
         def walk($wrappers):
-          if ((.[0] // "") | test("^(bash|sh|zsh|ksh|dash)$"))
+          if (((.[0] // "") | executable_basename) | test("^(bash|sh|zsh|ksh|dash)$"))
             then (if ((.[1] // "") == "-c")
               then (.[2:] | walk($wrappers + ["shell"]))
               else (.[1:] | walk($wrappers + ["shell"])) end)
-          elif ((.[0] // "") == "env")
+          elif (((.[0] // "") | executable_basename) == "env")
             then (.[1:] | walk($wrappers + ["env"]))
           elif ((.[0] // "") | test("^[A-Za-z_][A-Za-z0-9_]*="))
             then (.[1:] | walk($wrappers + ["assignment"]))
           elif ((.[0] // "") | test("^(timeout|gtimeout)$"))
-            and (length >= 3)
-            and (((.[1] // "") | startswith("-")) | not)
-            then (. as $tokens | ($tokens[2:] | walk($wrappers + [$tokens[0]])))
+            then (. as $tokens
+                  | ($tokens[1:] | strip_timeout_options) as $tail
+                  | if (($tail | type) == "array")
+                      and (($tail | length) >= 2)
+                      and (($tail[0] // "") | timeout_duration)
+                    then ($tail[1:] | walk($wrappers + [$tokens[0]]))
+                    else {tokens: $tokens, wrappers: $wrappers} end)
           elif (length >= 9)
             and ((.[0] // "") == "/usr/bin/perl")
             and ((.[1] // "") == "-e")
@@ -4992,7 +5044,7 @@ else
         ( . / " " | map(select(length > 0)) ) | strip_wrappers;
       def command_family:
         cmd_parts as $t
-        | ( ($t[0] // "") | split("/") | last ) as $exe
+        | ( ($t[0] // "") | executable_basename ) as $exe
         | $exe;
       # BUG-028 fix C: a generic dispatch verb is not a subject. Keeping only
       # the FIRST positional made `npm run lint` and `npm run test` one

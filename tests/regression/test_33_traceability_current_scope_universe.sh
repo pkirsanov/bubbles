@@ -9,7 +9,10 @@ set -uo pipefail
 # scope directories: the current scope, its transitive prerequisites, and
 # applicable siblings. A not_started DESCENDANT of the current scope MUST be
 # omitted (it is not yet in play, so its incomplete artifacts must not fail the
-# gate). The default --all-scopes mode is unchanged and analyzes every scope.
+# gate). The shared reader normalizes accepted v1 integer scopeRef values to
+# decimal strings; traceability resolves that string only through the aliases
+# emitted by scope-universe-resolver.py. The default --all-scopes mode is
+# unchanged and analyzes every scope.
 #
 # The two-mode diff on ONE fixture is the adversarial proof: the not_started
 # descendant `scopes/03-later` appears under --all-scopes but MUST NOT appear
@@ -200,6 +203,244 @@ if [[ "$rc_nodir" -eq 2 ]]; then
 else
   fail "un-mappable state exit $rc_nodir (expected 2 fail-closed)"
 fi
+
+# ── Case 8: symbolic canonical identity maps to a distinct directory name ────
+SYMBOLIC_FEATURE="$WORKSPACE/specs/034-symbolic"
+build_feature "$SYMBOLIC_FEATURE" yes
+python3 - "$SYMBOLIC_FEATURE/state.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    state = json.load(handle)
+for registry in (state["certification"]["scopeProgress"],):
+    registry[1]["scopeId"] = "payments-core"
+state["execution"]["currentScope"] = "payments-core"
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(state, handle, indent=2)
+    handle.write("\n")
+PY
+out_symbolic="$(bash "$GUARD" "$SYMBOLIC_FEATURE" --current-scope 2>&1)"
+if [[ "$out_symbolic" == *"$CURRENT_MARK"* ]]; then
+  pass "symbolic scopeId resolves to the unique physical directory named by scopeDir"
+else
+  fail "symbolic scopeId did not map to scopes/02-current"
+fi
+
+# ── Cases 9-10: reader-projected v1 integer and migrated string are equal ─────
+MANIFEST_FEATURE="$WORKSPACE/specs/035-manifest-aliases"
+build_feature "$MANIFEST_FEATURE" yes
+cat >"$MANIFEST_FEATURE/scopes/02-current/scope.md" <<'SCOPE'
+# Scope 02: Current
+
+**Status:** In Progress
+
+## Gherkin
+
+### SCN-035-001
+
+Scenario: Current scope alias
+  Given the current scope registry
+  When the manifest names a resolver-owned alias
+  Then traceability maps it to one physical scope
+
+## Test Plan
+
+| Test Type | Category | File/Location | Description | Command | Live System |
+| --- | --- | --- | --- | --- | --- |
+| E2E | e2e-ui | tests/current.spec.ts | SCN-035-001 current scope alias | selftest:current | Yes |
+
+## Definition of Done
+
+- [ ] SCN-035-001 current scope alias -> Evidence: report.md#test-evidence
+SCOPE
+cat >"$MANIFEST_FEATURE/scenario-manifest.json" <<'JSON'
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "scenarioId": "SCN-035-001",
+      "scopeRef": 2,
+      "title": "Current scope alias",
+      "plannedTests": [{"path": "tests/current.spec.ts", "title": "current", "type": "e2e-ui"}],
+      "evidenceRefs": []
+    }
+  ]
+}
+JSON
+out_integer="$(bash "$GUARD" "$MANIFEST_FEATURE" --current-scope 2>&1)"
+if [[ "$out_integer" != *"scope reference resolves to 0 physical scopes"* ]]; then
+  pass "v1 integer scopeRef is reader-normalized and accepted via resolver decimal alias"
+else
+  fail "v1 integer scopeRef did not resolve through resolver aliases"
+fi
+python3 - "$MANIFEST_FEATURE/scenario-manifest.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    document = json.load(handle)
+document["scenarios"][0]["scopeRef"] = "2"
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(document, handle, indent=2)
+    handle.write("\n")
+PY
+out_string="$(bash "$GUARD" "$MANIFEST_FEATURE" --current-scope 2>&1)"
+if [[ "$out_string" != *"scope reference resolves to 0 physical scopes"* ]]; then
+  pass "migrated decimal string scopeRef resolves through the same alias"
+else
+  fail "migrated decimal string scopeRef did not resolve"
+fi
+
+# ── Cases 11-13: exact projected scenario reconciliation is fail-closed ──────
+python3 - "$MANIFEST_FEATURE/scenario-manifest.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    document = json.load(handle)
+document["scenarios"][0]["scenarioId"] = "SCN-035-999"
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(document, handle, indent=2)
+    handle.write("\n")
+PY
+out_substituted="$(bash "$GUARD" "$MANIFEST_FEATURE" --current-scope 2>&1)"
+rc_substituted=$?
+if [[ "$rc_substituted" -eq 1 ]]; then
+  pass "equal scenario counts with a substituted stable id exit 1"
+else
+  fail "substituted stable id exit $rc_substituted (expected 1)"
+fi
+if [[ "$out_substituted" == *"identified-subset exact matching failed for known stable scenario id: SCN-035-001 expected=1 actual=0"* ]]; then
+  pass "equal scenario counts with a substituted stable id are refused by identified-subset reconciliation"
+else
+  fail "substituted stable id did not produce the identified-subset refusal"
+  printf '%s\n' "$out_substituted"
+fi
+
+python3 - "$MANIFEST_FEATURE/scenario-manifest.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    document = json.load(handle)
+document["scenarios"][0]["scenarioId"] = "SCN-035-001"
+extra = dict(document["scenarios"][0])
+extra["scenarioId"] = "SCN-035-002"
+document["scenarios"].append(extra)
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(document, handle, indent=2)
+    handle.write("\n")
+PY
+out_surplus="$(bash "$GUARD" "$MANIFEST_FEATURE" --current-scope 2>&1)"
+rc_surplus_manifest=$?
+if [[ "$rc_surplus_manifest" -eq 1 ]]; then
+  pass "surplus manifest scenario records exit 1"
+else
+  fail "surplus manifest scenario record exit $rc_surplus_manifest (expected 1)"
+fi
+if [[ "$out_surplus" == *"legacy residual cardinality differs after identified-subset exact matching: expected=0 actual=1"* ]]; then
+  pass "surplus manifest scenario records are refused by legacy-residual reconciliation"
+else
+  fail "surplus manifest scenario record did not produce the legacy-residual refusal"
+  printf '%s\n' "$out_surplus"
+fi
+
+python3 - "$MANIFEST_FEATURE/scenario-manifest.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    document = json.load(handle)
+document["scenarios"][1]["scenarioId"] = "SCN-035-001"
+document["scenarios"][1]["scopeRef"] = 2
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(document, handle, indent=2)
+    handle.write("\n")
+PY
+out_physical_alias_duplicate="$(bash "$GUARD" "$MANIFEST_FEATURE" --current-scope 2>&1)"
+if [[ "$out_physical_alias_duplicate" == *"scenario SCN-035-001: duplicate effective scenario id"* ]]; then
+  pass "physical-scope aliases cannot hide duplicate scenario records"
+else
+  fail "physical-scope aliases hid duplicate scenario records"
+fi
+
+# ── Case 14: traceability never invents a SCOPE-* alias ───────────────────────
+python3 - "$MANIFEST_FEATURE/scenario-manifest.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    document = json.load(handle)
+document["scenarios"][0]["scopeRef"] = "SCOPE-02"
+document["scenarios"] = document["scenarios"][:1]
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(document, handle, indent=2)
+    handle.write("\n")
+PY
+out_unknown="$(bash "$GUARD" "$MANIFEST_FEATURE" --current-scope 2>&1)"
+if [[ "$out_unknown" == *"scope reference resolves to 0 physical scopes"* ]]; then
+  pass "consumer-created SCOPE-02 alias is refused"
+else
+  fail "traceability synthesized an alias absent from resolver output"
+fi
+
+# ── Case 15: colliding resolver aliases fail before projection ────────────────
+AMBIGUOUS_FEATURE="$WORKSPACE/specs/036-ambiguous"
+build_feature "$AMBIGUOUS_FEATURE" yes
+python3 - "$AMBIGUOUS_FEATURE/state.json" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+with open(path, encoding="utf-8") as handle:
+    state = json.load(handle)
+registry = state["certification"]["scopeProgress"]
+registry[1]["scopeId"] = "current-symbolic"
+registry[1]["scope"] = "shared"
+registry[2]["scopeId"] = "future-symbolic"
+registry[2]["scope"] = "shared"
+registry[2]["dependsOn"] = ["current-symbolic"]
+state["execution"]["currentScope"] = "shared"
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(state, handle, indent=2)
+    handle.write("\n")
+PY
+out_ambiguous="$(bash "$GUARD" "$AMBIGUOUS_FEATURE" --current-scope 2>&1)"
+if [[ "$out_ambiguous" == *"scope-universe-resolver: ambiguous scope alias 'shared' identifies canonical scopes: current-symbolic, future-symbolic"* ]]; then
+  pass "colliding resolver-owned alias is refused deterministically"
+else
+  fail "colliding resolver alias did not fail closed"
+fi
+
+# ── Cases 16-18: bool, zero, and negative scopeRef remain reader-invalid ──────
+for invalid_scope_ref in true 0 -1; do
+  python3 - "$MANIFEST_FEATURE/scenario-manifest.json" "$invalid_scope_ref" <<'PY'
+import json
+import sys
+
+path, token = sys.argv[1:]
+value = True if token == "true" else int(token)
+with open(path, encoding="utf-8") as handle:
+    document = json.load(handle)
+document["scenarios"][0]["scopeRef"] = value
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(document, handle, indent=2)
+    handle.write("\n")
+PY
+  out_invalid="$(bash "$GUARD" "$MANIFEST_FEATURE" --current-scope 2>&1)"
+  if [[ "$out_invalid" == *"must be a nonblank string or positive integer"* ]]; then
+    pass "invalid scopeRef $invalid_scope_ref is refused by the shared reader"
+  else
+    fail "invalid scopeRef $invalid_scope_ref did not produce the reader refusal"
+  fi
+done
 
 printf 'ASSERTIONS=%s PASSED=%s FAILED=%s\n' "$((PASS_COUNT + FAIL_COUNT))" "$PASS_COUNT" "$FAIL_COUNT"
 if [[ "$FAIL_COUNT" -ne 0 ]]; then

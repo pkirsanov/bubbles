@@ -13,7 +13,7 @@
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_START -->
   <img src="https://img.shields.io/badge/agents-41-58a6ff?style=flat-square" alt="41 agents">
   <img src="https://img.shields.io/badge/gates-121-3fb950?style=flat-square" alt="121 gates">
-  <img src="https://img.shields.io/badge/workflow_modes-15_primitives_%2B_46_aliases-bc8cff?style=flat-square" alt="15 primitive modes (+46 v5 aliases)">
+  <img src="https://img.shields.io/badge/workflow_modes-15_primitives_%2B_47_aliases-bc8cff?style=flat-square" alt="15 primitive modes (+47 v5 aliases)">
   <!-- GENERATED:FRAMEWORK_STATS_BADGES_END -->
   <img src="https://img.shields.io/badge/fabrication_tolerance-zero-f85149?style=flat-square" alt="zero fabrication">
   <img src="https://img.shields.io/badge/license-MIT-d29922?style=flat-square" alt="MIT">
@@ -54,6 +54,8 @@ That is the genuine differentiator: not that Bubbles *tells* your AI to do good 
 
 Bubbles is a **spec-driven AI agent orchestration system** for VS Code Copilot Chat. It turns your `/` slash commands into a full software delivery pipeline — from business analysis to implementation to testing to audit — with zero tolerance for fabricated work, plus a control plane that tracks certification authority, scenario contracts, workflow run-state, typed framework events, runtime lease safety, and framework-level validation.
 
+The framework also ships opt-in, provider-neutral research and measured-admission runtimes. Research creates immutable evidence artifacts through explicit lifecycle stages. Admission controls measured resource-consuming dispatches through exact goal budgets, one-time permits, usage reconciliation, retry identities, and verified session epochs. Missing usage stays `unmeasured`, and neither capability authorizes consequential actions. Hosted providers and native host interception remain parked integration work.
+
 **One outcome endpoint. Just describe what you want:**
 
 ```
@@ -71,7 +73,7 @@ Think of it as a trailer park supervisor for your codebase. Except this one actu
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_START -->
 <tr><td width="64"><img src="icons/bubbles-glasses.svg" width="48"></td><td><strong>41 specialized agents</strong> — each with a defined role, from implementation to framework ops</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>121 quality gates</strong> — nothing ships without evidence. Nothing.</td></tr>
-<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 46 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
+<tr><td width="64"><img src="icons/julian-glass.svg" width="48"></td><td><strong>15 primitive workflow modes</strong> — plus 47 v5 aliases retained as registry keys — from full delivery to quick bugfixes to chaos sweeps</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_CALLOUTS_END -->
 <tr><td width="64"><img src="icons/barb-keys.svg" width="48"></td><td><strong>Optional execution tags</strong> — opt into grilling, inner-loop TDD, backlog export, Socratic discovery, git isolation, atomic commits, scope sizing, and micro-fix loops without weakening baseline planning gates</td></tr>
 <tr><td width="64"><img src="icons/lahey-badge.svg" width="48"></td><td><strong>Framework ops surface</strong> — health checks, framework validation, release hygiene, runtime coordination, and optional repo-readiness guidance live behind `bubbles.super` and the CLI</td></tr>
@@ -183,7 +185,7 @@ After bootstrap, update the `TODO` items in the generated files, then start usin
 ├── prompts/
 │   └── bubbles.*.prompt.md          # 41 prompt shims
 ├── bubbles/
-│   ├── workflows.yaml               # 61 workflow mode definitions
+│   ├── workflows.yaml               # 62 workflow mode definitions
 │   ├── scripts/                     # Governance scripts
 │   │   ├── cli.sh                   # Main CLI
 │   │   ├── artifact-lint.sh
@@ -486,7 +488,7 @@ You can still call any specialist directly when you explicitly want surgical wor
 ## Workflow Modes
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_START -->
-Bubbles supports 61 workflow modes plus optional execution tags. Here are the most common:
+Bubbles supports 62 workflow modes plus optional execution tags. Here are the most common:
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_INTRO_END -->
 
 | Mode | What It Does | Use When |
@@ -503,7 +505,7 @@ Bubbles supports 61 workflow modes plus optional execution tags. Here are the mo
 | `stochastic-quality-sweep` | Random quality checks across the codebase | Periodic maintenance |
 
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_START -->
-See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 61 modes.
+See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md) for all 62 modes.
 <!-- GENERATED:FRAMEWORK_STATS_WORKFLOW_OUTRO_END -->
 
 **Delivery strategy & achieved assurance.** The `rapid-tool-delivery` fast lane ships a single low-risk, build-free tool increment with fewer phases but the full integrity contract, self-escalating to `full-delivery` on any high-risk trigger. Separately, `bubbles.validate` *derives* an achieved-assurance level from evidence — `full` (→ `done`), `fast` (→ `delivered_fast`, the audit-less fast-lane result), or `prototype` (→ `delivered_prototype`, which never ships). Assurance is requestable, never declarable. See [docs/guides/WORKFLOW_MODES.md](docs/guides/WORKFLOW_MODES.md#delivery-strategy--achieved-assurance).
@@ -579,18 +581,19 @@ Build, lint, and test output must produce zero warnings. Warnings are errors.
 <tr><td><a href="docs/CHEATSHEET.md">Cheatsheet</a></td><td>Markdown quick-reference</td></tr>
 <tr><td><a href="docs/guides/AGENT_MANUAL.md">Agent Manual</a></td><td>Detailed guide for every agent</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_START -->
-<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 23 shipped, 3 partial, 0 proposed</td></tr>
+<tr><td><a href="docs/generated/competitive-capabilities.md">Competitive Capabilities</a></td><td>Ledger-backed competitive posture guide — 25 shipped, 3 partial, 0 proposed</td></tr>
 <tr><td><a href="docs/generated/issue-status.md">Issue Status</a></td><td>Ledger-backed status for 2 tracked framework gaps and proposals</td></tr>
 <tr><td><a href="docs/generated/interop-migration-matrix.md">Interop Migration Matrix</a></td><td>Ledger + registry-backed migration matrix for Claude Code, Roo Code, Cursor, and Cline</td></tr>
 <!-- GENERATED:CAPABILITY_LEDGER_DOCS_ROW_END -->
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_START -->
-<tr><td><a href="docs/guides/WORKFLOW_MODES.md">Workflow Modes</a></td><td>All 61 workflow modes explained</td></tr>
+<tr><td><a href="docs/guides/WORKFLOW_MODES.md">Workflow Modes</a></td><td>All 62 workflow modes explained</td></tr>
 <!-- GENERATED:FRAMEWORK_STATS_DOCS_ROW_END -->
 <tr><td><a href="docs/guides/INTEROP_MIGRATION.md">Interop Migration Guide</a></td><td>Supported apply, review-only intake, and proposal-only migration paths for external rule ecosystems</td></tr>
 <tr><td><a href="docs/guides/CONTROL_PLANE_DESIGN.md">Control Plane Design</a></td><td>Architecture for repository binding, registry-driven delegation, validate-owned certification, lockdown, and scenario contracts</td></tr>
 <tr><td><a href="docs/guides/CONTROL_PLANE_ROLLOUT.md">Control Plane Rollout</a></td><td>Phased implementation plan for the control-plane redesign across all requested changes</td></tr>
 <tr><td><a href="docs/guides/CONTROL_PLANE_SCHEMAS.md">Control Plane Schemas</a></td><td>Active and extension schemas for repository decisions, capability registry, policy defaults, scenario manifests, certification state, and rework packets</td></tr>
 <tr><td><a href="docs/recipes/">Recipes</a></td><td>Common problems → solutions</td></tr>
+<tr><td><a href="docs/recipes/research-and-admission-runtime.md">Research And Admission Runtime</a></td><td>Immutable evidence research and measured dispatch controls, including default-off and parked activation boundaries</td></tr>
 <tr><td><a href="docs/guides/INSTALLATION.md">Installing in Your Repo</a></td><td>Step-by-step setup guide</td></tr>
 <tr><td><a href="docs/examples/">Spec Examples</a></td><td>Annotated reference examples for common patterns</td></tr>
 <tr><td><a href="skills/">Shared Skills</a></td><td>Portable governance skills installed to every repo — including <strong>v4.0 skills-first policy discovery layer</strong> (14 discovery skills: anti-fabrication, evidence capture, DoD validation, status transition, result envelope, ownership routing, quality gates, scope workflow, feature template, bug template, workflow execution loops, mode resolution, fix-cycle protocol, top-level discovery)</td></tr>

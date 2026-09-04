@@ -24,6 +24,22 @@
 
 ## Delivered Improvements
 
+### IMP-054 — Hybrid evidence research runtime
+
+- **Problem:** the framework had workflow research phases and execution receipts, but no reusable question-to-publication evidence lifecycle.
+- **Delivered:** a provider-neutral, opt-in research runtime with question validation, planning, staged run/resume, inspection, validation, immutable publication, bridge contracts, cancellation, typed errors, content-addressed ECF records, CLI routing, and focused selftests.
+- **Durable home:** [`docs/recipes/research-and-admission-runtime.md`](recipes/research-and-admission-runtime.md), the control-plane guides, `bubbles/scripts/research-runtime.py`, and this entry.
+- **Boundary:** hosted providers and downstream bridge activation remain parked. Publication emits evidence and a result envelope; it does not certify, deploy, transact, message, or mutate infrastructure.
+- **Status:** delivered; the temporary packet was harvested and removed. External activation remains parked.
+
+### IMP-055 — Measured budget and session epoch runtime
+
+- **Problem:** aggregate session caps did not provide a deterministic pre-dispatch budget, permit, usage, retry, and epoch control plane.
+- **Delivered:** exact goal-budget accounting, reservations, debits, releases, holds, one-time permits, usage reconciliation, retry identities, verified session epochs, adapter resolution, a reference broker, frozen-corpus evaluation, CLI routing, and focused selftests.
+- **Durable home:** [`docs/recipes/research-and-admission-runtime.md`](recipes/research-and-admission-runtime.md), the control-plane guides, `bubbles/scripts/measured-budget-runtime.py`, and this entry.
+- **Boundary:** missing usage remains `unmeasured`. Native host interception, live checkpoints, rollout, and causal savings proof remain parked. A permit does not authorize consequential actions.
+- **Status:** delivered; the temporary packet was harvested and removed. External activation remains parked.
+
 ### IMP-006 — `bubbles.journey` full-stack tutorial + internal-correctness verification
 
 - **Problem:** guided-journey walkthroughs recorded only a user-facing verdict

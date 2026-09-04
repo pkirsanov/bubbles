@@ -45,8 +45,10 @@ where a new proposal addresses the same surface.
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
 | IMP-058 | Measured Gate Retirement and Single-Execution Verification | PROPOSED | framework-health (G125) | REG-22, COV-24, PERF-13, PERF-14, REG-23, COST-14 | 2026-09-04 |
-| IMP-054 | Hybrid Evidence Research Runtime | PROPOSED | framework-health (G125) | EV-15, HO-5, COST-11, SEC-7 | 2026-08-30 |
-| IMP-055 | Design 2: Measured Budget and Session Epoch Runtime | PROPOSED | framework-health (G125) | COST-12, HO-6, EV-16, REG-20 | 2026-08-30 |
+| IMP-057 | Native Host Budget Interception | PROPOSED | framework-health (G125) | COST-13, HO-8, EV-18, COV-23, REG-21 | 2026-09-02 |
+| IMP-056 | Fail-Closed Repository Mutable-Dispatch Authorization | IN PROGRESS | framework-health (G125) | GF-16, GF-17, HO-7, EV-17, COV-22 | 2026-09-02 |
+| IMP-054 | Hybrid Evidence Research Runtime | APPLIED 2026-09-02 — runtime, contracts, and focused selftests delivered across four repository scopes; temporary packet removed; hosted providers and downstream bridge activation remain outside this delivery | framework-health | EV-15, HO-5, COST-11, SEC-7 | 2026-08-27 |
+| IMP-055 | Measured Budget and Session Epoch Runtime | APPLIED 2026-09-02 — runtime, contracts, and focused selftests delivered across six repository scopes; temporary packet removed; native host activation and causal savings proof remain outside this delivery | framework-health | COST-12, HO-6, EV-16, REG-20 | 2026-08-27 |
 | IMP-028 | Orchestrator Context Architecture (COST-1 remainder) | CLOSED 2026-07-29 — findings folded into `agents/bubbles_shared/operating-baseline.md` (R3); target unreachable by the proposed reduction, dedup premise measured false | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
 | IMP-030 | Controlled Technical Prose: term registry enforcement + prose-form governance | APPLIED 2026-08-01 — SCOPE-1/2/3/4 landed; SCOPE-5 (Gate G132) DEFERRED under its own entry condition, no gate registered | framework-health (G125) | REG-3, DOC-2 | 2026-08-01 |
 | IMP-031 | Feature Reachability: close the orphaned-implementation hole | APPLIED 2026-08-01 — SCOPE-1/2/3/4/5/6/8/9 landed; SCOPE-7 (gate registration) DEFERRED under its own entry condition, no gate registered | framework-health (G125) | COV-3, REG-4, DOC-3 | 2026-08-01 |

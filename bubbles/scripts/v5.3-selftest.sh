@@ -116,7 +116,18 @@ fi
 # that can support asserting the downstream exit code, and it exercises the
 # installer on the same path a downstream repository uses.
 tmp_root="$(mktemp -d -t bubbles-v5.3-selftest.XXXXXX)"
-trap 'rm -rf "$tmp_root"' EXIT INT TERM
+ds_log=""
+cleanup() {
+  rm -rf "$tmp_root"
+  [[ -z "$ds_log" ]] || rm -f "$ds_log"
+}
+trap cleanup EXIT
+# A cleanup-only signal trap swallows the signal and resumes execution against
+# the resources it just deleted. Preserve cleanup through EXIT, but terminate
+# with the conventional shell status so a parent deadline produces one honest
+# interrupted check instead of cascading missing-log and missing-root failures.
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 run_in_downstream_root() {
   (cd "$tmp_root" && "$@")
@@ -196,18 +207,50 @@ fi
 # hang FAILS LOUD at the correct bound instead of truncating healthy progress.
 ds_rc=0
 ds_log="$(mktemp "${TMPDIR:-/tmp}/bubbles-v5.3-downstream.XXXXXX")"
-trap 'rm -rf "$tmp_root"; rm -f "$ds_log"' EXIT INT TERM
 bubbles_run_with_progress_timeout \
   "$downstream_validate_idle_timeout_seconds" \
   "$downstream_validate_absolute_timeout_seconds" \
   "$ds_log" \
   run_in_downstream_root bash .github/bubbles/scripts/framework-validate.sh || ds_rc=$?
 ds_full="$(cat "$ds_log")"
+# 2, 124 and 125 all originate in the PROGRESS RUNNER, not in framework-validate:
+# each means the run was cut short, so the captured log is INCOMPLETE and cannot
+# support any verdict about downstream behaviour. Naming that once, here, keeps
+# every assertion below gated on the same condition; the previous form repeated
+# `-ne 124 && -ne 125` at five sites, and rc=2 was absent from all five, so a
+# runner abort was read as a dozen independent skip-logic regressions.
+ds_run_incomplete=false
 if [[ $ds_rc -eq 124 ]]; then
+  ds_run_incomplete=true
   fail "T3: downstream framework-validate made no log progress for ${downstream_validate_idle_timeout_seconds}s (idle timeout; treated as a failure, not a skip)"
 elif [[ $ds_rc -eq 125 ]]; then
+  ds_run_incomplete=true
   fail "T3: downstream framework-validate exceeded the ${downstream_validate_absolute_timeout_seconds}s absolute ceiling while still producing output (treated as a failure, not a skip)"
+elif [[ $ds_rc -eq 2 ]]; then
+  ds_run_incomplete=true
+  fail "T3: the progress runner ABORTED the downstream framework-validate (rc=2) because it could not read the progress log; the run was cut short after $(wc -l <"$ds_log" | tr -d '[:space:]') line(s), so its verdicts are incomplete. This is a RUNNER failure, not a skip-logic regression."
 fi
+
+# A downstream run that never EXECUTED its checks cannot answer T3 at all. Its
+# log carries no SKIP line for any label, so the per-label loop below would read
+# every one of them as a skip-logic regression and emit 16 separate failures --
+# 16 symptoms of a run that never started, with the single real cause absent from
+# the output. The dominant instance is the concurrent-run guard in
+# framework-validate: when another run holds the lock, the nested validate exits
+# 1 after three lines, which is neither 124 nor 125 and so fell straight through.
+# Detect "produced no verdicts" once, name the cause, and suppress assertions the
+# captured log cannot support.
+ds_executed_checks=true
+if ! grep -Fq 'SKIP: ' <<<"$ds_full"; then
+  ds_executed_checks=false
+  ds_log_lines="$(wc -l <"$ds_log" | tr -d '[:space:]')"
+  if grep -Fq 'another framework-validate run is already in progress' <<<"$ds_full"; then
+    fail "T3: the downstream framework-validate was REFUSED by the concurrent-run guard (rc=$ds_rc); another framework-validate already holds the lock. This is an environment condition, NOT a skip-logic regression -- wait for that run to finish, then re-run."
+  elif [[ "$ds_run_incomplete" == "false" ]]; then
+    fail "T3: the downstream framework-validate emitted no SKIP verdict for any label (rc=$ds_rc, ${ds_log_lines} log lines), so it did not execute its checks. Last output: $(tail -2 "$ds_log" | tr '\n' ' ')"
+  fi
+fi
+
 self_only_labels=(
   "Capability ledger selftest"
   "Capability freshness selftest"
@@ -226,7 +269,7 @@ self_only_labels=(
   "Validation run receipt selftest (IMP-049 SCOPE-2)"
   "Generated gate-enforcement block current"
 )
-if [[ $ds_rc -ne 124 && $ds_rc -ne 125 ]]; then
+if [[ "$ds_executed_checks" == "true" && "$ds_run_incomplete" == "false" ]]; then
   t3_failures=0
   for label in "${self_only_labels[@]}"; do
     if grep -Fq "SKIP: $label (framework-source-only" <<<"$ds_full"; then
@@ -267,7 +310,7 @@ observed_failures=()
 # nested fixture output it printed. On failure, read only the LAST contiguous
 # "Failed checks:" block; the first block can belong to a nested selftest that
 # intentionally exercised a red framework-validate fixture.
-if [[ $ds_rc -ne 0 && $ds_rc -ne 124 && $ds_rc -ne 125 ]]; then
+if [[ $ds_rc -ne 0 && "$ds_run_incomplete" == "false" ]]; then
   while IFS= read -r line; do
     [[ -n "$line" ]] && observed_failures+=("$line")
   done < <(printf '%s\n' "$ds_full" | awk '
@@ -279,7 +322,7 @@ if [[ $ds_rc -ne 0 && $ds_rc -ne 124 && $ds_rc -ne 125 ]]; then
 fi
 
 unexpected=0
-if [[ $ds_rc -ne 0 && $ds_rc -ne 124 && $ds_rc -ne 125 && ${#observed_failures[@]} -eq 0 ]]; then
+if [[ $ds_rc -ne 0 && "$ds_run_incomplete" == "false" && ${#observed_failures[@]} -eq 0 ]]; then
   fail "T3c: downstream framework-validate exited $ds_rc without a trailing Failed checks block"
   unexpected=$((unexpected + 1))
 fi
@@ -313,7 +356,7 @@ for known in "${known_downstream_failures[@]}"; do
   fi
 done
 
-if [[ $unexpected -eq 0 && $fixed -eq 0 && $ds_rc -ne 124 && $ds_rc -ne 125 ]]; then
+if [[ $unexpected -eq 0 && $fixed -eq 0 && "$ds_run_incomplete" == "false" ]]; then
   if downstream_result_contract_passes \
     "$ds_rc" "${#known_downstream_failures[@]}" "$unexpected" "$fixed"; then
     if [[ ${#known_downstream_failures[@]} -eq 0 ]]; then

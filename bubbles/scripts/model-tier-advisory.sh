@@ -13,6 +13,8 @@
 #   model-tier-advisory.sh check [--enforce] --mode <mode> --phase <phase>
 #   model-tier-advisory.sh resolve --mode <mode> --phase <phase>   # prints floor
 #   model-tier-advisory.sh retirement [--tier <tier>]              # IMP-027/S11
+#   model-tier-advisory.sh typed --mode <mode> --phase <phase>
+#     --model-class <class> [--model-identity <id> --model-verified]
 #
 # `retirement` reports which `modelCompensation` gates have met the TIER half
 # of their registry `retireWhen` criterion at the given (or active) model tier.
@@ -63,18 +65,50 @@ MODE=""
 PHASE=""
 ENFORCE="0"
 TIER=""
+MODEL_CLASS="none"
+MODEL_IDENTITY=""
+MODEL_VERIFIED="false"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --mode) MODE="$2"; shift 2;;
     --phase) PHASE="$2"; shift 2;;
     --tier) TIER="$2"; shift 2;;
     --enforce) ENFORCE="1"; shift;;
+    --model-class) MODEL_CLASS="$2"; shift 2;;
+    --model-identity) MODEL_IDENTITY="$2"; shift 2;;
+    --model-verified) MODEL_VERIFIED="true"; shift;;
     -h|--help) usage; exit 0;;
     *) usage; exit 2;;
   esac
 done
 
 [[ -f "$WORKFLOWS" ]] || { echo "model-tier-advisory: workflows.yaml missing" >&2; exit 2; }
+
+if [[ "$OP" == "typed" ]]; then
+    [[ -n "$MODE" && -n "$PHASE" ]] || { usage; exit 2; }
+    case "$MODEL_CLASS" in
+        none|economy-reasoning|standard-reasoning|high-assurance-reasoning) ;;
+        *) echo "model-tier-advisory: unknown model class" >&2; exit 2 ;;
+    esac
+    if [[ "$MODEL_VERIFIED" == "true" && -z "$MODEL_IDENTITY" ]]; then
+        echo "model-tier-advisory: verified identity requires --model-identity" >&2
+        exit 2
+    fi
+    command -v jq >/dev/null 2>&1 || { echo "model-tier-advisory: jq is required for typed output" >&2; exit 2; }
+    identity_state="unverified"
+    [[ "$MODEL_VERIFIED" == "true" ]] && identity_state="verified"
+    material="$(jq -cnS --arg class "$MODEL_CLASS" --arg identity "$MODEL_IDENTITY" --arg state "$identity_state" --arg mode "$MODE" --arg phase "$PHASE" '{contractType:"model-class-decision",mode:$mode,modelClass:$class,modelIdentity:(if $identity == "" then null else $identity end),modelIdentityState:$state,phase:$phase,schemaVersion:1}')"
+    if command -v sha256sum >/dev/null 2>&1; then
+        digest="$(printf '%s' "$material" | sha256sum | awk '{print $1}')"
+    elif command -v shasum >/dev/null 2>&1; then
+        digest="$(printf '%s' "$material" | shasum -a 256 | awk '{print $1}')"
+    else
+        echo "model-tier-advisory: sha256 utility is required" >&2
+        exit 2
+    fi
+    printf '%s' "$material" | jq -cS --arg digest "sha256:$digest" '. + {decisionDigest:$digest}'
+    exit 0
+fi
 
 # Resolve the managed interpreter before probing, so a provisioned environment
 # satisfies the import even when PATH's python3 does not. See

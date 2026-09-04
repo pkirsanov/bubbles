@@ -170,7 +170,7 @@ Compatibility checks still cover repository-relative, feature-relative, string, 
 `Live System: No` denotes hermetic child-process execution with no deployed service or host.
 Each row still executes the production guard through its public CLI.
 
-| ID | DoD Ref | Scenario ID | Type | Category | File | Expected Test Title | Command | Live System |
+| ID | DoD Ref | Scenario ID | Type | Category | File/Location | Expected Test Title | Command | Live System |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | TP-B046-001 | `DOD-B046-T01` | `SCN-B046-001` | functional | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 accepts repository-relative and feature-relative regular files without rewrites` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
 | TP-B046-002 | `DOD-B046-T02` | `SCN-B046-002` | functional | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 rejects present and absent parent traversal with one non-disclosing class` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
@@ -181,8 +181,8 @@ Each row still executes the production guard through its public CLI.
 | TP-B046-007 | `DOD-B046-T07` | `SCN-B046-007` | functional | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 rejects missing directory FIFO and Unix-socket targets` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
 | TP-B046-008 | `DOD-B046-T08` | `SCN-B046-008` | functional | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 keeps substitution backtick variable wildcard and separator text inert` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
 | TP-B046-009 | `DOD-B046-T09` | `SCN-B046-009` | functional | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 preserves candidate-root form fragment envelope and scope-mode compatibility` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
-| TP-B046-010 | `DOD-B046-T10` | `SCN-B046-002`, `SCN-B046-004`, `SCN-B046-006` | functional | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 diagnostics disclose no external existence path metadata contents or control bytes` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
-| TP-B046-011 | `DOD-B046-T11` | `SCN-B046-002`, `SCN-B046-004` | mutation | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 containment-disabled regular-file-preserving mutation is killed` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
+| TP-B046-010 | `DOD-B046-T10` | Cross-cutting diagnostics | functional | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 diagnostics disclose no external existence path metadata contents or control bytes` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
+| TP-B046-011 | `DOD-B046-T11` | Containment mutation | mutation | functional | `bubbles/scripts/traceability-guard-selftest.sh` | `BUG-046 containment-disabled regular-file-preserving mutation is killed` | `bash bubbles/scripts/traceability-guard-selftest.sh` | No |
 
 ### Scenario Obligation Summary
 

@@ -2365,6 +2365,23 @@ one acceptance and one adversarial bound per facet, plus the BUG-007 and BUG-032
 pins. End-to-end cases run the whole guard in
 `bubbles/scripts/state-transition-guard-selftest.sh`.
 
+### Third facet — timeout wrapper grammar (2026-09-02)
+
+The packet was reopened for a distinct normalization case. Repository commands
+are routinely wrapped by exact-basename `timeout` or `gtimeout`. Those wrappers
+are transparent only when their complete prefix matches the packet's closed
+grammar. Unknown, malformed, attached short-option, unsupported clustered,
+missing-duration, missing-child, and near-miss forms remain opaque.
+
+The concurrent dirty implementation accepts broader forms, including `-vfp`,
+`-k.5`, and `-sTERM`. That source is not certified by this entry. Scope 2 in the
+BUG-033 packet owns narrowing the parser and its fixtures. No timeout red or
+green execution is claimed here.
+
+The packet boundary also admits the exact
+`.specify/memory/bubbles.session.json.flock` ignore entry. The session JSON and
+all other memory-state paths remain outside that ignore rule.
+
 ---
 
 ## BUG-034 — a superseded receipt blocks certification forever, so any spec that records receipts and then commits can never certify
@@ -2458,6 +2475,13 @@ refused transition becomes an accepted one, and `no-cross-product-effect` fails
 because the resolver ships into every consuming repository.
 
 ---
+
+> **Numbering note:** this repository independently assigned BUG-037 to two
+> unrelated defects on divergent branches -- the uservalidation entry below
+> (filed 2026-08-23) and the evidence-capture entry that follows it (filed
+> 2026-09-02, already present on `origin/main` with its own BUGS.md entry
+> before this merge). Both are preserved here rather than one silently
+> dropped; one needs a fresh number from the repository owner.
 
 ## BUG-037 — `uservalidation.md` implements opt-in acceptance, so a satisfied user cannot reach a terminal status at all
 
@@ -2810,3 +2834,96 @@ the file being read.
 Every block above is the real stdout and real exit code of the command shown
 directly above it, executed in this repository on the filing date. No output is
 paraphrased and no exit code is inferred.
+
+---
+
+## BUG-037 — evidence capture can duplicate the zero line count and feed a non-canonical scalar into arithmetic
+
+- **Filed:** 2026-09-02
+- **Disposition:** in progress. The focused fix, red-stage reproduction, and
+  focused checks are recorded at
+  `bugs/BUG-037-evidence-capture-zero-output-arithmetic/`. Aggregate framework
+  validation, release readiness, and validate-owned certification remain
+  pending.
+- **Severity:** high. Evidence formatting can emit an arithmetic diagnostic
+  while the child and helper still return success.
+- **Affects:** `bubbles/scripts/evidence-capture.sh` zero-output metadata.
+
+### Root cause
+
+The helper derives its line count with `grep -c` followed by a fallback printer.
+For an empty file, `grep -c ''` prints `0` and returns a no-match status. The
+fallback prints another `0`, so command substitution produces `00`. Later
+conditions consume that value arithmetically.
+
+The duplicated-zero source defect is confirmed by inspection. The operator's
+exact arithmetic diagnostic was not durably captured in this session and is not
+restated as execution evidence.
+
+### Required fix
+
+Use one canonical line-count producer for every readable capture file. Add
+focused successful and failing zero-output regressions that assert `lines: 0`,
+the empty-stream hash, no arithmetic diagnostic, and the existing child exit
+contract. Preserve non-empty, bounded, signal, cleanup, and verify behavior.
+
+The packet routes implementation to `bubbles.implement`. Full framework and
+release validation remain mandatory before validate-owned certification.
+
+---
+
+## BUG-038 — train metadata assignment has no authorized workflow route
+
+- **Filed:** 2026-09-02
+- **Disposition:** in progress. The bounded metadata-only fix and focused checks
+  are recorded at `bugs/BUG-038-train-metadata-assignment-mode-gap/`. Aggregate
+  framework validation, release readiness, and validate-owned certification
+  remain pending.
+- **Severity:** high. Grounded release-train classification cannot be persisted
+  through an authorized workflow route.
+- **Affects:** train metadata workflow resolution, sole-owner authorization,
+  aliases, and the bounded assignment helper.
+
+### Root cause
+
+The workflow registry exposed train lifecycle operations but no metadata
+assignment mode. The capability registry and train agent therefore had no
+authorized route to persist the two train-owned state fields.
+
+### Bounded fix
+
+The fix adds one metadata-assignment mode, its exact alias tuple, a sole
+`bubbles.train` runner grant, and a metadata-only helper. Focused helper,
+authorization, alias compatibility, syntax, portability, and artifact checks
+are recorded as passing. The bug remains `in_progress` until aggregate checks
+and validate-owned certification complete.
+
+---
+
+## BUG-039 — traceability Test Plan headers are counted as data rows
+
+- **Filed:** 2026-09-02
+- **Disposition:** in progress, pending human acceptance. The parser fix,
+  adversarial regression coverage, and focused checks are recorded at
+  `bugs/BUG-039-traceability-test-plan-header-count/`. Its `state.json` and
+  certification status remain `in_progress`, and no human acceptance decision
+  has been recorded.
+- **Severity:** medium. Incorrect row totals can mislead traceability audit
+  accounting.
+- **Affects:** standalone traceability Test Plan extraction and summary
+  accounting.
+
+### Root cause
+
+The extractor skipped Markdown separators but recognized only the legacy
+`Test Type` header shape. It therefore emitted an `ID | Type` header as data,
+and the summary correctly counted that extra emitted record.
+
+### Bounded fix
+
+The parser now recognizes the closed canonical and legacy header families,
+requires their separator, emits only contiguous valid data rows, and rejects
+malformed or duplicate table structure explicitly. Focused evidence includes
+the four-table case with 24 genuine rows. Aggregate framework validation,
+human acceptance, and validate-owned certification remain unclaimed.
+
