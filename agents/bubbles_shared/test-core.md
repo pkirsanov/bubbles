@@ -365,6 +365,64 @@ exactly one invokes any Bubbles guard, and one carries no hook at all. Gates tha
 are never reached are indistinguishable from gates that do not exist. The command
 has no bypass flag; what varies between repos is whether it is invoked at all.
 
+## Test-Leaf Receipt Reuse (IMP-058 SCOPE-5 / PERF-14)
+
+`test-leaf-receipt.sh` (IMP-048 SCOPE-3) already guarantees that an individual
+test command is not re-run when its bytes have not changed since it last
+passed. On `origin/main` that guarantee is reachable by any specialist, but no
+agent instruction told one to use it, so a `full-delivery` chain re-executed
+the same suite once per phase on an unchanged tree — measured, not assumed:
+`execution-ledger` spec 001 re-ran one 4,409-case suite five times across
+`regression`, `simplify`, `gaps`, `harden`, and `stabilize` with no byte
+changed between runs.
+
+**This is a citation right, never an execution shortcut.** What is reused is
+the *execution* — the command ran, its exit code and output were captured.
+What is NEVER reused is the *judgment* — whether that evidence satisfies the
+current phase's own contract. Each phase still reads the evidence and decides
+for itself; a phase that wants a fresh run may always demand one, receipt or
+not.
+
+**When a suite is unchanged, cite instead of re-running:**
+
+1. Construct `testId` so it names what the receipt actually claims:
+   `<phase>:<check>` at minimum, `<phase>:<agent>:<check>` when more than one
+   agent could produce the same check id. A receipt is looked up by this
+   exact string — reusing a sloppy id (e.g. every phase sharing `"tests"`)
+   makes an unrelated phase's receipt look like this phase's own.
+2. Declare `--leaf-ref` for **every** path the check's result actually
+   depends on — the test files, the source under test, and any fixture or
+   config the suite reads. `test-leaf-receipt.sh` invalidates ONLY on a
+   declared ref (see its header: "precise invalidation ... a sibling covering
+   untouched owners stays ACCEPTED"). An under-declared ref set is a stale
+   ACCEPTED on a real behavioral change — this is the one way reuse can hide
+   a regression, and it is a declaration mistake, not a limitation of the
+   mechanism.
+3. Run `test-leaf-receipt.sh run --leaf <testId>=<command> --leaf-ref ...`.
+   `RAN_PASS` means it executed — record the evidence as today. `ACCEPTED`
+   means an identical receipt already exists — do not re-run the command,
+   and record the citation instead of a fresh execution:
+   `verified: receipt <testOccurrenceId>, digest <candidateDigest>, produced by <phase> at <finishedAt>`.
+4. Call `bash bubbles/scripts/gate-hit-log.sh receipt-reuse --test-id <testId>
+   --receipt-id <testOccurrenceId> --digest <candidateDigest> --phase <phase>
+   --agent <agent>` for every citation. This is what makes the saving
+   measured rather than assumed, and what makes an unsound reuse traceable to
+   the receipt that authorized it.
+
+**Repository opt-in, unchanged default.** `test-leaf-receipt.sh` runs every
+leaf with no receipt tracking unless the repository sets
+`testLeafReceipts: adapter: jsonl` in `.github/bubbles-project.yaml` — an
+unconfigured repository, including this one today, behaves exactly as before
+this section existed. This is not a separate flag layered on top; it is the
+mechanism's own existing default.
+
+**What this does not change.** G005 and the anti-fabrication chain see the
+same requirement they always have: a claim is backed by real captured output
+with a real exit code. A cited receipt satisfies that because it carries the
+original captured bytes, never a caller-supplied assertion — `run` observes
+the exit code and output hash itself and refuses to accept either from an
+argument.
+
 ## References
 - `evidence-rules.md`
 - `state-gates.md`

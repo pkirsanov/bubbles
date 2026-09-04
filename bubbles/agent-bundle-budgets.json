@@ -1,7 +1,7 @@
 {
   "bubbles.analyst.agent.md": 156225,
   "bubbles.audit.agent.md": 177237,
-  "bubbles.bug.agent.md": 199934,
+  "bubbles.bug.agent.md": 214867,
   "bubbles.chaos.agent.md": 242573,
   "bubbles.clarify.agent.md": 114361,
   "bubbles.code-review.agent.md": 16873,
@@ -18,7 +18,7 @@
   "bubbles.implement.agent.md": 168481,
   "bubbles.iterate.agent.md": 335431,
   "bubbles.journey.agent.md": 29173,
-  "bubbles.plan.agent.md": 216064,
+  "bubbles.plan.agent.md": 228180,
   "bubbles.propagate.agent.md": 73229,
   "bubbles.recap.agent.md": 6429,
   "bubbles.redteam.agent.md": 89645,
@@ -34,10 +34,10 @@
   "bubbles.status.agent.md": 67210,
   "bubbles.super.agent.md": 132912,
   "bubbles.system-review.agent.md": 19031,
-  "bubbles.test.agent.md": 200422,
-  "bubbles.train.agent.md": 17849,
+  "bubbles.test.agent.md": 213372,
+  "bubbles.train.agent.md": 18851,
   "bubbles.upkeep.agent.md": 18001,
   "bubbles.ux.agent.md": 143366,
   "bubbles.validate.agent.md": 236220,
-  "bubbles.workflow.agent.md": 647377
+  "bubbles.workflow.agent.md": 682149
 }
