@@ -131,8 +131,17 @@ fi
 # requirement below because retirement candidacy is a property of the gate
 # registry and the model tier, not of any single mode/phase.
 if [[ "$OP" == "retirement" ]]; then
-  GATES="$GATES" TIER="${TIER:-${BUBBLES_ACTIVE_MODEL:-}}" python3 - <<'PY'
-import os, sys
+  # BUBBLES_GATE_HIT_ROOT override exists for hermetic selftests, mirroring
+  # BUBBLES_GATES_FILE/BUBBLES_WORKFLOWS_FILE above: it lets a fixture point
+  # gate-hit-log.sh at synthetic telemetry instead of the real repo's
+  # .specify/runtime/gate-hits.jsonl.
+  GATES="$GATES" TIER="${TIER:-${BUBBLES_ACTIVE_MODEL:-}}" \
+    REPO_ROOT="${BUBBLES_GATE_HIT_ROOT:-$REPO_ROOT}" \
+    GATE_HIT_LOG="$SCRIPT_DIR/gate-hit-log.sh" python3 - <<'PY'
+import json
+import os
+import subprocess
+import sys
 
 try:
     import yaml
@@ -202,15 +211,74 @@ if declared:
              if blocked else "none"))
 
 print("")
-print("  NOTHING IS RETIRED BY THIS REPORT. Each criterion has two halves and")
-print("  only the TIER half is evaluated above. The EVIDENCE half is UNMET for")
-print("  every gate without exception: retiring a gate requires the named rate")
-print("  measured below its threshold across its window of real model runs, and")
-print("  no harness produces those rates yet. The golden-task corpus scores a")
-print("  delivered artifact; it does not drive a model, so it cannot report how")
-print("  often a tier produces a dishonest one. Turning a gate off on tier")
-print("  eligibility alone would substitute 'the model is probably better now'")
-print("  for a measurement — the exact move the gate exists to prevent.")
+print("  NOTHING IS RETIRED BY THIS REPORT. Each RATE criterion above has two")
+print("  halves and only the TIER half is evaluated here.")
+print("  The EVIDENCE half is UNMET for every rate criterion without exception:")
+print("  retiring a gate on a rate requires that rate measured below its")
+print("  threshold across its window of real model runs, and no harness")
+print("  produces those rates yet. The golden-task corpus scores a delivered")
+print("  artifact; it does not drive a model, so it cannot report how often a")
+print("  tier produces a dishonest one. Turning a gate off on tier eligibility")
+print("  alone would substitute 'the model is probably better now' for a")
+print("  measurement — the exact move the rate criterion exists to prevent.")
+print("  See the preventionEvidence section below for the one evidence form")
+print("  this report CAN evaluate today.")
+
+# IMP-058 SCOPE-2 / COV-24 — the second criterion form. A gate may declare
+# `preventionEvidence: { minRuns, prevented, sourceClass }` alongside (never
+# instead of) its rate criterion. Unlike the rate, this is satisfied directly
+# from gate-hit-log.sh's own product-run telemetry, so it is decidable today.
+# A gate's PREVENTION history alone (no minRuns needed) proves it is earning
+# its cost; only the "never prevented" case needs a run-count floor to tell
+# "not yet observed enough" apart from "observed plenty, never mattered".
+earning, candidate, unmeasured = [], [], []
+hit_by_gate = {}
+gate_hit_log = os.environ.get('GATE_HIT_LOG', '')
+if gate_hit_log and os.path.isfile(gate_hit_log):
+    try:
+        proc = subprocess.run(
+            [gate_hit_log, 'report', '--json', '--repo-root',
+             os.environ.get('REPO_ROOT', '')],
+            capture_output=True, text=True, timeout=30,
+        )
+        hits = json.loads(proc.stdout or '{}')
+        for row in hits.get('gates') or []:
+            gid = row.get('gate')
+            if gid:
+                hit_by_gate[gid] = row
+    except (OSError, subprocess.SubprocessError, ValueError):
+        hit_by_gate = {}
+
+for gid in sorted(gates):
+    row = hit_by_gate.get(gid)
+    prevented = int(row.get('prevented', 0)) if row else 0
+    fired = int(row.get('fired', 0)) if row else 0
+    pe = gates[gid].get('preventionEvidence')
+    if prevented >= 1:
+        earning.append((gid, fired, prevented))
+    elif isinstance(pe, dict) and 'minRuns' in pe and fired >= int(pe['minRuns']):
+        candidate.append((gid, fired, prevented))
+    else:
+        unmeasured.append((gid, fired, prevented))
+
+print("")
+print("  preventionEvidence report (IMP-058 SCOPE-2 / COV-24) — decidable from")
+print("  gate-hit-log.sh product telemetry, no model run required:")
+print(f"  EARNING ({len(earning)}) — prevented at least once, cost is proven: "
+      + (', '.join(f"{g}(prevented={p}/{f})" for g, f, p in earning)
+         if earning else "none"))
+print(f"  CANDIDATE ({len(candidate)}) — fired >= declared minRuns, never "
+      "prevented: "
+      + (', '.join(f"{g}(fired={f})" for g, f, p in candidate)
+         if candidate else "none"))
+print(f"  UNMEASURED ({len(unmeasured)}) — no telemetry, or below the "
+      "declared minRuns, or no preventionEvidence declared: "
+      + (', '.join(g for g, f, p in unmeasured) if unmeasured else "none"))
+print("")
+print("  CANDIDATE is not retirement. It means the owner can now make an")
+print("  informed call instead of waiting on an unmeasurable rate — a gate")
+print("  judged load-bearing for reasons the hit log cannot see stays,")
+print("  regardless of its record count.")
 sys.exit(0)
 PY
   exit 0
