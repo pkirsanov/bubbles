@@ -44,7 +44,7 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
-| IMP-058 | Measured Gate Retirement and Single-Execution Verification | PROPOSED | framework-health (G125) | REG-22, COV-24, PERF-13, PERF-14, REG-23, COST-14 | 2026-09-04 |
+| IMP-058 | Measured Gate Retirement and Single-Execution Verification | IN PROGRESS — SCOPE-1 landed 2026-09-04: `model-tier-advisory.sh retirement` was silently bound to `workflows.yaml` (no `gates:` key) and always reported zero; rebound to `gates.yaml`, a regression pin added, and `gate-retirement.sh lint` now cross-checks the two readers' counts, mutation-verified against the original defect. `model-tier-advisory-selftest.sh` 22/22, `gate-retirement-selftest.sh` 46/46, shellcheck clean. SCOPE-2 through SCOPE-7 remain | framework-health (G125) | REG-22 (closed), COV-24, PERF-13, PERF-14, REG-23, COST-14 | 2026-09-04 |
 | IMP-057 | Native Host Budget Interception | PROPOSED | framework-health (G125) | COST-13, HO-8, EV-18, COV-23, REG-21 | 2026-09-02 |
 | IMP-056 | Fail-Closed Repository Mutable-Dispatch Authorization | IN PROGRESS | framework-health (G125) | GF-16, GF-17, HO-7, EV-17, COV-22 | 2026-09-02 |
 | IMP-054 | Hybrid Evidence Research Runtime | APPLIED 2026-09-02 — runtime, contracts, and focused selftests delivered across four repository scopes; temporary packet removed; hosted providers and downstream bridge activation remain outside this delivery | framework-health | EV-15, HO-5, COST-11, SEC-7 | 2026-08-27 |

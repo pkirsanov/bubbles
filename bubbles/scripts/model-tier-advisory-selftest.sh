@@ -134,12 +134,16 @@ gates:
 YAML
 
 retire_out() {
-  # retire_out <tier>  — prints the retirement report for a declared tier
+  # retire_out <tier>  — prints the retirement report for a declared tier.
+  # IMP-058 SCOPE-1 / REG-22: `retirement` reads the GATE registry, not
+  # workflows.yaml, so the fixture is fed via BUBBLES_GATES_FILE. The fixture
+  # file itself is unchanged — it already carries a top-level `gates:` key in
+  # the real registry's shape.
   if [[ -n "${1:-}" ]]; then
-    BUBBLES_WORKFLOWS_FILE="$RETIRE_FIXTURE" bash "$TARGET" retirement --tier "$1" 2>&1
+    BUBBLES_GATES_FILE="$RETIRE_FIXTURE" bash "$TARGET" retirement --tier "$1" 2>&1
   else
     (unset BUBBLES_ACTIVE_MODEL
-      BUBBLES_WORKFLOWS_FILE="$RETIRE_FIXTURE" bash "$TARGET" retirement) 2>&1
+      BUBBLES_GATES_FILE="$RETIRE_FIXTURE" bash "$TARGET" retirement) 2>&1
   fi
 }
 
@@ -183,6 +187,21 @@ for tier_out_label in "opus:$OPUS_OUT" "haiku:$HAIKU_OUT" "unknown:$UNKNOWN_OUT"
 done
 
 MODEL="opus-4.7" run 0 "retirement is advisory and never blocks" -- retirement
+
+# ---------------------------------------------------------------------------
+# IMP-058 SCOPE-1 / REG-22 regression pin: `retirement` against the REAL,
+# unoverridden gate registry must report a non-zero modelCompensation gate
+# count. This is the exact defect that shipped — the reader was bound to
+# workflows.yaml, which has no top-level `gates:` key, so the count was
+# always zero and the empty result rendered as a clean report rather than a
+# failure. Deliberately runs with no BUBBLES_GATES_FILE override.
+# ---------------------------------------------------------------------------
+REAL_OUT="$(bash "$TARGET" retirement --tier opus-class 2>&1)"
+if grep -qE "modelCompensation gates: 0$" <<<"$REAL_OUT"; then
+  fail "retirement against the real registry reports zero modelCompensation gates (REG-22 regression): $REAL_OUT"
+else
+  pass "retirement against the real registry reports a non-zero modelCompensation gate count"
+fi
 
 echo ""
 echo "[model-tier-advisory-selftest] $pass_count passed, $fail_count failed"

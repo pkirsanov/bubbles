@@ -39,6 +39,10 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # BUBBLES_WORKFLOWS_FILE override exists for hermetic selftests and downstream
 # repos that relocate workflows.yaml; defaults to the in-tree path.
 WORKFLOWS="${BUBBLES_WORKFLOWS_FILE:-$REPO_ROOT/bubbles/workflows.yaml}"
+# IMP-058 SCOPE-1 / REG-22: the gate registry, not workflows.yaml, is where
+# `classification` and `retireWhen` live. `retirement` reads this file; every
+# other operation (check/resolve/typed) keeps reading WORKFLOWS above.
+GATES="${BUBBLES_GATES_FILE:-$REPO_ROOT/bubbles/registry/gates.yaml}"
 
 usage() {
   cat >&2 <<'USAGE'
@@ -127,7 +131,7 @@ fi
 # requirement below because retirement candidacy is a property of the gate
 # registry and the model tier, not of any single mode/phase.
 if [[ "$OP" == "retirement" ]]; then
-  WORKFLOWS="$WORKFLOWS" TIER="${TIER:-${BUBBLES_ACTIVE_MODEL:-}}" python3 - <<'PY'
+  GATES="$GATES" TIER="${TIER:-${BUBBLES_ACTIVE_MODEL:-}}" python3 - <<'PY'
 import os, sys
 
 try:
@@ -136,7 +140,7 @@ except ImportError:
     print("model-tier-advisory: SKIP (PyYAML not installed)")
     sys.exit(0)
 
-with open(os.environ['WORKFLOWS']) as f:
+with open(os.environ['GATES']) as f:
     data = yaml.safe_load(f) or {}
 
 TIER_RANK = {'haiku-class': 1, 'sonnet-class': 2, 'opus-class': 3}
