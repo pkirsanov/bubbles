@@ -211,7 +211,7 @@ if [[ $# -gt 0 ]]; then
   _fv_executes_checks=false
   for _fv_arg in "$@"; do
     case "$_fv_arg" in
-      --tier=core | --tier=full | --changed-only | --cache | --no-cache | --record-debt)
+      --tier=core | --tier=full | --changed-only | --no-changed-only | --cache | --no-cache | --record-debt)
         _fv_executes_checks=true
         ;;
       -h | --help | --list-tier=core | --list-tier=full) ;;
@@ -404,12 +404,30 @@ LIST_TIER_ONLY="false"
 #   CI        -> the full tier
 # So a regression guard that must block a push has to be in core_check_label().
 #
+# WHICH CALLER FORCES --no-changed-only (IMP-058 SCOPE-4 -- keep this accurate
+# too, for the same reason): release-check.sh and hooks/pre-push.sh's
+# full-validation branch both pass --no-changed-only explicitly, so neither
+# can silently inherit the bare-invocation default below. Anything else that
+# invokes this script with no flags gets that default.
+#
 # --changed-only  restrict to checks whose owned surface the working tree
 #                 actually touched. Ownership is DERIVED (a selftest owns the
 #                 script it tests), never a hand-maintained manifest -- that
 #                 enumeration habit is what COV-2 was.
 # --no-cache      ignore the hermetic-selftest result cache for this run.
-CHANGED_ONLY="false"
+#
+# IMP-058 SCOPE-4 / PERF-13: a bare working-tree invocation now defaults to
+# --changed-only, so the dev-loop cost tracks what actually changed instead of
+# re-running the whole suite on every call. This default must NEVER reach a
+# release path by accident, so it is a SEPARATE opt-in for release-critical
+# callers: BUBBLES_VALIDATE_CHANGED_ONLY=false (or the explicit
+# --no-changed-only flag) forces the full, unfiltered run regardless of this
+# default, and release-check.sh / hooks/pre-push.sh's full-validation branch
+# both set it explicitly rather than relying on flag absence. A caller that
+# passes neither the env var nor either flag gets the new default; an explicit
+# --changed-only or --no-changed-only always wins over both the env var and
+# this default.
+CHANGED_ONLY="${BUBBLES_VALIDATE_CHANGED_ONLY:-true}"
 # IMP-027 SCOPE-7: the result cache is OPT-IN (--cache), never on by default.
 #
 # The original CORRECTNESS objection is now closed. validate_cache_key() used to
@@ -458,15 +476,17 @@ for _arg in "$@"; do
       LIST_TIER_ONLY="true"
       ;;
     --changed-only) CHANGED_ONLY="true" ;;
+    --no-changed-only) CHANGED_ONLY="false" ;;
     --cache) CACHE_ENABLED="true" ;;
     --no-cache) CACHE_ENABLED="false" ;;
     --record-debt) RECORD_DEBT="true" ;;
     -h | --help)
-      echo "Usage: framework-validate.sh [--tier=core|full] [--list-tier=core|full] [--changed-only] [--cache] [--no-cache] [--record-debt]"
-      echo "  (no flag)        run every check (full tier — unchanged default)"
+      echo "Usage: framework-validate.sh [--tier=core|full] [--list-tier=core|full] [--changed-only|--no-changed-only] [--cache] [--no-cache] [--record-debt]"
+      echo "  (no flag)        full tier, --changed-only filtering (unless BUBBLES_VALIDATE_CHANGED_ONLY=false)"
       echo "  --tier=core      run only the fast structural/lint/generator subset"
       echo "  --list-tier=core dry-list what the core tier runs/skips, then exit 0"
-      echo "  --changed-only   run only checks whose DECLARED CLOSURE the tree touched"
+      echo "  --changed-only   run only checks whose DECLARED CLOSURE the tree touched (default for a bare working-tree invocation; set BUBBLES_VALIDATE_CHANGED_ONLY=false or pass --no-changed-only to force the full run)"
+      echo "  --no-changed-only  force the full, unfiltered run even under the new default — release-check.sh and pre-push.sh's full-validation branch both pass this explicitly"
       echo "  --cache          OPT IN to the closure-keyed result cache (off by default)"
       echo "  --no-cache       ignore the result cache"
       echo "  --record-debt    write each --changed-only deferral to the validation debt ledger"

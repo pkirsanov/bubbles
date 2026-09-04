@@ -145,7 +145,10 @@ check_framework_validation() {
     echo "$decision"
     [[ "$accepted" -eq 1 ]] && return 0
   fi
-  bash "$SCRIPT_DIR/framework-validate.sh"
+  # IMP-058 SCOPE-4: framework-validate.sh's bare invocation now defaults to
+  # --changed-only. A release gate must never inherit that default by
+  # accident, so this is explicit rather than relying on flag absence.
+  bash "$SCRIPT_DIR/framework-validate.sh" --no-changed-only
 }
 
 echo "Bubbles Release Check"

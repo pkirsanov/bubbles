@@ -15727,6 +15727,7 @@ checks:
     - bubbles/scripts/mcp-server-selftest.sh
     - bubbles/scripts/repo-slug.sh
     - .github/bubbles-project.yaml
+    - agents/bubbles.workflow.agent.md
     - bubbles/mcp/tools/search_experience.json
     commands:
     - node
@@ -75937,4 +75938,4 @@ checks:
     commands:
     - sha256sum
     - shellcheck
-derivedAt: 3e1ba33e
+derivedAt: 5e570581
