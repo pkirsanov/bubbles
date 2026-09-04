@@ -44,6 +44,7 @@ where a new proposal addresses the same surface.
 
 | IMP | Title | Status | Surface | Gap codes | Date |
 |---|---|---|---|---|---|
+| IMP-058 | Measured Gate Retirement and Single-Execution Verification | PROPOSED | framework-health (G125) | REG-22, COV-24, PERF-13, PERF-14, REG-23, COST-14 | 2026-09-04 |
 | IMP-054 | Hybrid Evidence Research Runtime | PROPOSED | framework-health (G125) | EV-15, HO-5, COST-11, SEC-7 | 2026-08-30 |
 | IMP-055 | Design 2: Measured Budget and Session Epoch Runtime | PROPOSED | framework-health (G125) | COST-12, HO-6, EV-16, REG-20 | 2026-08-30 |
 | IMP-028 | Orchestrator Context Architecture (COST-1 remainder) | CLOSED 2026-07-29 — findings folded into `agents/bubbles_shared/operating-baseline.md` (R3); target unreachable by the proposed reduction, dedup premise measured false | framework-health (G125) | COST-1 (reduction; supersedes IMP-027 SCOPE-6) | 2026-07-28 |
