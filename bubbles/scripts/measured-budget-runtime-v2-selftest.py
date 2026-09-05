@@ -468,6 +468,60 @@ class TypedGraphTests(RuntimeCase):
                          "broker did not record launch-pending before consuming the permit "
                          "and launch-confirmed after a successful launch")
 
+    def test_reference_broker_reports_mutable_dispatch_audit_when_gateway_provided(self) -> None:
+        # IMP-056 SCOPE-5 (EV-17). The audit block is CONDITIONAL on
+        # --existing-snapshot-dir carrying an authorization.json -- exactly
+        # the shape mutable-dispatch-gateway.sh leaves behind, built here by
+        # hand (a full mint/verify round trip is already covered by
+        # mutable-dispatch-authorization-selftest.sh; this test is only
+        # about whether the BROKER reports what it finds, not whether the
+        # authorization itself is genuine).
+        argv = [str(self.private_dash("audit-dash")), "-c", "true"]
+        canonical = json.dumps({"argv": argv}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        action_digest = "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        fixture = self.prepare(action_digest=action_digest)
+        permit = self.runtime.permit_issue(decision_id=fixture["decision"]["decisionId"], nonce="nonce:audit",
+            expires_at=EXP, issued_at=T[12], enforcement_kind="repository-reference")
+        action_file = Path(self.temp.name) / "audit-action.json"
+        consumption_file = Path(self.temp.name) / "audit-consumption.json"
+        action_file.write_text(json.dumps({"actionDigest": action_digest, "argv": argv}), encoding="utf-8")
+        consumption_file.write_text(json.dumps({"permit_id": permit["permitId"], "nonce": "nonce:audit",
+            "consumed_at": T[13], "action_digest": action_digest}), encoding="utf-8")
+        snapshot_dir = Path(self.temp.name) / "gateway-snapshot"
+        snapshot_dir.mkdir(mode=0o700)
+        create = subprocess.run(["python3", str(HERE / "reference-broker-snapshot.py"),
+            "--action", str(action_file), "--permit-consumption", str(consumption_file),
+            "--output-dir", str(snapshot_dir)], text=True, capture_output=True, check=False)
+        self.assertEqual(create.returncode, 0, create.stderr)
+        fake_authorization = {"contractType": "mutable-dispatch-authorization/v1", "authenticator": "hmac-sha256:fixture-audit-marker"}
+        (snapshot_dir / "authorization.json").write_text(json.dumps(fake_authorization), encoding="utf-8")
+        (snapshot_dir / "authorization.json").chmod(0o600)
+        command = [str(HERE.parent / "adapters/dispatch/reference-broker.sh"), "dispatch",
+                   "--store-root", self.temp.name, "--permit-consumption", str(consumption_file),
+                   "--action", str(action_file), "--existing-snapshot-dir", str(snapshot_dir)]
+        completed = subprocess.run(command, text=True, capture_output=True, timeout=30, check=False,
+            env={**os.environ, "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path})
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        audit = result["mutableDispatchAudit"]
+        self.assertIsNotNone(audit, "gateway-provided dispatch reported no audit block at all")
+        self.assertEqual(audit["permitId"], permit["permitId"])
+        self.assertEqual(audit["authorizationAuthenticator"], "hmac-sha256:fixture-audit-marker")
+        self.assertEqual(audit["launchState"], "launch-confirmed")
+
+    def test_reference_broker_reports_no_audit_block_for_a_direct_call(self) -> None:
+        # The SAME conditional, proven from the other side: a caller that
+        # never went through the gateway (no --existing-snapshot-dir, so no
+        # authorization.json exists anywhere) gets mutableDispatchAudit: null,
+        # never a fabricated or defaulted-nonempty block.
+        argv = [str(self.private_dash("no-audit-dash")), "-c", "true"]
+        permit, _action_file, _consumption_file, command = self.broker_fixture(argv, "nonce:no-audit")
+        completed = subprocess.run(command, text=True, capture_output=True, timeout=30, check=False,
+            env={**os.environ, "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path})
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        result = json.loads(completed.stdout)
+        self.assertIsNone(result["mutableDispatchAudit"], "a direct (non-gateway) call fabricated an audit block")
+
     def test_reference_broker_refuses_before_recording_launch_pending(self) -> None:
         # A shebang script fails at snapshot CREATION (before launch-pending
         # is ever recorded, per the wiring order) -- so it produces NO

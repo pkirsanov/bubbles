@@ -143,7 +143,7 @@ if [[ "$launch_rc" -ne 0 ]] || [[ ! -f "$snapshot_dir/child-status" ]]; then
   echo "reference-broker: launch preparation failed after permit consumption" >&2
   exit 4
 fi
-python3 "$ENGINE" launch-confirm --store-root "$store_root" --input "$work_dir/launch-terminal-input.json" >/dev/null
+launch_confirm_record="$(python3 "$ENGINE" launch-confirm --store-root "$store_root" --input "$work_dir/launch-terminal-input.json")"
 
 child_status="$(<"$snapshot_dir/child-status")"
 [[ "$child_status" =~ ^[0-9]+$ ]] || {
@@ -168,5 +168,36 @@ settlement_json="$(python3 "$FINALIZER" settle --store-root "$store_root" --perm
 outcome="$(printf '%s' "$settlement_json" | jq -r '.terminalState')"
 stdout_bytes="$(wc -c <"$snapshot_dir/stdout" | tr -d ' ')"
 stderr_bytes="$(wc -c <"$snapshot_dir/stderr" | tr -d ' ')"
-printf '{"childExitCode":%s,"contractType":"reference-dispatch-result","nativeHostInterception":"unsupported","schemaVersion":1,"settlement":"%s","stderrBytes":%s,"stdoutBytes":%s}\n' "$child_status" "$outcome" "$stderr_bytes" "$stdout_bytes"
+
+# IMP-056 SCOPE-5 (EV-17). This block is audit evidence ONLY: everything in it
+# is read from durable records the ledger already accepted BEFORE this line
+# runs, after the launch it describes already happened. Nothing here is
+# consulted by any authorization decision -- the gateway (SCOPE-4) already
+# made every gating decision before the broker was ever invoked, from the
+# SAME durable records this just re-reads. A caller that fabricated this
+# object could not use it to open the gateway, because nothing reads a result
+# envelope as an input; it can only misrepresent history after the fact,
+# which is a provenance problem for whoever consumes the report, not an
+# authorization bypass.
+#
+# CONDITIONAL, per SCOPE-5's own wording: present only when this dispatch was
+# reached through the SCOPE-4 gateway (--existing-snapshot-dir left an
+# authorization.json in the shared snapshot directory). A direct broker call
+# has no authorization to report and gets no audit block, exactly as before.
+mutable_dispatch_audit="null"
+if [[ -f "$snapshot_dir/authorization.json" ]]; then
+  authorization_authenticator="$(jq -r '.authenticator // ""' "$snapshot_dir/authorization.json")"
+  launch_state_id="$(jq -r '.launchStateId // ""' <<<"$launch_confirm_record")"
+  launch_state="$(jq -r '.state // ""' <<<"$launch_confirm_record")"
+  mutable_dispatch_audit="$(jq -n --arg pid "$permit_id" --arg aa "$authorization_authenticator" \
+    --arg lsid "$launch_state_id" --arg ls "$launch_state" \
+    '{permitId:$pid,authorizationAuthenticator:$aa,launchStateId:$lsid,launchState:$ls}')"
+fi
+
+jq -nc --argjson childExitCode "$child_status" --arg settlement "$outcome" \
+  --argjson stderrBytes "$stderr_bytes" --argjson stdoutBytes "$stdout_bytes" \
+  --argjson mutableDispatchAudit "$mutable_dispatch_audit" \
+  '{childExitCode:$childExitCode,contractType:"reference-dispatch-result",
+    mutableDispatchAudit:$mutableDispatchAudit,nativeHostInterception:"unsupported",
+    schemaVersion:1,settlement:$settlement,stderrBytes:$stderrBytes,stdoutBytes:$stdoutBytes}'
 exit "$child_status"

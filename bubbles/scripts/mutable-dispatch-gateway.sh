@@ -179,7 +179,11 @@ mint_args=(mint --authority-file "$authority_file" \
 [[ -n "$lifetime" ]] && mint_args+=(--lifetime-seconds "$lifetime")
 [[ -n "$now_override" ]] && mint_args+=(--now "$now_override")
 
-authorization_file="$snapshot_dir/.authorization.json"
+# Named, not dot-prefixed: IMP-056 SCOPE-5's post-execution audit contract
+# reads this file, when present, to report which authorization the launch it
+# is describing actually used. It stays PRIVATE (0600, inside the 0700
+# snapshot_dir) either way; the name is discoverability, not exposure.
+authorization_file="$snapshot_dir/authorization.json"
 if ! bash "$AUTHORIZATION" "${mint_args[@]}" >"$authorization_file" 2>"$snapshot_dir/.mint-error"; then
   cat "$snapshot_dir/.mint-error" >&2
   fail_refuse "authorization could not be minted — repository, boundary, or receipt invariant did not hold"
