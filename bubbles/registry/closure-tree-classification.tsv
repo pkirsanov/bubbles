@@ -33,18 +33,53 @@
 #                                    leaves unclassified further, per
 #                                    the proposal.
 #
-# 2026-09-05 re-derivation: 161 closureComplete: false selftests total
-# (of 231 closureComplete: false checks registry-wide). 133
-# genuine-tree-walk, 10 candidate-false-negative, 3
-# candidate-false-negative+closure-unresolved, 15 closure-unresolved.
-# This is materially smaller than the proposal's 2026-09-04 manual-sample
-# estimate (~49 candidate false-negatives out of ~227 registry-wide
-# false entries). The proposal explicitly anticipated the drift ("the
-# exact counts... will have moved; re-verify before acting") and that
-# estimate was a manual sample, not a claim of precision -- so the gap is
-# not treated as an error in either number, and the 2026-09-04 estimate
-# is left as historical record rather than corrected. This file is the
-# mechanical, re-runnable derivation SCOPE-2 must work from instead.
+# 2026-09-05 initial re-derivation (before SCOPE-2 remediation): 161
+# closureComplete: false selftests total (of 231 closureComplete: false
+# checks registry-wide). 133 genuine-tree-walk, 10 candidate-false-negative,
+# 3 candidate-false-negative+closure-unresolved, 15 closure-unresolved.
+# This was materially smaller than the proposal's 2026-09-04 manual-sample
+# estimate (~49 candidate false-negatives out of ~227 registry-wide false
+# entries). The proposal explicitly anticipated the drift ("the exact
+# counts... will have moved; re-verify before acting") and that estimate
+# was a manual sample, not a claim of precision -- so the gap was not
+# treated as an error in either number, and the 2026-09-04 estimate is left
+# as historical record rather than corrected.
+#
+# 2026-09-05 SCOPE-2 remediation (shape (a), per-selftest retrofit): 6 of
+# the 10 pure candidate-false-negative selftests (eval-corpus-selftest.sh,
+# eval-harness-selftest.sh, experience-recall-eval-selftest.sh,
+# goal-contract-selftest.sh, judge-adapter-contract-selftest.sh,
+# mode-alias-selftest.sh) had their SOLE closureComplete-triggering
+# reference rewritten from $REPO_ROOT/bubbles/<path> to the equivalent
+# $SCRIPT_DIR/../<path> -- textually identical resolution, but outside
+# reads_working_tree()'s match set -- and now carry closureComplete: true.
+# Each was re-run standalone (zero behavior change) and shellcheck-clean
+# before and after. The dependency this unlocked for
+# judge-adapter-contract-selftest.sh (bubbles/adapters/judge/ollama.sh) was
+# proven load-bearing by execution: moving it aside made the selftest FAIL
+# CLOSED (exit 1, "adapter exists ... not found"), not silently pass or
+# skip, satisfying this proposal's fail-closed acceptance bar; the file was
+# restored and reconfirmed byte-identical and passing.
+#
+# The remaining 4 candidate-false-negative entries (bug-packet-selftest.sh,
+# imp021-interaction-contracts-selftest.sh,
+# phase-relevance-resolve-selftest.sh, state-linkage-backfill-selftest.sh)
+# were investigated and deliberately LEFT UNFIXED: their triggering
+# references point outside bubbles/ (agents/, docs/, or BUGS.md at the repo
+# root), which needs a DOUBLE $SCRIPT_DIR/../../<path> hop. normalize_ref()
+# in generate-validation-checks.sh only collapses a SINGLE `dir/../` hop (its
+# own comment says so); tracing a double hop through it produces a wrong,
+# non-existent path, so the reference would be silently DROPPED from the
+# tracked closure rather than correctly re-pointed -- reintroducing exactly
+# the staleness this proposal exists to remove, and worse than leaving the
+# false-negative alone. Fixing this needs either a normalize_ref() multi-hop
+# fix (shared derivation logic -- shape (b), out of scope here) or a
+# different per-file approach; recorded as an open follow-up rather than
+# forced through with a regression. This file's counts (155 total false
+# selftests: 133 genuine-tree-walk, 4 candidate-false-negative, 3
+# candidate-false-negative+closure-unresolved, 15 closure-unresolved) are
+# post-remediation and should be treated as current; the 2026-09-04 and
+# pre-remediation 2026-09-05 figures above are historical only.
 bubbles/scripts/acceptance-authority-selftest.sh	genuine-tree-walk
 bubbles/scripts/adoption-profile-lib-selftest.sh	genuine-tree-walk
 bubbles/scripts/adversarial-aggregate-selftest.sh	genuine-tree-walk
@@ -79,15 +114,12 @@ bubbles/scripts/delivery-implementation-delta-guard-selftest.sh	genuine-tree-wal
 bubbles/scripts/design-experiment-guard-selftest.sh	genuine-tree-walk
 bubbles/scripts/doctor-hygiene-surface-selftest.sh	genuine-tree-walk
 bubbles/scripts/done-spec-audit-selftest.sh	genuine-tree-walk
-bubbles/scripts/eval-corpus-selftest.sh	candidate-false-negative
-bubbles/scripts/eval-harness-selftest.sh	candidate-false-negative
 bubbles/scripts/evidence-admission-hardening-selftest.sh	genuine-tree-walk
 bubbles/scripts/evidence-capture-selftest.sh	closure-unresolved
 bubbles/scripts/evidence-tool-log-bridge-selftest.sh	genuine-tree-walk
 bubbles/scripts/experience-recall-adapter-contract-selftest.sh	closure-unresolved
 bubbles/scripts/experience-recall-authority-selftest.sh	candidate-false-negative+closure-unresolved
 bubbles/scripts/experience-recall-cli-selftest.sh	genuine-tree-walk
-bubbles/scripts/experience-recall-eval-selftest.sh	candidate-false-negative
 bubbles/scripts/experience-recall-index-selftest.sh	genuine-tree-walk
 bubbles/scripts/experience-recall-lifecycle-selftest.sh	genuine-tree-walk
 bubbles/scripts/framework-dogfood-guard-selftest.sh	genuine-tree-walk
@@ -104,7 +136,6 @@ bubbles/scripts/generate-gate-coverage-map-selftest.sh	genuine-tree-walk
 bubbles/scripts/generate-installer-selftest.sh	genuine-tree-walk
 bubbles/scripts/generate-validation-checks-selftest.sh	genuine-tree-walk
 bubbles/scripts/goal-boundary-receipt-selftest.sh	closure-unresolved
-bubbles/scripts/goal-contract-selftest.sh	candidate-false-negative
 bubbles/scripts/guard-lib-timeout-selftest.sh	genuine-tree-walk
 bubbles/scripts/hooks/git-env-sanitize-selftest.sh	genuine-tree-walk
 bubbles/scripts/imp021-interaction-contracts-selftest.sh	candidate-false-negative
@@ -113,7 +144,6 @@ bubbles/scripts/install-provenance-selftest.sh	genuine-tree-walk
 bubbles/scripts/intent-routes-lint-selftest.sh	genuine-tree-walk
 bubbles/scripts/interop-apply-selftest.sh	genuine-tree-walk
 bubbles/scripts/interop-import-selftest.sh	genuine-tree-walk
-bubbles/scripts/judge-adapter-contract-selftest.sh	candidate-false-negative
 bubbles/scripts/learning-loop-selftest.sh	genuine-tree-walk
 bubbles/scripts/managed-docs-existence-lint-selftest.sh	genuine-tree-walk
 bubbles/scripts/management-truth-lint-selftest.sh	genuine-tree-walk
@@ -123,7 +153,6 @@ bubbles/scripts/mcp-server-selftest.sh	genuine-tree-walk
 bubbles/scripts/mcp-trust-boundary-selftest.sh	genuine-tree-walk
 bubbles/scripts/micro-fix-admission-selftest.sh	closure-unresolved
 bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh	genuine-tree-walk
-bubbles/scripts/mode-alias-selftest.sh	candidate-false-negative
 bubbles/scripts/mode-resolver-phase-multiplicity-selftest.sh	genuine-tree-walk
 bubbles/scripts/mode-resolver-selftest.sh	genuine-tree-walk
 bubbles/scripts/multi-root-honesty-selftest.sh	genuine-tree-walk

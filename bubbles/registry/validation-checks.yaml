@@ -4159,7 +4159,7 @@ checks:
   vc-bubbles-scripts-experience-recall-eval-selftest:
     script: bubbles/scripts/experience-recall-eval-selftest.sh
     label: "Experience-recall evaluation selftest (IMP-037 / SCOPE-7)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/experience-recall-eval-selftest.sh
     - bubbles/scripts/experience-recall-index.py
@@ -11166,7 +11166,7 @@ checks:
   vc-bubbles-scripts-eval-corpus-selftest:
     script: bubbles/scripts/eval-corpus-selftest.sh
     label: "Golden-task corpus discriminates (IMP-027 SCOPE-5)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/eval-corpus-selftest.sh
     - bubbles/scripts/eval-harness.sh
@@ -13613,7 +13613,7 @@ checks:
   vc-bubbles-scripts-eval-harness-selftest:
     script: bubbles/scripts/eval-harness-selftest.sh
     label: "Golden-task eval harness selftest (v6.1 / R11)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/eval-harness-selftest.sh
     - bubbles/scripts/eval-harness.sh
@@ -18310,7 +18310,7 @@ checks:
   vc-bubbles-scripts-goal-contract-selftest:
     script: bubbles/scripts/goal-contract-selftest.sh
     label: "Goal-contract selftest (IMP-038 SCOPE-1 / GF-1)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/goal-contract-selftest.sh
     - bubbles/scripts/goal-contract.sh
@@ -23806,7 +23806,7 @@ checks:
   vc-bubbles-scripts-mode-alias-selftest:
     script: bubbles/scripts/mode-alias-selftest.sh
     label: "Mode alias selftest (v6.0 / B4)"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/scripts/aliases.sh
     - bubbles/scripts/mode-alias-selftest.sh
@@ -77567,7 +77567,7 @@ checks:
   vc-bubbles-scripts-judge-adapter-contract-selftest:
     script: bubbles/scripts/judge-adapter-contract-selftest.sh
     label: "Discovered selftest: judge-adapter-contract-selftest.sh"
-    closureComplete: false
+    closureComplete: true
     inputs:
     - bubbles/adapters/judge/ollama.sh
     - bubbles/scripts/eval-harness.sh
@@ -80698,4 +80698,4 @@ checks:
     commands:
     - sha256sum
     - shellcheck
-derivedAt: 440ec732
+derivedAt: b5201fb3

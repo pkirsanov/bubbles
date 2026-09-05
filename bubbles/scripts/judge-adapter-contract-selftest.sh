@@ -13,8 +13,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
-REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
-ADAPTER="$REPO_ROOT/bubbles/adapters/judge/ollama.sh"
+ADAPTER="$SCRIPT_DIR/../adapters/judge/ollama.sh"
 HARNESS="$SCRIPT_DIR/eval-harness.sh"
 
 passed=0

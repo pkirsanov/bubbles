@@ -30,13 +30,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 RESOLVER="$SCRIPT_DIR/mode-resolver.sh"
-WORKFLOWS_FILE="$REPO_ROOT/bubbles/workflows.yaml"
-ALIASES_FILE="$REPO_ROOT/bubbles/workflows/aliases.yaml"
+WORKFLOWS_FILE="$SCRIPT_DIR/../workflows.yaml"
+ALIASES_FILE="$SCRIPT_DIR/../workflows/aliases.yaml"
 SHELL_ALIASES_FILE="$SCRIPT_DIR/aliases.sh"
-CHEATSHEET_ALIASES_FILE="$REPO_ROOT/bubbles/cheatsheet/aliases.json"
-CHEATSHEET_MODES_FILE="$REPO_ROOT/bubbles/cheatsheet/modes.json"
+CHEATSHEET_ALIASES_FILE="$SCRIPT_DIR/../cheatsheet/aliases.json"
+CHEATSHEET_MODES_FILE="$SCRIPT_DIR/../cheatsheet/modes.json"
 
 failures=0
 pass() { echo "PASS: $1"; }

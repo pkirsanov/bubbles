@@ -5,10 +5,9 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HARNESS="$SCRIPT_DIR/eval-harness.sh"
-TASKS="$REPO_ROOT/bubbles/eval/tasks"
-FIXTURES="$REPO_ROOT/bubbles/eval/fixtures"
+TASKS="$SCRIPT_DIR/../eval/tasks"
+FIXTURES="$SCRIPT_DIR/../eval/fixtures"
 BASH_BIN="$(command -v bash)"
 
 if ! command -v python3 >/dev/null 2>&1; then

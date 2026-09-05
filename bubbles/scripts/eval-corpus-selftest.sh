@@ -20,10 +20,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HARNESS="$SCRIPT_DIR/eval-harness.sh"
-TASKS="$REPO_ROOT/bubbles/eval/tasks"
-GOLDEN="$REPO_ROOT/bubbles/eval/fixtures/positive/corpus-output"
+TASKS="$SCRIPT_DIR/../eval/tasks"
+GOLDEN="$SCRIPT_DIR/../eval/fixtures/positive/corpus-output"
 
 if [[ ! -d "$GOLDEN" ]]; then
   echo "eval-corpus-selftest: reference output missing: $GOLDEN" >&2

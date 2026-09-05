@@ -21,10 +21,9 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 INDEXER="$SCRIPT_DIR/experience-recall-index.py"
 LIFECYCLE="$SCRIPT_DIR/experience-recall-lifecycle.py"
-CORPUS="$REPO_ROOT/bubbles/eval/fixtures/experience-recall/corpus.json"
+CORPUS="$SCRIPT_DIR/../eval/fixtures/experience-recall/corpus.json"
 
 echo "experience-recall-eval-selftest"
 
