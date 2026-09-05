@@ -63,9 +63,13 @@ while [[ $# -gt 0 ]]; do
       ;;
     --check) MODE="check" ;;
     --stdout) MODE="stdout" ;;
+    --classify-closure-tree) MODE="classify-closure-tree" ;;
     -h | --help)
-      printf 'usage: %s.sh [--repo-root DIR] [--check|--stdout]\n' "$NAME"
+      printf 'usage: %s.sh [--repo-root DIR] [--check|--stdout|--classify-closure-tree]\n' "$NAME"
       printf 'Derives bubbles/registry/validation-checks.yaml by tracing real references.\n'
+      printf -- '--classify-closure-tree (IMP-059 SCOPE-1): for every closureComplete: false\n'
+      printf 'selftest, print why: genuine-tree-walk, candidate-false-negative, or\n'
+      printf 'closure-unresolved. Read-only; changes no generator output.\n'
       exit 0
       ;;
     *)
@@ -251,6 +255,79 @@ reads_working_tree() {
     /[$][{]?REPO_ROOT[}]?|[$][{]?repo_root[}]?|git -C|bubbles_pruned_find/ { found = 1 }
     END { exit(found ? 0 : 1) }
   ' "$file"
+}
+
+# IMP-059 SCOPE-1 (read-only diagnostic; does not affect closureComplete or the
+# committed registry): reads_working_tree() above flags a file on TEXTUAL
+# presence of $REPO_ROOT/$repo_root ANYWHERE, which cannot distinguish an
+# actual tree-walk (`git -C`, `bubbles_pruned_find`, an unrooted `find`) from a
+# BOUNDED literal-path reference such as "$REPO_ROOT/bubbles/scripts/foo.sh" —
+# a reference scan_file()/normalize_ref() already resolve into a concrete,
+# enumerable dependency. This prints, per non-comment line of one file, either
+# "unbounded" (a real walk marker, or a $REPO_ROOT/$repo_root token with no
+# resolvable literal path after it) or "bounded:<path>" (a $REPO_ROOT/$repo_root
+# token immediately followed by a literal path that resolves to a real file).
+# One unbounded line anywhere in a check's tree-flagged closure members is
+# enough to call the whole check a genuine tree-walk; --classify-closure-tree
+# below applies that rule.
+tree_match_kind() {
+  local file="$1" abs
+  abs="$REPO_ROOT/$file"
+  [[ -f "$abs" ]] || {
+    printf 'unbounded\n'
+    return 0
+  }
+  LC_ALL=C awk '
+    /^[ \t]*#/ { next }
+    /git -C|bubbles_pruned_find/ { print "unbounded"; next }
+    {
+      rest = $0
+      while (match(rest, /[$][{]?(REPO_ROOT|repo_root)[}]?/)) {
+        after = substr(rest, RSTART + RLENGTH)
+        rest = substr(rest, RSTART + RLENGTH)
+        if (substr(after, 1, 1) != "/") { print "unbounded"; continue }
+        tail = substr(after, 2)
+        if (match(tail, /^[A-Za-z0-9_.\/-]+/)) {
+          print "bounded:" substr(tail, RSTART, RLENGTH)
+        } else {
+          print "unbounded"
+        }
+      }
+    }
+  ' "$abs"
+}
+
+# Resolves each token tree_match_kind() marked "bounded:<path>" against the
+# repo root, collapsing one `dir/../` hop the same way normalize_ref() does. A
+# bounded token that does NOT resolve to a real file is treated as unbounded —
+# an unverifiable claim of boundedness is not evidence of one.
+classify_closure_tree_member() {
+  local member="$1" line cand collapsed head tail
+  local verdict="bounded"
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    case "$line" in
+      unbounded)
+        verdict="unbounded"
+        break
+        ;;
+      bounded:*)
+        cand="${line#bounded:}"
+        collapsed="$cand"
+        while [[ "$collapsed" == *"/../"* ]]; do
+          head="${collapsed%%/../*}"
+          tail="${collapsed#*/../}"
+          head="${head%/*}"
+          if [[ -n "$head" ]]; then collapsed="$head/$tail"; else collapsed="$tail"; fi
+        done
+        if [[ ! -e "$REPO_ROOT/$collapsed" ]]; then
+          verdict="unbounded"
+          break
+        fi
+        ;;
+    esac
+  done < <(tree_match_kind "$member")
+  printf '%s\n' "$verdict"
 }
 
 # Scripts this file invokes with NO argument after the path.
@@ -594,11 +671,75 @@ emit_registry() {
   printf 'derivedAt: %s\n' "$generated_from"
 }
 
+# IMP-059 SCOPE-1 — read-only closure-tree classification. Re-derives, from
+# the SAME emit_registry() output every other mode uses, why each
+# closureComplete: false SELFTEST is incomplete: a genuine tree-walk, a
+# candidate false-negative (see tree_match_kind() above), or CLOSURE_UNRESOLVED
+# (an unresolved bash/source variable, a distinct and unrelated reason). Prints
+# nothing to TARGET and writes nothing; the caller redirects stdout to the
+# checked-in classification manifest.
+classify_closure_tree() {
+  local registry
+  registry="$(emit_registry)"
+
+  local line pending_script="" bucket member verdict overall any_member
+  while IFS= read -r line; do
+    case "$line" in
+      "    script: "*)
+        pending_script="${line#    script: }"
+        ;;
+      "    closureComplete: true")
+        pending_script=""
+        ;;
+      "    closureComplete: false")
+        case "$pending_script" in
+          *-selftest.sh | *-selftest.py) ;;
+          *)
+            pending_script=""
+            continue
+            ;;
+        esac
+
+        walk_closure "$pending_script"
+        if [[ "$CLOSURE_TREE" != "1" && "$CLOSURE_UNRESOLVED" == "1" ]]; then
+          bucket="closure-unresolved"
+        else
+          overall="genuine-tree-walk"
+          any_member=0
+          while IFS= read -r member; do
+            [[ -n "$member" ]] || continue
+            [[ "${FILE_TREE[$member]:-0}" == "1" ]] || continue
+            any_member=1
+            verdict="$(classify_closure_tree_member "$member")"
+            if [[ "$verdict" == "bounded" ]]; then
+              overall="candidate-false-negative"
+            else
+              overall="genuine-tree-walk"
+              break
+            fi
+          done <<<"$CLOSURE_SCRIPTS"
+          # CLOSURE_TREE=1 with no flagged member is not expected to occur; a
+          # conservative default (genuine-tree-walk) is safer than a silent
+          # reclassification the walk itself cannot substantiate.
+          [[ "$any_member" == "0" ]] && overall="genuine-tree-walk"
+          bucket="$overall"
+          [[ "$CLOSURE_UNRESOLVED" == "1" && "$bucket" == "candidate-false-negative" ]] && bucket="candidate-false-negative+closure-unresolved"
+        fi
+        printf '%s\t%s\n' "$pending_script" "$bucket"
+        pending_script=""
+        ;;
+    esac
+  done <<<"$registry"
+}
+
 extractor_probe || exit 2
 
 case "$MODE" in
   stdout)
     emit_registry
+    ;;
+  classify-closure-tree)
+    classify_closure_tree
     ;;
   check)
     if [[ ! -f "$TARGET" ]]; then
