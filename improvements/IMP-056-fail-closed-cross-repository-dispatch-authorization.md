@@ -1,6 +1,6 @@
 # IMP-056 — Fail-Closed Repository Mutable-Dispatch Authorization
 
-**Status:** IN PROGRESS
+**Status:** IN PROGRESS — SCOPE-1 (planning) and SCOPE-2 (broker snapshot/executable hardening) landed prior to 2026-09-05. SCOPE-3 (signed mutable-dispatch authorization) landed 2026-09-05: `mutable-dispatch-authorization.sh` mint/verify, reusing `security-authority.py` under purpose `mutable-dispatch-authorization`; 17/17 selftest, mutation-verified, all 11 named negative-coverage cases present. Investigation ahead of SCOPE-3 found SCOPE-2 is less complete than its landed commits suggest: the `launch-pending`/`launch-confirmed`/`launch-denied`/`launch-ambiguous` ledger vocabulary SCOPE-2 itself specifies, and SCOPE-2's own required adversarial broker selftest, do not exist anywhere in the tree yet (confirmed by a repo-wide search) — real, open gaps in SCOPE-2, not introduced by SCOPE-3, and not blocking for SCOPE-3's standalone contract surface. SCOPE-4 (canonical final-edge gateway) is next and will need SCOPE-2's launch-state ledger to exist to wire `verify` in before `launch-pending` as designed.
 **Owner approval:** 2026-09-02. The owner approved the corrected repository-enforceable scope and incremental delivery.
 **Workflow mode:** `implement action:full-delivery target:spec`
 **Status ceiling:** `done` for the bounded repository-reference enforcement contract only. This status does not claim native host interception or IMP-057 completion.
@@ -107,13 +107,15 @@ The broker records `launch-pending`, consumes the permit immediately before proc
 - Preserve one-use permit semantics. On unresolved post-consumption state, hold the full reservation and prohibit automatic retry.
 - Add adversarial tests that mutate action files, executable paths, shebang interpreters, and explicit interpreters after validation and prove the changed bytes cannot execute.
 
-### SCOPE-3 — Signed Mutable-Dispatch Authorization
+### SCOPE-3 — Signed Mutable-Dispatch Authorization — **DONE**
 
-- Define the closed canonical schema for `mutable-dispatch-authorization/v1`.
-- Reuse `security-authority.py` with purpose `mutable-dispatch-authorization`; do not add another key-loading or signing implementation.
-- Mint only after current repository authority, exact boundary classification, and unchanged G134 receipt verification succeed.
-- Verify immediately before `launch-pending` and bind the broker snapshot, receipt, permit, repository control revision, and expiry.
-- Add negative coverage for altered, stale, substituted, wrong-purpose, wrong-repository, wrong-revision, wrong-receipt, wrong-action, wrong-executable, wrong-interpreter, and expired authorizations.
+New `bubbles/scripts/mutable-dispatch-authorization.sh` (`mint`/`verify`) plus `mutable-dispatch-authorization-selftest.sh` (17/17, mutation-verified). Built after reading SCOPE-2's actual landed state first, not assuming it: `reference-broker-snapshot.py`'s `snapshot-metadata.json` shape (`actionDigest`, `executable.sha256`, `launchForm`) and `measured-budget-runtime.py`'s `permit_issue()` record shape (`permitId`, `reservationId`, `occurrenceId`, `actionDigest`, `enforcementKind`, closed to `repository-reference`) are the two real, stable inputs this binds to — both confirmed by reading the source, not by trusting the design brief's field names.
+
+- ~~Define the closed canonical schema for `mutable-dispatch-authorization/v1`.~~ **DONE.** 18 closed fields (19 with `authenticator`): `contractType`, `schemaVersion`, `repositoryAlias`, `controlRevision`, `controlDecisionId`, `boundary`, `receiptDigest`, `actionDigest`, `executableDigest`, `interpreterDigest` (`sha256:absent` when the launch form has no separate interpreter — currently true for every admitted SCOPE-2 launch strategy), `permitId`, `reservationId`, `occurrenceId`, `enforcementKind`, `authorityId`, `trustRootId`, `issuedAt`, `expiresAt`, `authenticator`. Verify refuses any authorization whose field set is not exactly this set.
+- ~~Reuse `security-authority.py` with purpose `mutable-dispatch-authorization`...~~ **DONE.** No second signing implementation; both mint and verify shell out to `security-authority.py sign`/`verify`, mirroring `execution-control-store.py`'s own checkpoint mint/verify pattern (build the unsigned body, sign it, merge `authenticator`; on verify, pop `authenticator` and recompute).
+- ~~Mint only after current repository authority, exact boundary classification, and unchanged G134 receipt verification succeed.~~ **DONE.** `mint` runs `repository-binding.sh validate-packet`, then `work-boundary-resolve.sh` (parsing `disposition=in-boundary` explicitly — checking exit 0 alone is the GF-16 mistake this whole proposal exists to close), then `goal-boundary-receipt.sh verify --expect-boundary pre-dispatch`, in that order, aborting with nothing printed and that check's own exit code on the first failure — the same "prerequisite runs first" discipline `goal-boundary-receipt.sh emit` itself uses. Proven with a real end-to-end fixture (a genuine repository packet, control file, frozen goal contract, and pre-dispatch receipt — not stubs), plus three refusal cases each breaking exactly one of the three checks.
+- ~~Verify immediately before `launch-pending` and bind the broker snapshot, receipt, permit, repository control revision, and expiry.~~ **DONE, scoped correctly.** Verify binds all of these; wiring the CALL to happen immediately before `launch-pending` is SCOPE-4's canonical-gateway integration, per this proposal's own Files-To-Touch table — SCOPE-3's surface is the standalone contract, not the broker. Also found and documented, not hidden: SCOPE-2's own `launch-pending`/`launch-confirmed`/`launch-denied`/`launch-ambiguous` ledger vocabulary and its adversarial broker selftest do not exist yet anywhere in the tree (confirmed by repo-wide search) — SCOPE-3 does not depend on them and was scoped to not need them, but SCOPE-4 will.
+- ~~Add negative coverage for altered, stale, substituted, wrong-purpose, wrong-repository, wrong-revision, wrong-receipt, wrong-action, wrong-executable, wrong-interpreter, and expired authorizations.~~ **DONE, all 11.** Each is its own selftest case (`V1`-`V11`, plus `V12` for the closed-schema shape). Two were caught and fixed by the selftest's own mutation-testing pass before being trusted: `V7` (wrong-action) initially passed for the wrong reason because its fixture builder generated a fresh random executable digest on every call, incidentally also tripping the wrong-executable check; `V1` (altered) initially passed because it mutated `controlRevision`, which is independently cross-checked (redundant with `V5`) rather than exercising the authenticator alone. Both fixtures were corrected and re-mutation-tested to confirm they now fail for the intended reason and pass once restored.
 
 ### SCOPE-4 — Canonical Final-Edge Gateway And Mandatory Permit Composition
 
@@ -166,7 +168,7 @@ IMP-056 may reach `done` only when its repository-reference mutable command-vect
 - [ ] The proposal and index carry the approved title, IN PROGRESS status, done-capable workflow, bounded `done` ceiling, and six-scope order.
 - [ ] The broker launches only a capability-proven immutable action, executable, and interpreter snapshot and never rereads caller action bytes.
 - [ ] Unsupported platform, executable, interpreter, or launch-strategy combinations fail closed before permit consumption.
-- [ ] `mutable-dispatch-authorization/v1` verifies under purpose `mutable-dispatch-authorization` and binds current repository, receipt, snapshot, and permit identities.
+- [x] `mutable-dispatch-authorization/v1` verifies under purpose `mutable-dispatch-authorization` and binds current repository, receipt, snapshot, and permit identities. **DONE (SCOPE-3).** Standalone contract verified; wiring `verify` into the broker's launch sequence is SCOPE-4.
 - [ ] Every mutable repository command vector requires the current IMP-055 one-use permit at the final edge.
 - [ ] A durable `launch-pending` precedes permit consumption, and every recoverable occurrence reaches one closed terminal launch state.
 - [ ] Unprovable post-consumption state becomes `launch-ambiguous`, holds the full reservation, and cannot automatically retry.
@@ -182,7 +184,7 @@ IMP-056 may reach `done` only when its repository-reference mutable command-vect
 |---|---|---|
 | SCOPE-1 | This proposal and `improvements/INDEX.md` | Planning truth only |
 | SCOPE-2 | Reference broker, measured-budget runtime/finalizer, capability probe, focused selftests | Harden before gateway work |
-| SCOPE-3 | Authorization schema/issuer/verifier, security-authority integration, focused selftests | Reuse existing authority implementation |
+| SCOPE-3 | ~~Authorization schema/issuer/verifier, security-authority integration, focused selftests~~ **DONE** — `bubbles/scripts/mutable-dispatch-authorization.sh` + `-selftest.sh` | Reuse existing authority implementation |
 | SCOPE-4 | Canonical final-edge gateway and integration selftests | Compose all invariants and current permit |
 | SCOPE-5 | Result-envelope schema, producers, consumers, semantic tests | Audit-only fields |
 | SCOPE-6 | Phase coordinator, four orchestrator definitions, caller coverage, gates, validation and release inventory | Repository contract may reach `done`; native surfaces remain excluded |

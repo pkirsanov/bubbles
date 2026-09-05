@@ -537,6 +537,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -1369,6 +1371,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -2119,6 +2123,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -2886,6 +2892,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -3636,6 +3644,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -4426,6 +4436,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -5176,6 +5188,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -5941,6 +5955,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -6691,6 +6707,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -7471,6 +7489,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -8221,6 +8241,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -8971,6 +8993,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -9810,6 +9834,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -10560,6 +10586,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -11361,6 +11389,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -12261,6 +12291,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -13011,6 +13043,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -13810,6 +13844,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -14573,6 +14609,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -15323,6 +15361,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -16090,6 +16130,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -16840,6 +16882,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -17590,6 +17634,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -18168,6 +18214,758 @@ checks:
     - sha256sum
     - shasum
     - shellcheck
+  vc-bubbles-scripts-mutable-dispatch-authorization-selftest:
+    script: bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    label: "Mutable-dispatch authorization selftest (IMP-056 SCOPE-3)"
+    closureComplete: false
+    inputs:
+    - bubbles/adapters/dispatch/none.sh
+    - bubbles/adapters/dispatch/reference-broker.sh
+    - bubbles/adapters/experience-recall/local-lexical.sh
+    - bubbles/adapters/experience-recall/none.sh
+    - bubbles/adapters/judge/ollama.sh
+    - bubbles/adapters/observability/none.sh
+    - bubbles/adapters/research/disabled.sh
+    - bubbles/adapters/research/local-command.sh
+    - bubbles/adapters/usage/none.sh
+    - bubbles/adapters/usage/reference-test.sh
+    - bubbles/adapters/usage/vscode-copilot.sh
+    - bubbles/mcp/server.py
+    - bubbles/scripts/acceptance-authority-lib.sh
+    - bubbles/scripts/action-risk-classes-lib.sh
+    - bubbles/scripts/action-risk-registry-lint.sh
+    - bubbles/scripts/admission-contract-selftest.sh
+    - bubbles/scripts/adoption-profile-lib-selftest.sh
+    - bubbles/scripts/adoption-profile-lib.sh
+    - bubbles/scripts/adversarial-aggregate-selftest.sh
+    - bubbles/scripts/adversarial-aggregate.sh
+    - bubbles/scripts/adversarial-resolve-selftest.sh
+    - bubbles/scripts/adversarial-resolve.sh
+    - bubbles/scripts/agent-bundle-size-budget-selftest.sh
+    - bubbles/scripts/agent-bundle-size-budget.sh
+    - bubbles/scripts/agent-id-enum-lint-selftest.sh
+    - bubbles/scripts/agent-id-enum-lint.sh
+    - bubbles/scripts/agent-ownership-lint-selftest.sh
+    - bubbles/scripts/agent-ownership-lint.sh
+    - bubbles/scripts/agent-roster-coverage-selftest.sh
+    - bubbles/scripts/agent-roster-coverage.sh
+    - bubbles/scripts/agnosticity-lint-selftest.sh
+    - bubbles/scripts/agnosticity-lint.sh
+    - bubbles/scripts/aliases.sh
+    - bubbles/scripts/always-on-instruction-budget-selftest.sh
+    - bubbles/scripts/always-on-instruction-budget.sh
+    - bubbles/scripts/artifact-freshness-guard-selftest.sh
+    - bubbles/scripts/artifact-freshness-guard.sh
+    - bubbles/scripts/artifact-lint-selftest.sh
+    - bubbles/scripts/artifact-lint.sh
+    - bubbles/scripts/assurance-certification-check-selftest.sh
+    - bubbles/scripts/assurance-certification-check.sh
+    - bubbles/scripts/assurance-derive-selftest.sh
+    - bubbles/scripts/assurance-derive.sh
+    - bubbles/scripts/assurance-resolve-selftest.sh
+    - bubbles/scripts/assurance-resolve.sh
+    - bubbles/scripts/audit-result-contract-lint-selftest.sh
+    - bubbles/scripts/audit-result-contract-lint.sh
+    - bubbles/scripts/autonomy-posture-guard-selftest.sh
+    - bubbles/scripts/autonomy-posture-guard.sh
+    - bubbles/scripts/autonomy-resolve-selftest.sh
+    - bubbles/scripts/autonomy-resolve.sh
+    - bubbles/scripts/bash-baseline-guard-selftest.sh
+    - bubbles/scripts/batch-promotion-lint-selftest.sh
+    - bubbles/scripts/batch-promotion-lint.sh
+    - bubbles/scripts/bsd-userland-sim-selftest.sh
+    - bubbles/scripts/bsd-userland-sim.sh
+    - bubbles/scripts/bubbles-drift-check-selftest.sh
+    - bubbles/scripts/bubbles-drift-check.sh
+    - bubbles/scripts/bubbles-hub-report-selftest.sh
+    - bubbles/scripts/bubbles-hub-report.sh
+    - bubbles/scripts/bug-packet-resolve.sh
+    - bubbles/scripts/bug-packet-selftest.sh
+    - bubbles/scripts/bundle-cost-report-selftest.sh
+    - bubbles/scripts/bundle-cost-report.sh
+    - bubbles/scripts/capability-consumer-freshness-selftest.sh
+    - bubbles/scripts/capability-consumer-freshness.sh
+    - bubbles/scripts/capability-consumer-naming-selftest.sh
+    - bubbles/scripts/capability-consumer-naming.sh
+    - bubbles/scripts/capability-foundation-guard-selftest.sh
+    - bubbles/scripts/capability-foundation-guard.sh
+    - bubbles/scripts/capability-freshness-selftest.sh
+    - bubbles/scripts/capability-ledger-selftest.sh
+    - bubbles/scripts/case-collision-guard-selftest.sh
+    - bubbles/scripts/case-collision-guard.sh
+    - bubbles/scripts/ci-annotation-emitter-selftest.sh
+    - bubbles/scripts/claim-source-lint-selftest.sh
+    - bubbles/scripts/claim-source-lint.sh
+    - bubbles/scripts/cli.sh
+    - bubbles/scripts/closeout-report-selftest.sh
+    - bubbles/scripts/closeout-report.sh
+    - bubbles/scripts/code-search.sh
+    - bubbles/scripts/codeindex-resolve.sh
+    - bubbles/scripts/collected-test-count-guard-selftest.sh
+    - bubbles/scripts/collected-test-count-guard.sh
+    - bubbles/scripts/compact-obligation-basis-selftest.sh
+    - bubbles/scripts/compaction-discipline-guard-selftest.sh
+    - bubbles/scripts/compaction-discipline-guard.sh
+    - bubbles/scripts/competitive-docs-selftest.sh
+    - bubbles/scripts/context-compactor-selftest.sh
+    - bubbles/scripts/context-compactor.sh
+    - bubbles/scripts/continuation-intent-resolve-selftest.sh
+    - bubbles/scripts/continuation-intent-resolve.sh
+    - bubbles/scripts/continuation-routing-selftest.sh
+    - bubbles/scripts/control-plane-config-merge-selftest.sh
+    - bubbles/scripts/control-plane-policy-activation-selftest.sh
+    - bubbles/scripts/control-plane-rce-selftest.sh
+    - bubbles/scripts/convergence-cap-guard-selftest.sh
+    - bubbles/scripts/convergence-cap-guard.sh
+    - bubbles/scripts/convergence-materiality-selftest.sh
+    - bubbles/scripts/convergence-materiality.sh
+    - bubbles/scripts/core-tier-pattern-lint-selftest.sh
+    - bubbles/scripts/core-tier-pattern-lint.sh
+    - bubbles/scripts/cost-corpus-evaluate.sh
+    - bubbles/scripts/delivery-implementation-delta-guard-selftest.sh
+    - bubbles/scripts/delivery-implementation-delta-guard.sh
+    - bubbles/scripts/dependency-posture.sh
+    - bubbles/scripts/deploy-manifest-assurance-lint-selftest.sh
+    - bubbles/scripts/deploy-manifest-assurance-lint.sh
+    - bubbles/scripts/design-experiment-guard-selftest.sh
+    - bubbles/scripts/design-experiment-guard.sh
+    - bubbles/scripts/developer-profile.sh
+    - bubbles/scripts/diff-evidence-guard-selftest.sh
+    - bubbles/scripts/diff-evidence-guard.sh
+    - bubbles/scripts/discovered-issue-disposition-guard-selftest.sh
+    - bubbles/scripts/discovered-issue-disposition-guard.sh
+    - bubbles/scripts/dispatch-adapter-resolve.sh
+    - bubbles/scripts/dispatch-admission.sh
+    - bubbles/scripts/dispatch-receipt-selftest.sh
+    - bubbles/scripts/dispatch-receipt.sh
+    - bubbles/scripts/docs-registry-resolve.sh
+    - bubbles/scripts/docs-wording-advisory.sh
+    - bubbles/scripts/doctor-hygiene-surface-selftest.sh
+    - bubbles/scripts/dod-section-lib-selftest.sh
+    - bubbles/scripts/dod-section-lib.sh
+    - bubbles/scripts/domain-invariant-guard-selftest.sh
+    - bubbles/scripts/domain-invariant-guard.sh
+    - bubbles/scripts/domain-model-consistency-selftest.sh
+    - bubbles/scripts/domain-model-consistency.sh
+    - bubbles/scripts/done-spec-audit-selftest.sh
+    - bubbles/scripts/done-spec-audit.sh
+    - bubbles/scripts/downstream-framework-write-guard.sh
+    - bubbles/scripts/edit-lint-gate-selftest.sh
+    - bubbles/scripts/edit-lint-gate.sh
+    - bubbles/scripts/effective-bundle-budget-selftest.sh
+    - bubbles/scripts/effective-bundle-budget.sh
+    - bubbles/scripts/effective-bundle-measure-selftest.sh
+    - bubbles/scripts/effective-bundle-measure.sh
+    - bubbles/scripts/env-pollution-scan-selftest.sh
+    - bubbles/scripts/env-pollution-scan.sh
+    - bubbles/scripts/eval-corpus-selftest.sh
+    - bubbles/scripts/eval-harness-selftest.sh
+    - bubbles/scripts/eval-harness.sh
+    - bubbles/scripts/eval-heldout-guard-selftest.sh
+    - bubbles/scripts/eval-heldout-guard.sh
+    - bubbles/scripts/evidence-admission-hardening-selftest.sh
+    - bubbles/scripts/evidence-capture-selftest.sh
+    - bubbles/scripts/evidence-capture.sh
+    - bubbles/scripts/evidence-receipt-check-selftest.sh
+    - bubbles/scripts/evidence-receipt-check.sh
+    - bubbles/scripts/evidence-tool-log-bridge-selftest.sh
+    - bubbles/scripts/evidence-tool-log-bridge.sh
+    - bubbles/scripts/execution-control-lock-selftest.py
+    - bubbles/scripts/execution-control-selftest.sh
+    - bubbles/scripts/execution-control-store.py
+    - bubbles/scripts/execution-control-v2-selftest.py
+    - bubbles/scripts/execution-substate-guard-selftest.sh
+    - bubbles/scripts/execution-substate-guard.sh
+    - bubbles/scripts/expand-migrate-contract-guard-selftest.sh
+    - bubbles/scripts/expand-migrate-contract-guard.sh
+    - bubbles/scripts/expansion-approval-selftest.sh
+    - bubbles/scripts/expansion-approval.sh
+    - bubbles/scripts/experience-recall-adapter-contract-selftest.sh
+    - bubbles/scripts/experience-recall-authority-selftest.sh
+    - bubbles/scripts/experience-recall-cli-selftest.sh
+    - bubbles/scripts/experience-recall-eval-selftest.sh
+    - bubbles/scripts/experience-recall-index-selftest.sh
+    - bubbles/scripts/experience-recall-index.py
+    - bubbles/scripts/experience-recall-lifecycle-selftest.sh
+    - bubbles/scripts/experience-recall-lifecycle.py
+    - bubbles/scripts/experience-recall-resolve-selftest.sh
+    - bubbles/scripts/experience-recall-resolve.sh
+    - bubbles/scripts/experience-recall.sh
+    - bubbles/scripts/finding-closure-selftest.sh
+    - bubbles/scripts/forecast-eval-check-selftest.sh
+    - bubbles/scripts/forecast-eval-check.sh
+    - bubbles/scripts/framework-dogfood-guard-selftest.sh
+    - bubbles/scripts/framework-dogfood-guard.sh
+    - bubbles/scripts/framework-health-evidence-lint-selftest.sh
+    - bubbles/scripts/framework-health-evidence-lint.sh
+    - bubbles/scripts/framework-validate-changed-only-selftest.sh
+    - bubbles/scripts/framework-validate-tier-selftest.sh
+    - bubbles/scripts/framework-validate.sh
+    - bubbles/scripts/framework-validation-wiring-selftest.sh
+    - bubbles/scripts/fun-mode.sh
+    - bubbles/scripts/gate-bands.sh
+    - bubbles/scripts/gate-catalog-freshness.sh
+    - bubbles/scripts/gate-classification.sh
+    - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
+    - bubbles/scripts/gate-enforcement-selftest.sh
+    - bubbles/scripts/gate-enforcement.sh
+    - bubbles/scripts/gate-hit-log-selftest.sh
+    - bubbles/scripts/gate-hit-log.sh
+    - bubbles/scripts/gate-id-grep-selftest.sh
+    - bubbles/scripts/gate-id-grep.sh
+    - bubbles/scripts/gate-retirement-selftest.sh
+    - bubbles/scripts/gate-retirement.sh
+    - bubbles/scripts/gate-strength-lint-selftest.sh
+    - bubbles/scripts/gate-strength-lint.sh
+    - bubbles/scripts/gate-telemetry-capability-lint-selftest.sh
+    - bubbles/scripts/gate-telemetry-capability-lint.sh
+    - bubbles/scripts/gate-vintage-annotate.sh
+    - bubbles/scripts/gate-vintage-guard.sh
+    - bubbles/scripts/gate-vintage-selftest.sh
+    - bubbles/scripts/generate-capability-ledger-docs.sh
+    - bubbles/scripts/generate-cheatsheet-selftest.sh
+    - bubbles/scripts/generate-cheatsheet.sh
+    - bubbles/scripts/generate-framework-stats.sh
+    - bubbles/scripts/generate-gate-coverage-map-selftest.sh
+    - bubbles/scripts/generate-gate-coverage-map.sh
+    - bubbles/scripts/generate-gate-enforcement.sh
+    - bubbles/scripts/generate-installer-selftest.sh
+    - bubbles/scripts/generate-installer.sh
+    - bubbles/scripts/generate-modes-block.sh
+    - bubbles/scripts/generate-release-manifest.sh
+    - bubbles/scripts/generate-report-template.sh
+    - bubbles/scripts/generate-validation-checks-selftest.sh
+    - bubbles/scripts/generate-validation-checks.sh
+    - bubbles/scripts/goal-boundary-receipt-selftest.sh
+    - bubbles/scripts/goal-boundary-receipt.sh
+    - bubbles/scripts/goal-budget-ledger.sh
+    - bubbles/scripts/goal-contract-selftest.sh
+    - bubbles/scripts/goal-contract.sh
+    - bubbles/scripts/goal-fidelity-guard-selftest.sh
+    - bubbles/scripts/goal-fidelity-guard.sh
+    - bubbles/scripts/goal-fidelity-telemetry-selftest.sh
+    - bubbles/scripts/goal-fidelity-telemetry.sh
+    - bubbles/scripts/governance-index-lint-selftest.sh
+    - bubbles/scripts/governance-index-lint.sh
+    - bubbles/scripts/guard-lib-timeout-selftest.sh
+    - bubbles/scripts/guard-lib.sh
+    - bubbles/scripts/guards/control-plane-checks.sh
+    - bubbles/scripts/guards/planning-checks.sh
+    - bubbles/scripts/guards/sensitive-client-storage-scan.py
+    - bubbles/scripts/guards/tail-convergence-gates.sh
+    - bubbles/scripts/guards/tail-delegated-gates.sh
+    - bubbles/scripts/hooks/git-env-sanitize-selftest.sh
+    - bubbles/scripts/hooks/git-env-sanitize.sh
+    - bubbles/scripts/hooks/pre-push.sh
+    - bubbles/scripts/imp021-interaction-contracts-selftest.sh
+    - bubbles/scripts/imp040-evaluation-corpus.sh
+    - bubbles/scripts/imp041-evaluation-corpus.sh
+    - bubbles/scripts/implementation-reality-scan-selftest.sh
+    - bubbles/scripts/implementation-reality-scan.sh
+    - bubbles/scripts/install-bubbles-hooks.sh
+    - bubbles/scripts/install-provenance-selftest.sh
+    - bubbles/scripts/instruction-budget-lint-selftest.sh
+    - bubbles/scripts/instruction-budget-lint.sh
+    - bubbles/scripts/intent-routes-lint-selftest.sh
+    - bubbles/scripts/intent-routes-lint.sh
+    - bubbles/scripts/inter-spec-dependency-guard-selftest.sh
+    - bubbles/scripts/inter-spec-dependency-guard.sh
+    - bubbles/scripts/inter-spec-dependency-revalidation.sh
+    - bubbles/scripts/interop-apply-selftest.sh
+    - bubbles/scripts/interop-import-selftest.sh
+    - bubbles/scripts/interop-intake.sh
+    - bubbles/scripts/interop-registry.sh
+    - bubbles/scripts/inventory-parity-check-selftest.sh
+    - bubbles/scripts/inventory-parity-check.sh
+    - bubbles/scripts/is-terminal-for-mode.sh
+    - bubbles/scripts/judge-adapter-contract-selftest.sh
+    - bubbles/scripts/learning-loop-selftest.sh
+    - bubbles/scripts/macos-portability-guard-selftest.sh
+    - bubbles/scripts/macos-portability-guard.sh
+    - bubbles/scripts/managed-docs-existence-lint-selftest.sh
+    - bubbles/scripts/managed-docs-existence-lint.sh
+    - bubbles/scripts/management-truth-lint-selftest.sh
+    - bubbles/scripts/management-truth-lint.sh
+    - bubbles/scripts/mbe-reference-verify.py
+    - bubbles/scripts/mcp-grant-reconcile.sh
+    - bubbles/scripts/mcp-grant-selftest.sh
+    - bubbles/scripts/mcp-grant-sync.sh
+    - bubbles/scripts/mcp-http-transport-selftest.sh
+    - bubbles/scripts/mcp-server-selftest.sh
+    - bubbles/scripts/mcp-trust-boundary-selftest.sh
+    - bubbles/scripts/measured-budget-contracts.py
+    - bubbles/scripts/measured-budget-runtime-selftest.py
+    - bubbles/scripts/measured-budget-runtime-v2-selftest.py
+    - bubbles/scripts/measured-budget-runtime.py
+    - bubbles/scripts/micro-fix-admission-selftest.sh
+    - bubbles/scripts/micro-fix-admission.sh
+    - bubbles/scripts/micro-fix-outcome-log.sh
+    - bubbles/scripts/migrate-modes-v5-to-v6-selftest.sh
+    - bubbles/scripts/migrate-modes-v5-to-v6.sh
+    - bubbles/scripts/mode-alias-selftest.sh
+    - bubbles/scripts/mode-family-inventory-selftest.sh
+    - bubbles/scripts/mode-family-inventory.sh
+    - bubbles/scripts/mode-resolver-phase-multiplicity-selftest.sh
+    - bubbles/scripts/mode-resolver-selftest.sh
+    - bubbles/scripts/mode-resolver.sh
+    - bubbles/scripts/model-tier-advisory-selftest.sh
+    - bubbles/scripts/model-tier-advisory.sh
+    - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
+    - bubbles/scripts/mutation-adapter-contract-selftest.sh
+    - bubbles/scripts/mutation-receipt-selftest.sh
+    - bubbles/scripts/mutation-receipt.sh
+    - bubbles/scripts/mutation-resolve.sh
+    - bubbles/scripts/observability-adapter-lint-selftest.sh
+    - bubbles/scripts/observability-adapter-lint.sh
+    - bubbles/scripts/observability-check-selftest.sh
+    - bubbles/scripts/observability-check.sh
+    - bubbles/scripts/observability-endpoint-resolve-selftest.sh
+    - bubbles/scripts/observability-endpoint-resolve.sh
+    - bubbles/scripts/observability-opt-out-guard-selftest.sh
+    - bubbles/scripts/observability-opt-out-guard.sh
+    - bubbles/scripts/observability-posture-guard-selftest.sh
+    - bubbles/scripts/observability-posture-guard.sh
+    - bubbles/scripts/observability-slo-guard-selftest.sh
+    - bubbles/scripts/observability-slo-guard.sh
+    - bubbles/scripts/occurrence-identity-lib.sh
+    - bubbles/scripts/open-work-report-selftest.sh
+    - bubbles/scripts/open-work-report.sh
+    - bubbles/scripts/open-work-surface-selftest.sh
+    - bubbles/scripts/orchestrator-persistence-lint-selftest.sh
+    - bubbles/scripts/orchestrator-persistence-lint.sh
+    - bubbles/scripts/orchestrator-tool-frontmatter-lint-selftest.sh
+    - bubbles/scripts/orchestrator-tool-frontmatter-lint.sh
+    - bubbles/scripts/orphaned-scaffolding-guard-selftest.sh
+    - bubbles/scripts/orphaned-scaffolding-guard.sh
+    - bubbles/scripts/output-policy-coherence-guard-selftest.sh
+    - bubbles/scripts/output-policy-coherence-guard.sh
+    - bubbles/scripts/parallel-fanout-determinism-selftest.sh
+    - bubbles/scripts/parallel-fanout.sh
+    - bubbles/scripts/payload-closure-guard-selftest.sh
+    - bubbles/scripts/payload-closure-guard.sh
+    - bubbles/scripts/phase-coordinator-selftest.sh
+    - bubbles/scripts/phase-coordinator.sh
+    - bubbles/scripts/phase-name-enum-lint-selftest.sh
+    - bubbles/scripts/phase-name-enum-lint.sh
+    - bubbles/scripts/phase-relevance-resolve-selftest.sh
+    - bubbles/scripts/phase-relevance-resolve.sh
+    - bubbles/scripts/pii-scan.sh
+    - bubbles/scripts/plan-dependency-depth-guard-selftest.sh
+    - bubbles/scripts/plan-dependency-depth-guard.sh
+    - bubbles/scripts/planning-packet-linkage-guard-selftest.sh
+    - bubbles/scripts/planning-packet-linkage-guard.sh
+    - bubbles/scripts/planning-workflow-chain-guard-selftest.sh
+    - bubbles/scripts/planning-workflow-chain-guard.sh
+    - bubbles/scripts/post-cert-spec-edit-guard-selftest.sh
+    - bubbles/scripts/post-cert-spec-edit-guard.sh
+    - bubbles/scripts/pre-existing-deferral-guard-selftest.sh
+    - bubbles/scripts/pre-existing-deferral-guard.sh
+    - bubbles/scripts/pre-tool-risk-gate-selftest.sh
+    - bubbles/scripts/pre-tool-risk-gate.sh
+    - bubbles/scripts/profile-transition-selftest.sh
+    - bubbles/scripts/project-scan-setup.sh
+    - bubbles/scripts/prometheus-adapter-fetch-selftest.sh
+    - bubbles/scripts/propagation-policy-guard-selftest.sh
+    - bubbles/scripts/propagation-policy-guard.sh
+    - bubbles/scripts/python-env.sh
+    - bubbles/scripts/rapid-tool-delivery-mode-selftest.sh
+    - bubbles/scripts/receipt-identity-selftest.sh
+    - bubbles/scripts/reference-existence-lint-selftest.sh
+    - bubbles/scripts/reference-existence-lint.sh
+    - bubbles/scripts/regen-derived-selftest.sh
+    - bubbles/scripts/regen-derived.sh
+    - bubbles/scripts/registry-consistency-selftest.sh
+    - bubbles/scripts/regression-baseline-guard-selftest.sh
+    - bubbles/scripts/regression-baseline-guard.sh
+    - bubbles/scripts/regression-quality-guard-selftest.sh
+    - bubbles/scripts/regression-quality-guard.sh
+    - bubbles/scripts/release-assurance-gate-selftest.sh
+    - bubbles/scripts/release-assurance-gate.sh
+    - bubbles/scripts/release-check.sh
+    - bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh
+    - bubbles/scripts/release-delivery-reconciliation-guard.sh
+    - bubbles/scripts/release-ladder-schema-guard-selftest.sh
+    - bubbles/scripts/release-ladder-schema-guard.sh
+    - bubbles/scripts/release-manifest-purity-selftest.sh
+    - bubbles/scripts/release-manifest-selftest.sh
+    - bubbles/scripts/release-packet-completeness-guard-selftest.sh
+    - bubbles/scripts/release-packet-completeness-guard.sh
+    - bubbles/scripts/release-packet-docs-lib.sh
+    - bubbles/scripts/release-packet-location-guard-selftest.sh
+    - bubbles/scripts/release-packet-location-guard.sh
+    - bubbles/scripts/release-train-backfill-planner.sh
+    - bubbles/scripts/release-train-rollup-selftest.sh
+    - bubbles/scripts/release-train-rollup.sh
+    - bubbles/scripts/repo-binding-preflight-selftest.sh
+    - bubbles/scripts/repo-binding-preflight.sh
+    - bubbles/scripts/repo-drift-report.sh
+    - bubbles/scripts/repo-readiness.sh
+    - bubbles/scripts/repo-slug.sh
+    - bubbles/scripts/report-sections-resolve.sh
+    - bubbles/scripts/report-sections-selftest.sh
+    - bubbles/scripts/repository-binding-conformance-guard-selftest.sh
+    - bubbles/scripts/repository-binding-conformance-guard.sh
+    - bubbles/scripts/repository-binding-host-context-selftest.sh
+    - bubbles/scripts/repository-binding-host-context.sh
+    - bubbles/scripts/repository-binding-selftest.sh
+    - bubbles/scripts/repository-binding.sh
+    - bubbles/scripts/required-specialists-registry-selftest.sh
+    - bubbles/scripts/requirement-mechanism-guard-selftest.sh
+    - bubbles/scripts/requirement-mechanism-guard.sh
+    - bubbles/scripts/research-adapter-contract-selftest.py
+    - bubbles/scripts/research-admission-cli-selftest.sh
+    - bubbles/scripts/research-run.sh
+    - bubbles/scripts/research-runtime-selftest.py
+    - bubbles/scripts/research-runtime.py
+    - bubbles/scripts/result-envelope-validate-selftest.sh
+    - bubbles/scripts/result-envelope-validate.sh
+    - bubbles/scripts/retro-convergence-health-selftest.sh
+    - bubbles/scripts/retro-convergence-health.sh
+    - bubbles/scripts/retro-framework-health-selftest.sh
+    - bubbles/scripts/retro-framework-health.sh
+    - bubbles/scripts/risk-tier-resolve-selftest.sh
+    - bubbles/scripts/risk-tier-resolve.sh
+    - bubbles/scripts/run-state-reaper-selftest.sh
+    - bubbles/scripts/run-state-registry-selftest.sh
+    - bubbles/scripts/runtime-concurrency-selftest.sh
+    - bubbles/scripts/runtime-lease-selftest.sh
+    - bubbles/scripts/runtime-leases.sh
+    - bubbles/scripts/scaffold-gate-selftest.sh
+    - bubbles/scripts/scaffold-gate.sh
+    - bubbles/scripts/scan-lib-selftest.sh
+    - bubbles/scripts/scan-lib.sh
+    - bubbles/scripts/scenario-compile-lint-selftest.sh
+    - bubbles/scripts/scenario-compile-lint.sh
+    - bubbles/scripts/scenario-impact-resolve-selftest.sh
+    - bubbles/scripts/scenario-impact-resolve.sh
+    - bubbles/scripts/scenario-manifest-migrate-selftest.sh
+    - bubbles/scripts/scenario-manifest-migrate.py
+    - bubbles/scripts/scenario-manifest-v2-schema-selftest.sh
+    - bubbles/scripts/scenario-match-lib-selftest.sh
+    - bubbles/scripts/scenario-match-lib.sh
+    - bubbles/scripts/scenario-obligation-lint-selftest.sh
+    - bubbles/scripts/scenario-obligation-lint.sh
+    - bubbles/scripts/scenario-reference-reader-selftest.sh
+    - bubbles/scripts/scenario-reference-reader.py
+    - bubbles/scripts/scenario-state-resolve-selftest.sh
+    - bubbles/scripts/scenario-state-resolve.sh
+    - bubbles/scripts/scenario-test-resolve-selftest.sh
+    - bubbles/scripts/scenario-test-resolve.sh
+    - bubbles/scripts/scope-context-fit-lint-selftest.sh
+    - bubbles/scripts/scope-context-fit-lint.sh
+    - bubbles/scripts/scope-universe-resolver-selftest.sh
+    - bubbles/scripts/scope-universe-resolver.py
+    - bubbles/scripts/security-authority-selftest.py
+    - bubbles/scripts/security-authority.py
+    - bubbles/scripts/security-gate-selftest.sh
+    - bubbles/scripts/security-gate.sh
+    - bubbles/scripts/selftest-coverage-lint-selftest.sh
+    - bubbles/scripts/selftest-coverage-lint.sh
+    - bubbles/scripts/session-cap-guard-selftest.sh
+    - bubbles/scripts/session-cap-guard.sh
+    - bubbles/scripts/session-epoch-authority.sh
+    - bubbles/scripts/session-liveness-selftest.sh
+    - bubbles/scripts/session-liveness.sh
+    - bubbles/scripts/session-review-selftest.sh
+    - bubbles/scripts/session-review.sh
+    - bubbles/scripts/shellcheck-lint-selftest.sh
+    - bubbles/scripts/shellcheck-lint.sh
+    - bubbles/scripts/skill-description-load-selftest.sh
+    - bubbles/scripts/skill-description-load.sh
+    - bubbles/scripts/skill-evolution-selftest.sh
+    - bubbles/scripts/skill-evolution.sh
+    - bubbles/scripts/spec-dashboard-selftest.sh
+    - bubbles/scripts/spec-dashboard.sh
+    - bubbles/scripts/spec-review-handoff-selftest.sh
+    - bubbles/scripts/stale-deferral-lint-selftest.sh
+    - bubbles/scripts/stale-deferral-lint.sh
+    - bubbles/scripts/state-certification-reconcile-selftest.sh
+    - bubbles/scripts/state-certification-reconcile.sh
+    - bubbles/scripts/state-consistency-scan.sh
+    - bubbles/scripts/state-linkage-backfill-selftest.sh
+    - bubbles/scripts/state-linkage-backfill.sh
+    - bubbles/scripts/state-snapshot-selftest.sh
+    - bubbles/scripts/state-snapshot.sh
+    - bubbles/scripts/state-transition-guard-perf-selftest.sh
+    - bubbles/scripts/state-transition-guard-selftest.sh
+    - bubbles/scripts/state-transition-guard.sh
+    - bubbles/scripts/state-transition-required-specialists-selftest.sh
+    - bubbles/scripts/strict-terminal-status-guard-selftest.sh
+    - bubbles/scripts/strict-terminal-status-guard.sh
+    - bubbles/scripts/super-surface-selftest.sh
+    - bubbles/scripts/surface-reachability-guard-selftest.sh
+    - bubbles/scripts/surface-reachability-guard.sh
+    - bubbles/scripts/technical-prose-lint-selftest.sh
+    - bubbles/scripts/technical-prose-lint.sh
+    - bubbles/scripts/test-impact-plan-selftest.sh
+    - bubbles/scripts/test-impact-plan.sh
+    - bubbles/scripts/test-inventory-adapter-contract-selftest.sh
+    - bubbles/scripts/test-inventory-resolve.sh
+    - bubbles/scripts/test-leaf-receipt-selftest.sh
+    - bubbles/scripts/test-leaf-receipt.sh
+    - bubbles/scripts/test-mechanism-lint-selftest.sh
+    - bubbles/scripts/test-mechanism-lint.sh
+    - bubbles/scripts/tool-capture-shim-selftest.sh
+    - bubbles/scripts/tool-capture-shim.sh
+    - bubbles/scripts/tool-grant-lint-selftest.sh
+    - bubbles/scripts/tool-grant-lint.sh
+    - bubbles/scripts/tool-log-selftest.sh
+    - bubbles/scripts/tool-log-semantic-admission-selftest.sh
+    - bubbles/scripts/tool-log.sh
+    - bubbles/scripts/top-level-runtime-routing-selftest.sh
+    - bubbles/scripts/trace-contract-guard-selftest.sh
+    - bubbles/scripts/trace-contract-guard.sh
+    - bubbles/scripts/traceability-guard-selftest.sh
+    - bubbles/scripts/traceability-guard.sh
+    - bubbles/scripts/trajectory-inspector-selftest.sh
+    - bubbles/scripts/trajectory-inspector.sh
+    - bubbles/scripts/transition-contract-resolver-selftest.sh
+    - bubbles/scripts/transition-contract-resolver.sh
+    - bubbles/scripts/trust-doctor-selftest.sh
+    - bubbles/scripts/trust-metadata.sh
+    - bubbles/scripts/upgrade-transactionality-selftest.sh
+    - bubbles/scripts/usage-adapter-contract-selftest.sh
+    - bubbles/scripts/usage-adapter-v2-selftest.sh
+    - bubbles/scripts/usage-resolve.sh
+    - bubbles/scripts/v5.2-selftest.sh
+    - bubbles/scripts/v5.3-selftest.sh
+    - bubbles/scripts/v7-selftest.sh
+    - bubbles/scripts/validate-cache.sh
+    - bubbles/scripts/validation-batch-selftest.sh
+    - bubbles/scripts/validation-batch.sh
+    - bubbles/scripts/validation-closure-selftest.sh
+    - bubbles/scripts/validation-closure.sh
+    - bubbles/scripts/validation-debt-selftest.sh
+    - bubbles/scripts/validation-debt.sh
+    - bubbles/scripts/validation-latency-report-selftest.sh
+    - bubbles/scripts/validation-latency-report.sh
+    - bubbles/scripts/validation-receipt-selftest.sh
+    - bubbles/scripts/validation-receipt.sh
+    - bubbles/scripts/value-selection-lint-selftest.sh
+    - bubbles/scripts/value-selection-lint.sh
+    - bubbles/scripts/verify-changed-specs-selftest.sh
+    - bubbles/scripts/verify-changed-specs.sh
+    - bubbles/scripts/verify-payload-integrity-selftest.sh
+    - bubbles/scripts/verify-payload-integrity.sh
+    - bubbles/scripts/vertical-delivery-plan-guard-selftest.sh
+    - bubbles/scripts/vertical-delivery-plan-guard.sh
+    - bubbles/scripts/work-boundary-resolve-selftest.sh
+    - bubbles/scripts/work-boundary-resolve.sh
+    - bubbles/scripts/work-tracker-project-selftest.sh
+    - bubbles/scripts/work-tracker-project.sh
+    - bubbles/scripts/workflow-delegation-selftest.sh
+    - bubbles/scripts/workflow-planning-provenance-selftest.sh
+    - bubbles/scripts/workflow-registry-consistency.sh
+    - bubbles/scripts/workflow-runner-grants-lint-selftest.sh
+    - bubbles/scripts/workflow-runner-grants-lint.sh
+    - bubbles/scripts/workflow-surface-selftest.sh
+    - bubbles/scripts/workflow-yaml-validity-selftest.sh
+    - bubbles/scripts/worktree-finalize-reap-selftest.sh
+    - bubbles/scripts/worktree-hygiene-guard-selftest.sh
+    - bubbles/scripts/worktree-hygiene-report.sh
+    - bubbles/scripts/worktree-reap.sh
+    - bubbles/scripts/worktree-spawn-selftest.sh
+    - bubbles/scripts/worktree-spawn.sh
+    - bubbles/scripts/yaml-schema-validate-selftest.sh
+    - bubbles/scripts/yaml-schema-validate.sh
+    - install.sh
+    - tests/regression/test_05_orchestrator_persistence.sh
+    - tests/regression/test_11_post_cert_spec_edit.sh
+    - tests/regression/test_12_inter_spec_dependency.sh
+    - tests/regression/test_18_capability_foundation_gate.sh
+    - tests/regression/test_23_planning_audit_contract.sh
+    - tests/regression/test_24_g028_sensitive_client_storage.sh
+    - tests/regression/test_25_traceability_test_plan_heading_depth.sh
+    - tests/regression/test_26_state_transition_spec_mjs_path.sh
+    - tests/regression/test_28_framework_validate_portable_timeout.sh
+    - tests/regression/test_33_traceability_current_scope_universe.sh
+    - tests/regression/test_35_human_acceptance_terminal.sh
+    - tests/regression/test_repository_binding.sh
+    - .github/bubbles-project.yaml
+    - .github/copilot-instructions.md
+    - .specify/memory/agents.md
+    - .specify/memory/bubbles.config.json
+    - .specify/memory/constitution.md
+    - .specify/memory/developer-profile.md
+    - .specify/memory/open-work.md
+    - .specify/runtime/resource-leases.json
+    - .specify/runtime/workflow-runs.json
+    - .vscode/settings.json
+    - BUGS.md
+    - CHANGELOG.md
+    - README.md
+    - agents/bubbles.audit.agent.md
+    - agents/bubbles.bug.agent.md
+    - agents/bubbles.code-review.agent.md
+    - agents/bubbles.docs.agent.md
+    - agents/bubbles.gaps.agent.md
+    - agents/bubbles.goal.agent.md
+    - agents/bubbles.grill.agent.md
+    - agents/bubbles.handoff.agent.md
+    - agents/bubbles.harden.agent.md
+    - agents/bubbles.implement.agent.md
+    - agents/bubbles.iterate.agent.md
+    - agents/bubbles.journey.agent.md
+    - agents/bubbles.plan.agent.md
+    - agents/bubbles.propagate.agent.md
+    - agents/bubbles.recap.agent.md
+    - agents/bubbles.redteam.agent.md
+    - agents/bubbles.releases.agent.md
+    - agents/bubbles.retro.agent.md
+    - agents/bubbles.spec-review.agent.md
+    - agents/bubbles.sprint.agent.md
+    - agents/bubbles.stabilize.agent.md
+    - agents/bubbles.status.agent.md
+    - agents/bubbles.super.agent.md
+    - agents/bubbles.system-review.agent.md
+    - agents/bubbles.train.agent.md
+    - agents/bubbles.upkeep.agent.md
+    - agents/bubbles.validate.agent.md
+    - agents/bubbles.workflow.agent.md
+    - agents/bubbles_shared/agent-common.md
+    - agents/bubbles_shared/bug-templates.md
+    - agents/bubbles_shared/completion-governance.md
+    - agents/bubbles_shared/critical-requirements.md
+    - agents/bubbles_shared/evidence-rules.md
+    - agents/bubbles_shared/feature-templates.md
+    - agents/bubbles_shared/operating-baseline.md
+    - agents/bubbles_shared/planning-core.md
+    - agents/bubbles_shared/project-config-contract.md
+    - agents/bubbles_shared/quality-gates.md
+    - agents/bubbles_shared/repository-binding-preflight.md
+    - agents/bubbles_shared/scenario-compile.md
+    - agents/bubbles_shared/scope-templates.md
+    - agents/bubbles_shared/scope-workflow.md
+    - agents/bubbles_shared/validation-profiles.md
+    - agents/bubbles_shared/workflow-delegation-core.md
+    - agents/bubbles_shared/workflow-execution-loops.md
+    - agents/bubbles_shared/workflow-input-bootstrap.md
+    - agents/bubbles_shared/workflow-mode-resolution.md
+    - agents/bubbles_shared/workflow-orchestration-core.md
+    - agents/bubbles_shared/workflow-phase-engine.md
+    - bubbles/action-risk-registry.yaml
+    - bubbles/adoption-profiles.yaml
+    - bubbles/agent-bundle-budgets.json
+    - bubbles/agent-capabilities.yaml
+    - bubbles/agent-ownership.yaml
+    - bubbles/agnosticity-allowlist.txt
+    - bubbles/capability-ledger.yaml
+    - bubbles/cheatsheet/README.md
+    - bubbles/cheatsheet/aliases.json
+    - bubbles/cheatsheet/modes.json
+    - bubbles/cheatsheet/vocabulary.json
+    - bubbles/code-review.yaml
+    - bubbles/docs-registry.yaml
+    - bubbles/eval/fixtures/experience-recall/corpus.json
+    - bubbles/eval/schemas/adversarial-sample.schema.json
+    - bubbles/eval/schemas/evaluator-result.schema.json
+    - bubbles/eval/schemas/task-v2.schema.json
+    - bubbles/hooks.json
+    - bubbles/installer/installer.yaml
+    - bubbles/intent-routes.yaml
+    - bubbles/interop-registry.yaml
+    - bubbles/mcp/clients/vscode.json
+    - bubbles/mcp/tools/query_tool_log.json
+    - bubbles/mcp/tools/record_evidence.json
+    - bubbles/mcp/tools/search_experience.json
+    - bubbles/registry/acceptance-authority.yaml
+    - bubbles/registry/admission-dimensions.yaml
+    - bubbles/registry/bug-packet.yaml
+    - bubbles/registry/execution-control-security-outcomes.json
+    - bubbles/registry/gates.yaml
+    - bubbles/registry/measured-budget-runtime-contracts.json
+    - bubbles/registry/micro-fix-packet.yaml
+    - bubbles/registry/model-classes.yaml
+    - bubbles/registry/optional-skills.txt
+    - bubbles/registry/proof-obligations.yaml
+    - bubbles/registry/report-sections.yaml
+    - bubbles/registry/required-specialists.yaml
+    - bubbles/registry/research-direct-tests.json
+    - bubbles/registry/research-runtime.json
+    - bubbles/registry/research-stages.yaml
+    - bubbles/registry/scenario-states.yaml
+    - bubbles/registry/selftest-denylist.txt
+    - bubbles/registry/tool-grants.yaml
+    - bubbles/registry/validation-checks.yaml
+    - bubbles/release-manifest.json
+    - bubbles/requirements.txt
+    - bubbles/schemas/dispatch-admission.schema.json
+    - bubbles/schemas/execution-control-event.schema.json
+    - bubbles/schemas/experience-recall.schema.json
+    - bubbles/schemas/goal-contract.schema.json
+    - bubbles/schemas/repository-binding.schema.json
+    - bubbles/schemas/result-envelope.schema.json
+    - bubbles/schemas/scenario-manifest-v2.schema.json
+    - bubbles/schemas/scenario-manifest.schema.json
+    - bubbles/schemas/session-epoch.schema.json
+    - bubbles/schemas/tool-call.schema.json
+    - bubbles/schemas/usage-adapter-v2.schema.json
+    - bubbles/schemas/workflows.schema.json
+    - bubbles/tests/fixtures/observability/payload-alerts-raw-envelope.invalid.json
+    - bubbles/workflows.yaml
+    - bubbles/workflows/aliases.yaml
+    - bubbles/workflows/modes.yaml
+    - docs/CATALOG.md
+    - docs/CHEATSHEET.md
+    - docs/Framework_Improvements_Delivered.md
+    - docs/MCP.md
+    - docs/Product-Review-2026-08-02.md
+    - docs/Spec_Implementation_Alignment.md
+    - docs/generated/competitive-capabilities.md
+    - docs/generated/framework-stats.json
+    - docs/generated/gate-coverage-map.md
+    - docs/generated/interop-migration-matrix.md
+    - docs/generated/issue-status.md
+    - docs/generated/telemetry-reader-map.md
+    - docs/governance-index.md
+    - docs/guides/AGENT_MANUAL.md
+    - docs/guides/CONTROL_PLANE_ADOPTION.md
+    - docs/guides/CONTROL_PLANE_DESIGN.md
+    - docs/guides/CONTROL_PLANE_SCHEMAS.md
+    - docs/guides/FRAMEWORK_CONCEPTS.md
+    - docs/guides/INSTALLATION.md
+    - docs/guides/WORKFLOW_MODES.md
+    - docs/issues/G068-word-overlap-threshold.md
+    - docs/issues/session-aware-runtime-coordination.md
+    - docs/mcp.md
+    - docs/recipes/README.md
+    - docs/recipes/adversarial-verification.md
+    - docs/recipes/ask-the-super-first.md
+    - docs/recipes/cross-model-review.md
+    - docs/recipes/custom-gates.md
+    - docs/recipes/framework-dogfood.md
+    - docs/recipes/framework-ops.md
+    - docs/recipes/quality-sweep.md
+    - docs/recipes/resume-work.md
+    - docs/recipes/runtime-coordination.md
+    - docs/recipes/setup-project.md
+    - docs/v5.2-design.md
+    - docs/v6-mcp-design.md
+    - improvements/INDEX.md
+    - instructions/bubbles-agents.instructions.md
+    - instructions/bubbles-release-trains.instructions.md
+    - instructions/bubbles-wsl-macos-compatibility.instructions.md
+    - skills/INVENTORY.md
+    - skills/bubbles-cinematic-design/SKILL.md
+    - skills/bubbles-quality-gates-catalog/SKILL.md
+    - skills/bubbles-result-envelope/SKILL.md
+    - skills/bubbles-workflow-mode-resolution/SKILL.md
+    commands:
+    - git
+    - jq
+    - node
+    - npx
+    - perl
+    - python3
+    - sha256sum
+    - shasum
+    - shellcheck
+    - shfmt
+    - yq
   vc-bubbles-scripts-expansion-approval-selftest:
     script: bubbles/scripts/expansion-approval-selftest.sh
     label: "Expansion-approval selftest (IMP-041 SCOPE-4 / GF-10)"
@@ -18518,6 +19316,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -19268,6 +20068,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -20111,6 +20913,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -20952,6 +21756,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -21711,6 +22517,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -22515,6 +23323,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -23265,6 +24075,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -24015,6 +24827,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -24765,6 +25579,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -25515,6 +26331,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -26265,6 +27083,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -27015,6 +27835,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -27794,6 +28616,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -28544,6 +29368,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -29579,6 +30405,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -30329,6 +31157,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -31121,6 +31951,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -31871,6 +32703,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -32621,6 +33455,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -33379,6 +34215,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -34323,6 +35161,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -35127,6 +35967,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -35887,6 +36729,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -36637,6 +37481,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -37387,6 +38233,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -38137,6 +38985,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -38887,6 +39737,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -39637,6 +40489,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -40398,6 +41252,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -41148,6 +42004,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -41898,6 +42756,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -42712,6 +43572,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -43462,6 +44324,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -44212,6 +45076,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -44962,6 +45828,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -45712,6 +46580,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -46515,6 +47385,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -47265,6 +48137,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -48015,6 +48889,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -48799,6 +49675,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -49593,6 +50471,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -50456,6 +51336,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -51226,6 +52108,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -51976,6 +52860,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -52778,6 +53664,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -53528,6 +54416,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -54278,6 +55168,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -55065,6 +55957,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -55815,6 +56709,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -56565,6 +57461,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -57315,6 +58213,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -58065,6 +58965,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -58933,6 +59835,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -59703,6 +60607,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -60453,6 +61359,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -61203,6 +62111,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -61953,6 +62863,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -62831,6 +63743,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -63592,6 +64506,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -64736,6 +65652,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -65486,6 +66404,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -66236,6 +67156,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -67003,6 +67925,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -67753,6 +68677,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -68627,6 +69553,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -69377,6 +70305,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -70205,6 +71135,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -70985,6 +71917,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -71735,6 +72669,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -72486,6 +73422,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -73373,6 +74311,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -74147,6 +75087,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -74899,6 +75841,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -75688,6 +76632,8 @@ checks:
     - bubbles/scripts/model-tier-advisory-selftest.sh
     - bubbles/scripts/model-tier-advisory.sh
     - bubbles/scripts/multi-root-honesty-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization-selftest.sh
+    - bubbles/scripts/mutable-dispatch-authorization.sh
     - bubbles/scripts/mutation-adapter-contract-selftest.sh
     - bubbles/scripts/mutation-receipt-selftest.sh
     - bubbles/scripts/mutation-receipt.sh
@@ -76150,4 +77096,4 @@ checks:
     commands:
     - sha256sum
     - shellcheck
-derivedAt: 9346c9ba
+derivedAt: c2b53d90

@@ -1105,6 +1105,7 @@ run_check "Work-boundary resolver selftest (IMP-100 Phase 4 R6)" bash "$SCRIPT_D
 run_check "Goal-contract selftest (IMP-038 SCOPE-1 / GF-1)" bash "$SCRIPT_DIR/goal-contract-selftest.sh"
 run_check "Goal-fidelity guard selftest (IMP-038 SCOPE-6 / G134)" bash "$SCRIPT_DIR/goal-fidelity-guard-selftest.sh"
 run_check "Goal-boundary receipt selftest (IMP-041 SCOPE-3 / GF-7)" bash "$SCRIPT_DIR/goal-boundary-receipt-selftest.sh"
+run_check "Mutable-dispatch authorization selftest (IMP-056 SCOPE-3)" bash "$SCRIPT_DIR/mutable-dispatch-authorization-selftest.sh"
 run_check "Expansion-approval selftest (IMP-041 SCOPE-4 / GF-10)" bash "$SCRIPT_DIR/expansion-approval-selftest.sh"
 run_check "Convergence-materiality selftest (IMP-041 SCOPE-7 / GF-13)" bash "$SCRIPT_DIR/convergence-materiality-selftest.sh"
 run_check "IMP-041 evaluation corpus (SCOPE-8 / COV-13)" bash "$SCRIPT_DIR/imp041-evaluation-corpus.sh"
