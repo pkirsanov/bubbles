@@ -1021,6 +1021,18 @@ class MeasuredBudgetRuntime:
             self._append_locked(permit, "command", permit["permitId"], decision["occurrenceId"])
             return permit
 
+    def permit_get(self, *, permit_id: str) -> dict[str, Any]:
+        """Read-only lookup of one dispatch-permit record by permitId. Never
+        mutates the ledger. Exists because IMP-056 SCOPE-4's gateway needs the
+        full permit (reservationId, occurrenceId, enforcementKind, ...) to
+        mint a mutable-dispatch-authorization, and the only record a caller
+        otherwise holds by that point is the narrower permit-consumption
+        shape passed to the broker."""
+        identifier(permit_id, "permitId")
+        with self.store.locked():
+            records = self._records_locked()
+            return self._find(records, "dispatch-permit", "permitId", permit_id)
+
     def permit_consume(self, *, permit_id: str, nonce: str, consumed_at: str, action_digest: str | None = None) -> dict[str, Any]:
         for value, label in ((permit_id, "permitId"), (nonce, "nonce")):
             identifier(value, label)
@@ -1295,7 +1307,7 @@ def error_envelope(exc: MbeError) -> dict[str, Any]:
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="IMP-055 MBE-1 reference domain engine")
-    result.add_argument("command", choices=("usage-record", "dispatch-intent", "admission-fact", "budget-open", "snapshot", "reserve", "debit", "release", "hold", "correct", "close", "budget-settle", "retry-decide", "admission-evaluate", "permit-issue", "permit-consume", "launch-pending", "launch-confirm", "launch-deny", "launch-reconcile", "epoch-boundary", "epoch-open", "epoch-verify", "epoch-close", "corpus-seal", "corpus-evaluate"))
+    result.add_argument("command", choices=("usage-record", "dispatch-intent", "admission-fact", "budget-open", "snapshot", "reserve", "debit", "release", "hold", "correct", "close", "budget-settle", "retry-decide", "admission-evaluate", "permit-issue", "permit-get", "permit-consume", "launch-pending", "launch-confirm", "launch-deny", "launch-reconcile", "epoch-boundary", "epoch-open", "epoch-verify", "epoch-close", "corpus-seal", "corpus-evaluate"))
     result.add_argument("--store-root", required=True)
     result.add_argument("--input", required=True)
     return result

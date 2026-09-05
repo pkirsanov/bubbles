@@ -14,12 +14,21 @@ usage() {
   cat >&2 <<'EOF'
 Usage: reference-broker.sh capabilities
        reference-broker.sh dispatch --store-root PATH --permit-consumption FILE
-         --action FILE
+         --action FILE [--existing-snapshot-dir PATH]
 
 The action file is {"argv":[...],"actionDigest":"sha256:..."}. The digest is
 sha256 over canonical JSON {"argv":[...]}. The consumption file carries every
 permit binding required by MBE-1. Native VS Code, MCP, and ambient interception
 are unsupported. This broker gates only the child argv routed through it.
+
+--existing-snapshot-dir is for IMP-056 SCOPE-4's canonical gateway only: a
+directory the gateway already populated via reference-broker-snapshot.py,
+using the SAME immutable action/executable bytes it minted a
+mutable-dispatch-authorization against. Passing it skips re-creating the
+snapshot (which would otherwise reopen a TOCTOU window between the gateway's
+mint and this broker's own launch) and reuses that directory as-is. Omit it
+for a direct, unauthorized-by-a-gateway call, which still gets the full
+broker-owned snapshot hardening on its own.
 EOF
 }
 
@@ -46,11 +55,13 @@ fi
 store_root=""
 consumption_file=""
 action_file=""
+existing_snapshot_dir=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --store-root) store_root="${2:-}"; shift 2 ;;
     --permit-consumption) consumption_file="${2:-}"; shift 2 ;;
     --action) action_file="${2:-}"; shift 2 ;;
+    --existing-snapshot-dir) existing_snapshot_dir="${2:-}"; shift 2 ;;
     *) echo "reference-broker: unknown option '$1'" >&2; exit 2 ;;
   esac
 done
@@ -62,9 +73,26 @@ command -v jq >/dev/null 2>&1 || { echo "reference-broker: jq is required" >&2; 
 work_dir="$(mktemp -d "${TMPDIR:-/tmp}/bubbles-reference-broker.XXXXXX")"
 chmod 700 "$work_dir"
 trap 'rm -rf "$work_dir"' EXIT INT TERM
-python3 "$SNAPSHOT_HELPER" --action "$action_file" --permit-consumption "$consumption_file" --output-dir "$work_dir"
-snapshot_action="$work_dir/action.json"
-snapshot_consumption="$work_dir/permit-consumption.json"
+
+if [[ -n "$existing_snapshot_dir" ]]; then
+  # The gateway already built this snapshot and minted an authorization
+  # against its exact bytes. Re-creating it here would copy the executable a
+  # second time from its original mutable path -- exactly the TOCTOU gap
+  # broker-owned snapshotting exists to close -- so it is used as-is.
+  snapshot_dir="$existing_snapshot_dir"
+  [[ -d "$snapshot_dir" ]] || { echo "reference-broker: existing snapshot directory not found: $snapshot_dir" >&2; exit 2; }
+  for required_snapshot_file in action.json permit-consumption.json snapshot-metadata.json executable; do
+    [[ -e "$snapshot_dir/$required_snapshot_file" ]] || {
+      echo "reference-broker: existing snapshot directory is incomplete (missing $required_snapshot_file)" >&2
+      exit 2
+    }
+  done
+else
+  snapshot_dir="$work_dir"
+  python3 "$SNAPSHOT_HELPER" --action "$action_file" --permit-consumption "$consumption_file" --output-dir "$snapshot_dir"
+fi
+snapshot_action="$snapshot_dir/action.json"
+snapshot_consumption="$snapshot_dir/permit-consumption.json"
 
 permit_id="$(jq -r '.permit_id // .permitId // ""' "$snapshot_consumption")"
 nonce="$(jq -r '.nonce // ""' "$snapshot_consumption")"
@@ -105,8 +133,8 @@ jq -n --arg pid "$permit_id" --arg at "$at" '{permit_id:$pid,recorded_at:$at}' \
 chmod 600 "$work_dir/launch-terminal-input.json"
 
 launch_rc=0
-python3 "$SNAPSHOT_HELPER" launch --output-dir "$work_dir" || launch_rc=$?
-if [[ "$launch_rc" -ne 0 ]] || [[ ! -f "$work_dir/child-status" ]]; then
+python3 "$SNAPSHOT_HELPER" launch --output-dir "$snapshot_dir" || launch_rc=$?
+if [[ "$launch_rc" -ne 0 ]] || [[ ! -f "$snapshot_dir/child-status" ]]; then
   # Launch preparation failed strictly AFTER the permit was consumed but
   # BEFORE process creation could be confirmed. This is launch-denied, not
   # launch-ambiguous: the failure is observed here, in this process, not
@@ -117,7 +145,7 @@ if [[ "$launch_rc" -ne 0 ]] || [[ ! -f "$work_dir/child-status" ]]; then
 fi
 python3 "$ENGINE" launch-confirm --store-root "$store_root" --input "$work_dir/launch-terminal-input.json" >/dev/null
 
-child_status="$(<"$work_dir/child-status")"
+child_status="$(<"$snapshot_dir/child-status")"
 [[ "$child_status" =~ ^[0-9]+$ ]] || {
   echo "reference-broker: child exit status is invalid" >&2
   exit 4
@@ -138,7 +166,7 @@ receipt_id="$(jq -r '.usageReceiptId' "$work_dir/receipt.json")"
 verification_id="$(jq -r '.verificationId' "$work_dir/verification.json")"
 settlement_json="$(python3 "$FINALIZER" settle --store-root "$store_root" --permit-id "$permit_id" --usage-receipt-id "$receipt_id" --receipt-verification-id "$verification_id" --at "$at")"
 outcome="$(printf '%s' "$settlement_json" | jq -r '.terminalState')"
-stdout_bytes="$(wc -c <"$work_dir/stdout" | tr -d ' ')"
-stderr_bytes="$(wc -c <"$work_dir/stderr" | tr -d ' ')"
+stdout_bytes="$(wc -c <"$snapshot_dir/stdout" | tr -d ' ')"
+stderr_bytes="$(wc -c <"$snapshot_dir/stderr" | tr -d ' ')"
 printf '{"childExitCode":%s,"contractType":"reference-dispatch-result","nativeHostInterception":"unsupported","schemaVersion":1,"settlement":"%s","stderrBytes":%s,"stdoutBytes":%s}\n' "$child_status" "$outcome" "$stderr_bytes" "$stdout_bytes"
 exit "$child_status"
