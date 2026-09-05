@@ -1,0 +1,45 @@
+# IMP-059 — Hermetic Selftest Closure Precision
+
+**Status:** PROPOSED (not yet applied) — awaiting owner review
+**Surface:** framework-health (G125) — human-reviewed; NO auto-mutation of bubbles/* until approved
+**Motivation:** Split out of IMP-058 SCOPE-4 (PERF-13). That proposal's default-tier work (`framework-validate.sh` defaulting a working-tree invocation to `--changed-only`) landed and is out of scope here. Its companion sub-item — making `closureComplete: false` mean what it claims to mean for hermetic selftests — was investigated, found real, and deliberately left unattempted: fixing a 3MB+ generated file's core derivation heuristic in the same pass as an unrelated default-flip carried more risk than the rest of that proposal combined. This IMP gives that investigation its own scope, evidence, and acceptance criteria rather than letting it live as a paragraph inside a closed proposal.
+**Verified gaps addressed:** PERF-13 (residual) — a hermetic selftest whose closure is enumerable is nevertheless marked `closureComplete: false`, so it is re-executed on every validation run regardless of whether anything it tests changed.
+
+## Problem (verified against source)
+
+- **PERF-13 (residual) — the `closureComplete` heuristic is textual, not semantic, and over-flags.** `bubbles/scripts/generate-validation-checks.sh` derives `closureComplete: false` for a check whenever its source file's text contains `$REPO_ROOT`, `$repo_root`, `git -C`, or `bubbles_pruned_find` anywhere — a string match, not an analysis of what the script actually reads. As of this write-up: 227 checks in `bubbles/registry/validation-checks.yaml` carry `closureComplete: false` against 140 carrying `true` (counts move slightly release to release as scripts are added; re-verify before acting). A selftest is a hermetic unit test of one guard script — its closure (the guard, its libraries, its fixtures) is enumerable in principle — so a selftest landing in the `false` bucket for a reason that isn't a real, unenumerable tree-walk is paying the full re-execution cost of every validation run for no correctness reason.
+- **The over-flagging is measured, not assumed, for a real sample.** Classifying the selftests flagged `closureComplete: false` directly against their own source text (IMP-058 SCOPE-4 investigation, 2026-09-04): of the checks examined, roughly 44 contain a genuine `find`/`git -C` tree-walk pattern — correctly `false`. Roughly 49 mention `$REPO_ROOT` with no such walk — an enumerable single-file or fixed-path read that the current heuristic cannot distinguish from a real walk, and is therefore a likely false negative. The remainder of the flagged set carries `closureComplete: false` for a distinct, separately-tracked reason inside the generator (`CLOSURE_UNRESOLVED`, not the tree-walk marker `CLOSURE_TREE`) that the originating investigation did not have room to classify and this proposal must re-derive rather than assume still holds.
+- **Two remediation shapes exist, with different risk profiles, and neither has been attempted.** (a) Retrofit each of the ~49 candidate selftests with a provably-enforced hermeticity contract — one that fails under execution if the selftest reads outside its declared closure, not a self-declared comment — which is large (many files) but touches no shared derivation logic. (b) Sharpen `generate-validation-checks.sh`'s own reference-tracing to recognize an enumerable `$REPO_ROOT/<literal-path>` construction as a real, closeable input rather than an automatic tree-walk marker — smaller in file count but changes the core heuristic of a generated, hand-edit-refused 3MB+ file that many other checks' `closureComplete` values already depend on. A wrong change here risks the opposite failure: silently reclassifying a genuinely-unenumerable check as `closureComplete: true`, which is a cache-staleness bug the generator exists to prevent, not to reintroduce.
+
+## Proposal
+
+### SCOPE-1 — Re-derive and freeze the current classification (PERF-13)
+
+- Re-run the full classification (not the sample) against the CURRENT `bubbles/registry/validation-checks.yaml` and selftest set — the exact counts above are a 2026-09-04 snapshot and will have moved. Produce a checked-in list (mirroring the shape of `bubbles/registry/gate-enforcement-agreement.baseline` from IMP-058 SCOPE-6) of selftest paths currently `closureComplete: false`, tagged with which of the two buckets (genuine tree-walk vs. candidate false-negative vs. `CLOSURE_UNRESOLVED`) each falls into.
+- This scope produces no behavior change — it is the measurement SCOPE-2 needs to not be a guess, and it is independently useful even if SCOPE-2 is never attempted: it turns "154 (or whatever the count now is) selftests are closure-incomplete" from an assertion into a reviewable, re-runnable list.
+
+### SCOPE-2 — Choose and execute one remediation shape (PERF-13)
+
+- Decide between the two shapes named in the Problem section based on SCOPE-1's real bucket sizes, not on the 2026-09-04 estimate. Recommendation (subject to the re-derived numbers): prefer (a), the per-selftest retrofit, for the candidate-false-negative bucket specifically — it is additive per file and cannot regress an unrelated check's closure, where (b) touches shared derivation logic used by every check in the registry.
+- Whichever shape is chosen, the acceptance bar is the same: a `closureComplete: true` selftest that is made to read outside its declared closure (via a hermetic fixture, not a self-declared comment) MUST fail, proving the contract is enforced by execution.
+- Leave `CLOSURE_UNRESOLVED` entries alone in this scope unless SCOPE-1's re-classification finds they are actually cheap to resolve; that bucket was explicitly unclassified by the originating investigation and may deserve its own scope.
+
+## Migration / rollout
+
+- SCOPE-1 is read-only measurement and can land alone with no review risk.
+- SCOPE-2 changes what gets cached/skipped under `--changed-only`. Land it behind the same discipline IMP-058 SCOPE-4's default-tier change used: full blast-radius check of every `framework-validate.sh` invocation before landing, and owner sign-off given this script ships into every downstream Bubbles install.
+
+## Risks & mitigations
+
+- **R1 — A wrong heuristic change reclassifies a genuinely-unenumerable check as `closureComplete: true`, silently reintroducing stale-cache bugs.** → SCOPE-2's acceptance bar requires proving enforcement by execution (a fixture that reads outside its declared closure must fail), not by reading the generator's logic and trusting it.
+- **R2 — The retrofit shape (154+ individual selftest edits) is large enough to itself become a source of drift.** → SCOPE-1's checked-in, bucketed list is the guardrail: SCOPE-2 works off a reviewable manifest, not a fresh re-scan each time, so partial progress is visible and auditable.
+
+## Acceptance criteria (when implemented)
+
+- A checked-in, re-runnable classification of every `closureComplete: false` selftest into {genuine tree-walk, candidate false-negative, CLOSURE_UNRESOLVED}, generated from the live registry rather than hand-maintained.
+- The count of `closureComplete: false` selftests attributable to the candidate-false-negative bucket is reduced, with the achieved figure recorded from a regenerated `validation-checks.yaml` and the total assertion count across the suite unchanged.
+- At least one remediated selftest is proven to still fail-closed: a fixture that reads outside its declared closure causes that selftest's own hermeticity check to refuse, not silently pass.
+
+## Files to touch (on approval)
+
+`bubbles/scripts/generate-validation-checks.sh` (closure-classification heuristic, if SCOPE-2 chooses shape (b) — owner `bubbles.super`), individual `bubbles/scripts/*-selftest.sh` files identified by SCOPE-1 (hermeticity retrofit, if SCOPE-2 chooses shape (a) — owner `bubbles.test`), `bubbles/registry/validation-checks.yaml` (regenerated; never hand-edited — generated surface), a new checked-in classification manifest (path TBD by SCOPE-1 — owner `bubbles.super`), `improvements/INDEX.md` (proposal row — owner `bubbles.super`).

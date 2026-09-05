@@ -431,6 +431,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -1261,6 +1263,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -2009,6 +2013,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -2774,6 +2780,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -3522,6 +3530,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -4310,6 +4320,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -5058,6 +5070,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -5821,6 +5835,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -6569,6 +6585,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -7347,6 +7365,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -8095,6 +8115,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -8843,6 +8865,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -9434,6 +9458,24 @@ checks:
     commands:
     - python3
     - shellcheck
+  vc-bubbles-scripts-gate-enforcement-agreement-ratchet-selftest:
+    script: bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    label: "Gate enforcement agreement ratchet selftest (IMP-058 SCOPE-6)"
+    closureComplete: true
+    inputs:
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
+    - bubbles/registry/gates.yaml
+    commands:
+    - shellcheck
+  vc-bubbles-scripts-gate-enforcement-agreement-ratchet:
+    script: bubbles/scripts/gate-enforcement-agreement-ratchet.sh
+    label: "Gate enforcement agreement ratchet"
+    closureComplete: false
+    inputs:
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
+    - bubbles/registry/gates.yaml
+    commands: []
   vc-bubbles-scripts-gate-retirement-selftest:
     script: bubbles/scripts/gate-retirement-selftest.sh
     label: "Gate retirement selftest (IMP-027 SCOPE-11)"
@@ -9662,6 +9704,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -10410,6 +10454,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -11209,6 +11255,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -12107,6 +12155,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -12855,6 +12905,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -13652,6 +13704,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -14413,6 +14467,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -15161,6 +15217,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -15926,6 +15984,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -16674,6 +16734,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -17422,6 +17484,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -18348,6 +18412,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -19096,6 +19162,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -19937,6 +20005,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -20776,6 +20846,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -21533,6 +21605,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -22335,6 +22409,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -23083,6 +23159,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -23831,6 +23909,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -24579,6 +24659,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -25327,6 +25409,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -26075,6 +26159,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -26823,6 +26909,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -27600,6 +27688,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -28348,6 +28438,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -29381,6 +29473,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -30129,6 +30223,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -30919,6 +31015,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -31667,6 +31765,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -32415,6 +32515,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -33171,6 +33273,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -34113,6 +34217,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -34915,6 +35021,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -35673,6 +35781,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -36421,6 +36531,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -37169,6 +37281,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -37917,6 +38031,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -38665,6 +38781,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -39413,6 +39531,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -40172,6 +40292,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -40920,6 +41042,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -41668,6 +41792,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -42480,6 +42606,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -43228,6 +43356,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -43976,6 +44106,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -44724,6 +44856,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -45472,6 +45606,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -46273,6 +46409,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -47021,6 +47159,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -47769,6 +47909,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -48551,6 +48693,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -49343,6 +49487,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -50204,6 +50350,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -50972,6 +51120,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -51720,6 +51870,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -52520,6 +52672,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -53268,6 +53422,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -54016,6 +54172,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -54801,6 +54959,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -55549,6 +55709,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -56297,6 +56459,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -57045,6 +57209,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -57793,6 +57959,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -58659,6 +58827,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -59427,6 +59597,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -60175,6 +60347,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -60923,6 +61097,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -61671,6 +61847,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -62547,6 +62725,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -63306,6 +63486,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -64448,6 +64630,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -65196,6 +65380,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -65944,6 +66130,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -66709,6 +66897,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -67457,6 +67647,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -68329,6 +68521,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -69077,6 +69271,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -69903,6 +70099,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -70681,6 +70879,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -71429,6 +71629,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -72178,6 +72380,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -73063,6 +73267,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -73835,6 +74041,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -74585,6 +74793,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -75372,6 +75582,8 @@ checks:
     - bubbles/scripts/gate-catalog-freshness.sh
     - bubbles/scripts/gate-classification.sh
     - bubbles/scripts/gate-detection-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet-selftest.sh
+    - bubbles/scripts/gate-enforcement-agreement-ratchet.sh
     - bubbles/scripts/gate-enforcement-selftest.sh
     - bubbles/scripts/gate-enforcement.sh
     - bubbles/scripts/gate-hit-log-selftest.sh
@@ -75938,4 +76150,4 @@ checks:
     commands:
     - sha256sum
     - shellcheck
-derivedAt: 5e570581
+derivedAt: 9346c9ba
