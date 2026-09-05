@@ -66,6 +66,24 @@ python3 "$SNAPSHOT_HELPER" --action "$action_file" --permit-consumption "$consum
 snapshot_action="$work_dir/action.json"
 snapshot_consumption="$work_dir/permit-consumption.json"
 
+permit_id="$(jq -r '.permit_id // .permitId // ""' "$snapshot_consumption")"
+nonce="$(jq -r '.nonce // ""' "$snapshot_consumption")"
+at="$(jq -r '.consumed_at // .consumedAt // ""' "$snapshot_consumption")"
+[[ -n "$permit_id" && -n "$nonce" && -n "$at" ]] || {
+  echo "reference-broker: permit identity or dispatch time unavailable" >&2
+  exit 2
+}
+
+# IMP-056 SCOPE-2 (Launch State And Settlement). launch-pending is durable
+# BEFORE the permit is consumed: if the broker dies anywhere between here and
+# a terminal record, that pending record is the only evidence process
+# creation was ever attempted, and launch-reconcile is what later resolves it
+# to launch-ambiguous rather than leaving the question unanswerable.
+jq -n --arg pid "$permit_id" --arg nonce "$nonce" --arg at "$at" \
+  '{permit_id:$pid,nonce:$nonce,recorded_at:$at}' >"$work_dir/launch-pending-input.json"
+chmod 600 "$work_dir/launch-pending-input.json"
+python3 "$ENGINE" launch-pending --store-root "$store_root" --input "$work_dir/launch-pending-input.json" >/dev/null
+
 # MBE validates every permit binding, expiry, and one-use state under the ECF
 # lock. A failed consumption exits before the child can run.
 python3 "$ENGINE" permit-consume --store-root "$store_root" --input "$snapshot_consumption" >/dev/null
@@ -82,17 +100,29 @@ expected_argc="$(jq -r '.argv | length - 1' "$snapshot_action")"
   exit 2
 }
 
-python3 "$SNAPSHOT_HELPER" launch --output-dir "$work_dir"
+jq -n --arg pid "$permit_id" --arg at "$at" '{permit_id:$pid,recorded_at:$at}' \
+  >"$work_dir/launch-terminal-input.json"
+chmod 600 "$work_dir/launch-terminal-input.json"
+
+launch_rc=0
+python3 "$SNAPSHOT_HELPER" launch --output-dir "$work_dir" || launch_rc=$?
+if [[ "$launch_rc" -ne 0 ]] || [[ ! -f "$work_dir/child-status" ]]; then
+  # Launch preparation failed strictly AFTER the permit was consumed but
+  # BEFORE process creation could be confirmed. This is launch-denied, not
+  # launch-ambiguous: the failure is observed here, in this process, not
+  # inferred later by a recovery pass over an unresolved pending record.
+  python3 "$ENGINE" launch-deny --store-root "$store_root" --input "$work_dir/launch-terminal-input.json" >/dev/null
+  echo "reference-broker: launch preparation failed after permit consumption" >&2
+  exit 4
+fi
+python3 "$ENGINE" launch-confirm --store-root "$store_root" --input "$work_dir/launch-terminal-input.json" >/dev/null
+
 child_status="$(<"$work_dir/child-status")"
 [[ "$child_status" =~ ^[0-9]+$ ]] || {
   echo "reference-broker: child exit status is invalid" >&2
   exit 4
 }
 
-permit_id="$(jq -r '.permit_id // .permitId // ""' "$snapshot_consumption")"
-[[ -n "$permit_id" ]] || { echo "reference-broker: permit identity unavailable" >&2; exit 2; }
-at="$(jq -r '.consumed_at // .consumedAt // ""' "$snapshot_consumption")"
-[[ -n "$at" ]] || { echo "reference-broker: dispatch time unavailable" >&2; exit 2; }
 python3 "$FINALIZER" context --store-root "$store_root" --permit-id "$permit_id" --child-exit-code "$child_status" --at "$at" >"$work_dir/receipt-input.json"
 BUBBLES_USAGE_REFERENCE_TEST=enabled bash "$USAGE_ADAPTER" receipt "$work_dir/receipt-input.json" >"$work_dir/receipt.json"
 python3 "$ENGINE" usage-record --store-root "$store_root" --input "$work_dir/receipt.json" >/dev/null

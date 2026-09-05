@@ -40,6 +40,7 @@ ENUMS: dict[str, list[Any]] = {
     "boundaryKind": ["initial-host-checkpoint", "host-checkpoint", "new-session"],
     "epochVerdict": ["verified", "invalid"],
     "epochState": ["active", "closed"],
+    "launchState": ["launch-pending", "launch-confirmed", "launch-denied", "launch-ambiguous"],
 }
 
 

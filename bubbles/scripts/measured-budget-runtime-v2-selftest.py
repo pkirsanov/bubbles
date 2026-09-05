@@ -229,6 +229,107 @@ class TypedGraphTests(RuntimeCase):
                          "unsupported launch form consumed its permit before refusing")
         return denied
 
+    # IMP-056 SCOPE-2: launch-state ledger. Pure runtime-level coverage (no
+    # subprocess, no Linux/dash dependency) for launch_pending/launch_confirm/
+    # launch_deny/launch_reconcile -- the crash-recovery vocabulary the broker
+    # relies on but which is exercised independently of it here, the same way
+    # permit_issue/permit_consume are tested apart from reference-broker.sh.
+    def issued_permit(self, nonce: str = "nonce:launch") -> tuple[dict[str, Any], dict[str, Any]]:
+        fixture = self.prepare()
+        permit = self.runtime.permit_issue(decision_id=fixture["decision"]["decisionId"], nonce=nonce,
+            expires_at=EXP, issued_at=T[12], enforcement_kind="repository-reference")
+        return fixture, permit
+
+    def test_launch_pending_then_confirm_is_the_terminal_state(self) -> None:
+        _fixture, permit = self.issued_permit()
+        pending = self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:launch", recorded_at=T[13])
+        self.assertEqual(pending["state"], "launch-pending")
+        self.assertEqual(pending["permitId"], permit["permitId"])
+        self.assertEqual(pending["reservationId"], permit["reservationId"])
+        self.runtime.permit_consume(permit_id=permit["permitId"], nonce="nonce:launch", consumed_at=T[13])
+        confirmed = self.runtime.launch_confirm(permit_id=permit["permitId"], recorded_at=T[14])
+        self.assertEqual(confirmed["state"], "launch-confirmed")
+        states = [record["state"] for record in self.runtime.records()
+                  if record.get("contractType") == "dispatch-launch-state" and record.get("permitId") == permit["permitId"]]
+        self.assertEqual(states, ["launch-pending", "launch-confirmed"])
+
+    def test_launch_pending_then_deny_is_the_terminal_state(self) -> None:
+        _fixture, permit = self.issued_permit(nonce="nonce:deny")
+        self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:deny", recorded_at=T[13])
+        denied = self.runtime.launch_deny(permit_id=permit["permitId"], recorded_at=T[14])
+        self.assertEqual(denied["state"], "launch-denied")
+
+    def test_launch_pending_refuses_wrong_nonce(self) -> None:
+        _fixture, permit = self.issued_permit(nonce="nonce:right")
+        self.expect("MBE-PERMIT-INVALID", lambda: self.runtime.launch_pending(
+            permit_id=permit["permitId"], nonce="nonce:wrong", recorded_at=T[13]))
+
+    def test_launch_pending_refuses_a_second_pending_for_the_same_permit(self) -> None:
+        _fixture, permit = self.issued_permit(nonce="nonce:once")
+        self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:once", recorded_at=T[13])
+        self.expect("MBE-PERMIT-INVALID", lambda: self.runtime.launch_pending(
+            permit_id=permit["permitId"], nonce="nonce:once", recorded_at=T[14]))
+
+    def test_launch_confirm_refuses_without_a_prior_pending_record(self) -> None:
+        _fixture, permit = self.issued_permit(nonce="nonce:skip")
+        self.expect("MBE-PERMIT-INVALID", lambda: self.runtime.launch_confirm(
+            permit_id=permit["permitId"], recorded_at=T[13]))
+
+    def test_launch_terminal_refuses_a_second_terminal_record(self) -> None:
+        _fixture, permit = self.issued_permit(nonce="nonce:double")
+        self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:double", recorded_at=T[13])
+        self.runtime.launch_confirm(permit_id=permit["permitId"], recorded_at=T[14])
+        self.expect("MBE-PERMIT-INVALID", lambda: self.runtime.launch_confirm(
+            permit_id=permit["permitId"], recorded_at=T[15]))
+        self.expect("MBE-PERMIT-INVALID", lambda: self.runtime.launch_deny(
+            permit_id=permit["permitId"], recorded_at=T[15]))
+
+    def test_launch_reconcile_promotes_an_unresolved_pending_to_ambiguous(self) -> None:
+        # Simulates the broker dying between recording launch-pending and ever
+        # returning to record a terminal state -- the exact gap R2 names.
+        _fixture, permit = self.issued_permit(nonce="nonce:crash")
+        self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:crash", recorded_at=T[13])
+        result = self.runtime.launch_reconcile(recorded_at=T[20])
+        self.assertEqual(len(result["promotedLaunchStateIds"]), 1)
+        states = [record["state"] for record in self.runtime.records()
+                  if record.get("contractType") == "dispatch-launch-state" and record.get("permitId") == permit["permitId"]]
+        self.assertEqual(states, ["launch-pending", "launch-ambiguous"])
+
+    def test_launch_reconcile_is_idempotent_on_an_already_ambiguous_permit(self) -> None:
+        _fixture, permit = self.issued_permit(nonce="nonce:crash-twice")
+        self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:crash-twice", recorded_at=T[13])
+        self.runtime.launch_reconcile(recorded_at=T[20])
+        second = self.runtime.launch_reconcile(recorded_at=T[21])
+        self.assertEqual(second["promotedLaunchStateIds"], [])
+        states = [record["state"] for record in self.runtime.records()
+                  if record.get("contractType") == "dispatch-launch-state" and record.get("permitId") == permit["permitId"]]
+        self.assertEqual(states, ["launch-pending", "launch-ambiguous"])
+
+    def test_launch_reconcile_leaves_a_terminal_permit_untouched(self) -> None:
+        _fixture, permit = self.issued_permit(nonce="nonce:already-terminal")
+        self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:already-terminal", recorded_at=T[13])
+        self.runtime.launch_confirm(permit_id=permit["permitId"], recorded_at=T[14])
+        result = self.runtime.launch_reconcile(recorded_at=T[20])
+        self.assertEqual(result["promotedLaunchStateIds"], [])
+
+    def test_launch_ambiguous_holds_the_reservation_and_forbids_a_second_permit(self) -> None:
+        # R2/R4: ambiguity must hold the full reservation (no automatic
+        # release) and must not be a channel for an automatic retry. The
+        # reservation state is untouched by reconcile, and permit_issue's own
+        # one-permit-per-decision rule -- unconditional on outcome -- is what
+        # makes a second attempt on the SAME decision impossible; a genuine
+        # retry requires a brand new admission decision, never this path.
+        fixture, permit = self.issued_permit(nonce="nonce:ambiguous")
+        self.runtime.launch_pending(permit_id=permit["permitId"], nonce="nonce:ambiguous", recorded_at=T[13])
+        self.runtime.launch_reconcile(recorded_at=T[20])
+        reservation_after = next(record for record in self.runtime.records()
+                                  if record.get("contractType") == "budget-reservation"
+                                  and record.get("reservationId") == permit["reservationId"])
+        self.assertEqual(reservation_after["state"], "reserved")
+        self.expect("MBE-PERMIT-INVALID", lambda: self.runtime.permit_issue(
+            decision_id=fixture["decision"]["decisionId"], nonce="nonce:retry",
+            expires_at=EXP, issued_at=T[21], enforcement_kind="repository-reference"))
+
     def test_corpus_reports_counterfactual_coverage_exclusions_and_quality_pairing(self) -> None:
         rows = [
             {"rowId": "row:included", "sessionDigest": D[1], "mode": "implement", "phase": "implementation", "epochClass": "implementation", "riskClass": "bounded", "modelClass": "none", "toolFamily": "repository", "measurementStatus": "measured", "outcome": "complete", "evidenceDigest": D[2], "exclusionReason": None},
@@ -348,6 +449,47 @@ class TypedGraphTests(RuntimeCase):
         self.assertNotEqual(replay.returncode, 0)
         self.assertNotIn("reference-dispatch-result", replay.stdout,
                  "replayed dispatch reached the post-child result path")
+
+    def test_reference_broker_records_launch_pending_then_confirmed(self) -> None:
+        # The wiring this test proves cannot be exercised by the pure
+        # runtime-level launch-state tests above: only reference-broker.sh
+        # itself decides WHEN to call launch-pending (before permit-consume)
+        # and launch-confirm (after a successful launch), and only a real
+        # subprocess run proves that ordering actually happened.
+        argv = [str(self.private_dash("launch-state-dash")), "-c", "true"]
+        permit, _action_file, _consumption_file, command = self.broker_fixture(argv, "nonce:launch-state")
+        completed = subprocess.run(command, text=True, capture_output=True, timeout=30, check=False,
+            env={**os.environ, "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path})
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        launch_states = [record["state"] for record in self.runtime.records()
+                          if record.get("contractType") == "dispatch-launch-state"
+                          and record.get("permitId") == permit["permitId"]]
+        self.assertEqual(launch_states, ["launch-pending", "launch-confirmed"],
+                         "broker did not record launch-pending before consuming the permit "
+                         "and launch-confirmed after a successful launch")
+
+    def test_reference_broker_refuses_before_recording_launch_pending(self) -> None:
+        # A shebang script fails at snapshot CREATION (before launch-pending
+        # is ever recorded, per the wiring order) -- so it produces NO
+        # dispatch-launch-state record at all, not a launch-denied one.
+        # launch-denied is reserved for a failure strictly between permit
+        # consumption and a confirmed launch; the pure runtime-level test
+        # above (test_launch_pending_then_deny_is_the_terminal_state) already
+        # proves that state transition directly, since black-box subprocess
+        # fixtures on this broker cannot reach that narrow a window without a
+        # test seam this script does not provide.
+        script = Path(self.temp.name) / "shebang-script.sh"
+        script.write_text("#!/bin/sh\necho unreachable\n", encoding="utf-8")
+        script.chmod(0o700)
+        argv = [str(script)]
+        permit, _action_file, _consumption_file, command = self.broker_fixture(argv, "nonce:pre-pending-refusal")
+        completed = subprocess.run(command, text=True, capture_output=True, timeout=30, check=False,
+            env={**os.environ, "BUBBLES_USAGE_REFERENCE_AUTHORITY": self.usage_authority_path})
+        self.assertNotEqual(completed.returncode, 0)
+        launch_states = [record["state"] for record in self.runtime.records()
+                          if record.get("contractType") == "dispatch-launch-state"
+                          and record.get("permitId") == permit["permitId"]]
+        self.assertEqual(launch_states, [])
 
     def test_reference_broker_preserves_nonzero_child_exit_through_settlement(self) -> None:
         executable = self.private_dash("failing-dash")

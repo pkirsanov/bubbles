@@ -364,7 +364,7 @@ class MeasuredBudgetRuntime:
             "objectDigest": stored["objectDigest"],
             "occurrenceId": occurrence_id or f"occ:mbe.{hexadecimal[:48]}",
             "posture": "reference-enforce",
-            "recordedAt": next((record[name] for name in ("at", "createdAt", "reservedAt", "settledAt", "decidedAt", "observedAt", "negotiatedAt", "quotedAt", "startedAt", "finishedAt", "openedAt", "evaluatedAt", "issuedAt", "consumedAt", "sealedAt", "verifiedAt", "closedAt") if record.get(name) is not None), None),
+            "recordedAt": next((record[name] for name in ("at", "createdAt", "reservedAt", "settledAt", "decidedAt", "observedAt", "negotiatedAt", "quotedAt", "startedAt", "finishedAt", "openedAt", "evaluatedAt", "issuedAt", "consumedAt", "sealedAt", "verifiedAt", "closedAt", "recordedAt") if record.get(name) is not None), None),
             "schemaVersion": 2,
             "subject": {"id": subject_id, "kind": ecf_subject_kind},
             "supersedesEventId": None,
@@ -1044,6 +1044,92 @@ class MeasuredBudgetRuntime:
             self._append_locked(consumption, "command", consumption["consumptionId"], permit["occurrenceId"])
             return consumption
 
+    # IMP-056 SCOPE-2. A launch-state record answers one question a permit
+    # record cannot: did process creation actually happen? Permit consumption
+    # proves authorization was spent; it says nothing about whether the broker
+    # then crashed before, during, or after launching the child. Recording
+    # intent BEFORE consuming (launch_pending) and a terminal fact AFTER
+    # (launch_confirm/launch_deny) turns "the broker died somewhere in here"
+    # from an unanswerable question into a durable, reconcilable record.
+    def _launch_records_for_permit(self, records: list[dict[str, Any]], permit_id: str) -> list[dict[str, Any]]:
+        # _records_locked() returns records in ledger append order, so the
+        # last entry for a permit IS its current state -- no separate
+        # predecessor-chain field is needed to answer "what happened last".
+        return [record for record in records if record.get("contractType") == "dispatch-launch-state" and record.get("permitId") == permit_id]
+
+    def launch_pending(self, *, permit_id: str, nonce: str, recorded_at: str) -> dict[str, Any]:
+        identifier(permit_id, "permitId")
+        identifier(nonce, "nonce")
+        timestamp(recorded_at, "recordedAt")
+        with self.store.locked():
+            records = self._records_locked()
+            permit = self._find(records, "dispatch-permit", "permitId", permit_id)
+            if permit["nonce"] != nonce:
+                refused("MBE-PERMIT-INVALID", "permit binding mismatch")
+            if self._launch_records_for_permit(records, permit_id):
+                refused("MBE-PERMIT-INVALID", "a permit may enter launch-pending at most once")
+            payload = {"permitId": permit_id, "reservationId": permit["reservationId"], "occurrenceId": permit["occurrenceId"], "state": "launch-pending", "recordedAt": recorded_at}
+            record = identified("dispatch-launch-state", payload, "launchStateId", "dls")
+            self._append_locked(record, "command", record["launchStateId"], permit["occurrenceId"])
+            return record
+
+    def _launch_terminal(self, *, permit_id: str, state: str, recorded_at: str) -> dict[str, Any]:
+        identifier(permit_id, "permitId")
+        timestamp(recorded_at, "recordedAt")
+        with self.store.locked():
+            records = self._records_locked()
+            permit = self._find(records, "dispatch-permit", "permitId", permit_id)
+            launch_records = self._launch_records_for_permit(records, permit_id)
+            if not launch_records:
+                refused("MBE-PERMIT-INVALID", "no launch-pending record exists for this permit")
+            latest = launch_records[-1]
+            if latest["state"] != "launch-pending":
+                refused("MBE-PERMIT-INVALID", f"launch state is already terminal ({latest['state']}); a second terminal record is forbidden")
+            payload = {"permitId": permit_id, "reservationId": permit["reservationId"], "occurrenceId": permit["occurrenceId"], "state": state, "recordedAt": recorded_at}
+            record = identified("dispatch-launch-state", payload, "launchStateId", "dls")
+            self._append_locked(record, "command", record["launchStateId"], permit["occurrenceId"])
+            return record
+
+    def launch_confirm(self, *, permit_id: str, recorded_at: str) -> dict[str, Any]:
+        """Process creation is durably confirmed. Never a claim about the
+        child's exit code or output -- only that it started."""
+        return self._launch_terminal(permit_id=permit_id, state="launch-confirmed", recorded_at=recorded_at)
+
+    def launch_deny(self, *, permit_id: str, recorded_at: str) -> dict[str, Any]:
+        """Authorization or launch preparation failed BEFORE process creation
+        (e.g. the capability probe or snapshot refused). Distinct from
+        launch-ambiguous: denial means creation provably did not happen."""
+        return self._launch_terminal(permit_id=permit_id, state="launch-denied", recorded_at=recorded_at)
+
+    def launch_reconcile(self, *, recorded_at: str) -> dict[str, Any]:
+        """Recovery pass: every permit whose latest launch-state record is
+        still launch-pending has no durable evidence of a terminal outcome
+        (the broker never returned to record one -- most likely a crash
+        between consuming the permit and confirming or denying the launch).
+        Promote each to launch-ambiguous. Idempotent: a permit already at a
+        terminal state is untouched, so running this twice changes nothing
+        the second time. This is the ONLY way an ambiguous record is
+        produced -- there is no direct launch-ambiguous entry point, because
+        ambiguity is a recovery FINDING, never a claim a caller gets to make
+        about its own launch."""
+        timestamp(recorded_at, "recordedAt")
+        with self.store.locked():
+            records = self._records_locked()
+            by_permit: dict[str, list[dict[str, Any]]] = {}
+            for record in records:
+                if record.get("contractType") == "dispatch-launch-state":
+                    by_permit.setdefault(record["permitId"], []).append(record)
+            promoted: list[str] = []
+            for permit_id, launch_records in by_permit.items():
+                if launch_records[-1]["state"] != "launch-pending":
+                    continue
+                permit = self._find(records, "dispatch-permit", "permitId", permit_id)
+                payload = {"permitId": permit_id, "reservationId": permit["reservationId"], "occurrenceId": permit["occurrenceId"], "state": "launch-ambiguous", "recordedAt": recorded_at}
+                record = identified("dispatch-launch-state", payload, "launchStateId", "dls")
+                self._append_locked(record, "command", record["launchStateId"], permit["occurrenceId"])
+                promoted.append(record["launchStateId"])
+            return {"contractType": "dispatch-launch-reconciliation", "schemaVersion": VERSION, "promotedLaunchStateIds": promoted, "recordedAt": recorded_at}
+
     def epoch_boundary(self, *, goal_id: str, from_epoch_id: str, to_epoch_class: str, boundary_kind: str, previous_session_identity_id: str, next_session_identity_id: str, continuation_digest: str, budget_snapshot_id: str, host_proof_digest: str, observed_at: str) -> dict[str, Any]:
         for value, label in ((goal_id, "goalId"), (from_epoch_id, "fromEpochId"), (previous_session_identity_id, "previousSessionIdentityId"), (next_session_identity_id, "nextSessionIdentityId"), (budget_snapshot_id, "budgetSnapshotId")):
             identifier(value, label)
@@ -1209,7 +1295,7 @@ def error_envelope(exc: MbeError) -> dict[str, Any]:
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="IMP-055 MBE-1 reference domain engine")
-    result.add_argument("command", choices=("usage-record", "dispatch-intent", "admission-fact", "budget-open", "snapshot", "reserve", "debit", "release", "hold", "correct", "close", "budget-settle", "retry-decide", "admission-evaluate", "permit-issue", "permit-consume", "epoch-boundary", "epoch-open", "epoch-verify", "epoch-close", "corpus-seal", "corpus-evaluate"))
+    result.add_argument("command", choices=("usage-record", "dispatch-intent", "admission-fact", "budget-open", "snapshot", "reserve", "debit", "release", "hold", "correct", "close", "budget-settle", "retry-decide", "admission-evaluate", "permit-issue", "permit-consume", "launch-pending", "launch-confirm", "launch-deny", "launch-reconcile", "epoch-boundary", "epoch-open", "epoch-verify", "epoch-close", "corpus-seal", "corpus-evaluate"))
     result.add_argument("--store-root", required=True)
     result.add_argument("--input", required=True)
     return result
