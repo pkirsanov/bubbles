@@ -963,6 +963,16 @@ fi
 if [[ -x "$SCRIPT_DIR/generate-gate-enforcement.sh" ]]; then
   run_check_self_only "Generated gate-enforcement block current" bash "$SCRIPT_DIR/generate-gate-enforcement.sh" --check
 fi
+# IMP-058 SCOPE-6 (REG-23): the derived block above can drift stale without
+# failing anything if a NEW gate starts disagreeing with its own declaration
+# -- this ratchet is what actually refuses that, rather than merely detecting
+# that the block needs regenerating.
+if [[ -x "$SCRIPT_DIR/gate-enforcement-agreement-ratchet-selftest.sh" ]]; then
+  run_check "Gate enforcement agreement ratchet selftest (IMP-058 SCOPE-6)" bash "$SCRIPT_DIR/gate-enforcement-agreement-ratchet-selftest.sh"
+fi
+if [[ -x "$SCRIPT_DIR/gate-enforcement-agreement-ratchet.sh" ]]; then
+  run_check_self_only "Gate enforcement agreement ratchet" bash "$SCRIPT_DIR/gate-enforcement-agreement-ratchet.sh"
+fi
 # IMP-027 SCOPE-11: a modelCompensation gate with no recorded retirement
 # criterion carries unbounded cost in time — nobody can say what would have to
 # be true to turn it off, so it is carried forever by default. `lint` keeps
