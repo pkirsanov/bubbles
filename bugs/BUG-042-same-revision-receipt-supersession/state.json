@@ -1,0 +1,322 @@
+{
+  "version": 3,
+  "bugId": "BUG-042",
+  "featureDir": "bugs/BUG-042-same-revision-receipt-supersession",
+  "featureName": "Same-Revision Receipt Supersession",
+  "status": "in_progress",
+  "statusReason": "The planning-authorized external base prerequisite is imported as exact uncommitted bytes and its ten-case focused selftest passes. The state boundary now authorizes only the exact guard-lib.sh and release-manifest.json prerequisite paths, and both classify in-boundary. BUG-042 remains in progress pending regression rerun.",
+  "workflowMode": "bugfix-fastlane",
+  "packet": "full",
+  "packetResolution": "full packet selected because the defect changes cross-repository certification behavior and receipt-selection semantics",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "deliveryTopology": "in-place",
+  "deliveryTopologyJustification": "BUG-042 keeps planning, implementation, focused tests, and evidence in this bug packet.",
+  "specDependsOn": [],
+  "relatedBugs": ["BUG-034"],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "crossRepoPolicy": "forbidden",
+    "specTargets": ["bugs/BUG-042-same-revision-receipt-supersession"],
+    "allowedPaths": [
+      "bugs/BUG-042-same-revision-receipt-supersession/**",
+      "bubbles/scripts/guard-lib.sh",
+      "bubbles/release-manifest.json",
+      "bubbles/scripts/scenario-state-resolve.sh",
+      "bubbles/scripts/scenario-state-resolve-selftest.sh",
+      "bubbles/registry/scenario-states.yaml"
+    ],
+    "forbiddenPaths": [
+      "bubbles/schemas/tool-call.schema.json",
+      "bubbles/scripts/framework-validate.sh",
+      "bubbles/scripts/phase-coordinator.sh",
+      "bubbles/scripts/phase-coordinator-selftest.sh",
+      "bubbles/scripts/state-transition-guard.sh",
+      "bubbles/scripts/state-transition-guard-selftest.sh",
+      "bubbles/scripts/tool-log.sh",
+      "bugs/BUG-034-*"
+    ]
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "activeAgent": "bubbles.plan",
+    "currentPhase": "regression",
+    "currentScope": 1,
+    "substate": "implemented",
+    "completedPhaseClaims": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "outcome": "completed_owned",
+        "evidenceRefs": [
+          ".specify/runtime/tool-calls.jsonl#row-2",
+          ".specify/runtime/tool-calls.jsonl#row-8",
+          ".specify/runtime/tool-calls.jsonl#row-10",
+          ".specify/runtime/tool-calls.jsonl#row-11",
+          "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-implement-green"
+        ]
+      },
+      {
+        "phase": "test",
+        "agent": "bubbles.test",
+        "scope": 1,
+        "outcome": "completed_owned",
+        "evidenceRefs": [
+          ".specify/runtime/tool-calls.jsonl#row-55",
+          ".specify/runtime/tool-calls.jsonl#row-62",
+          ".specify/runtime/tool-calls.jsonl#row-64",
+          ".specify/runtime/tool-calls.jsonl#row-65",
+          ".specify/runtime/tool-calls.jsonl#row-66",
+          "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-remediation-independent"
+        ]
+      }
+    ],
+    "executionHistory": [
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "outcome": "completed_owned",
+        "phasesExecuted": ["implement"],
+        "durationUnmeasured": true,
+        "durationUnmeasuredReason": "The standalone implementation invocation did not record a single end-to-end wall-clock span.",
+        "summary": "Implemented append-order receipt identity, latest complete same-group chain selection, closed receipt dispositions, two registry refusal codes, the 18-case persistent matrix, and unchanged-consumer canaries.",
+        "evidenceRefs": [
+          ".specify/runtime/tool-calls.jsonl#row-2",
+          ".specify/runtime/tool-calls.jsonl#row-8",
+          ".specify/runtime/tool-calls.jsonl#row-10",
+          ".specify/runtime/tool-calls.jsonl#row-11"
+        ],
+        "addressedFindings": ["F-B042-01", "F-B042-02"],
+        "unresolvedFindings": []
+      },
+      {
+        "phase": "test",
+        "agent": "bubbles.test",
+        "scope": 1,
+        "outcome": "route_required",
+        "phasesExecuted": ["test"],
+        "durationUnmeasured": true,
+        "durationUnmeasuredReason": "The independent phase comprised multiple bounded commands rather than one wall-clock span.",
+        "summary": "Independently verified all 18 planned resolver cases, existing protections, both production consumers, BUG-034 compatibility, legacy receipts, rollback, no-bypass behavior, registry consistency, and the strict change boundary.",
+        "evidenceRefs": [
+          ".specify/runtime/tool-calls.jsonl#row-15",
+          ".specify/runtime/tool-calls.jsonl#row-16",
+          ".specify/runtime/tool-calls.jsonl#row-17",
+          ".specify/runtime/tool-calls.jsonl#row-19",
+          "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-independent"
+        ],
+        "addressedFindings": ["F-B042-01", "F-B042-02"],
+        "unresolvedFindings": []
+      },
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "outcome": "route_required",
+        "phasesExecuted": ["implement"],
+        "durationUnmeasured": true,
+        "durationUnmeasuredReason": "The remediation used separate bounded RED, GREEN, mutation, and static-validation commands.",
+        "summary": "Removed the selected IMPLEMENTED blocked-state contradiction, restricted the BUG-034 drift-only summary to actual drift-only refusals, added both persistent output assertions, and froze all three BUG-034 output hashes and exits with a discriminating one-string mutation oracle.",
+        "evidenceRefs": [
+          ".specify/runtime/tool-calls.jsonl#row-41",
+          ".specify/runtime/tool-calls.jsonl#row-42",
+          ".specify/runtime/tool-calls.jsonl#row-43",
+          ".specify/runtime/tool-calls.jsonl#row-46",
+          ".specify/runtime/tool-calls.jsonl#row-48",
+          "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-implement-remediation"
+        ],
+        "addressedFindings": [
+          "F-B042-RG-01",
+          "F-B042-RG-02",
+          "F-B042-RG-03",
+          "F-B042-RG-04"
+        ],
+        "unresolvedFindings": []
+      },
+      {
+        "phase": "test",
+        "agent": "bubbles.test",
+        "scope": 1,
+        "outcome": "route_required",
+        "phasesExecuted": ["test"],
+        "durationUnmeasured": true,
+        "durationUnmeasuredReason": "The independent phase used separate bounded current-byte, focused, mutation, and integrity commands.",
+        "summary": "Independently verified all four remediation findings on current bytes through the 18-row suite, isolated mutation discriminator, unchanged consumer canaries, and test-owned integrity checks.",
+        "evidenceRefs": [
+          ".specify/runtime/tool-calls.jsonl#row-55",
+          ".specify/runtime/tool-calls.jsonl#row-62",
+          ".specify/runtime/tool-calls.jsonl#row-64",
+          ".specify/runtime/tool-calls.jsonl#row-65",
+          ".specify/runtime/tool-calls.jsonl#row-66",
+          "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-test-remediation-independent"
+        ],
+        "addressedFindings": [
+          "F-B042-RG-01",
+          "F-B042-RG-02",
+          "F-B042-RG-03",
+          "F-B042-RG-04"
+        ],
+        "unresolvedFindings": []
+      },
+      {
+        "phase": "implement",
+        "agent": "bubbles.implement",
+        "scope": 1,
+        "outcome": "route_required",
+        "phasesExecuted": ["implement"],
+        "durationUnmeasured": true,
+        "durationUnmeasuredReason": "The import used separate bounded packet, identity, focused-selftest, and boundary-classification commands.",
+        "summary": "Imported only the six-line guard-lib normalization and coupled one-entry manifest hash substitution from commit 130691932e815c622ab9601195c8eba0c41c6b90. The fixed blob, one-entry-only diff, ten-case selftest, and unchanged resolver hashes are verified; the older state boundary metadata remains explicitly routed.",
+        "evidenceRefs": [
+          "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-external-base-prerequisite-import",
+          "bugs/BUG-042-same-revision-receipt-supersession/scopes.md#external-base-prerequisite-import"
+        ],
+        "addressedFindings": [],
+        "unresolvedFindings": ["F-B042-BOUNDARY-METADATA-01"],
+        "routedFindings": [
+          {
+            "id": "F-B042-BOUNDARY-METADATA-01",
+            "owner": "bubbles.plan",
+            "finding": "The mechanical boundary resolver reads state.json's older path list and classifies both newly planning-authorized prerequisite exception paths as route-same-repo.",
+            "requiredAction": "Reconcile only the state boundary metadata for the exact two-path closed exception already authorized in scopes.md; do not widen BUG-042 source authorship."
+          }
+        ]
+      },
+      {
+        "phase": "bootstrap",
+        "agent": "bubbles.plan",
+        "scope": 1,
+        "outcome": "route_required",
+        "phasesExecuted": ["bootstrap"],
+        "statusBefore": "in_progress",
+        "runStartedAt": "2026-09-02T20:51:30Z",
+        "durationUnmeasured": true,
+        "durationUnmeasuredReason": "The reconciliation used separate bounded packet, classifier, artifact, traceability, reference, and preservation checks.",
+        "summary": "Authorized only the two exact prerequisite paths already approved by scopes.md, retained every other exclusion, resolved F-B042-BOUNDARY-METADATA-01, and routed the unchanged candidate to bubbles.regression.",
+        "evidenceRefs": [
+          "bugs/BUG-042-same-revision-receipt-supersession/scopes.md#external-base-prerequisite-import"
+        ],
+        "addressedFindings": ["F-B042-BOUNDARY-METADATA-01"],
+        "unresolvedFindings": [],
+        "nextRequiredOwner": "bubbles.regression"
+      }
+    ],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.regression",
+    "nextRequiredAction": "Rerun BUG-042 regression against the exact imported prerequisite and unchanged resolver candidate bytes. Preserve all six regression-verified resolver findings; F-B042-BOUNDARY-METADATA-01 is resolved.",
+    "findingAccounting": {
+      "addressedFindings": [
+        {
+          "id": "F-B042-01",
+          "status": "regression_verified",
+          "evidenceRef": "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-regression-closeout-retry"
+        },
+        {
+          "id": "F-B042-02",
+          "status": "regression_verified",
+          "evidenceRef": "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-regression-closeout-retry"
+        },
+        {
+          "id": "F-B042-RG-01",
+          "status": "regression_verified",
+          "evidenceRef": "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-regression-closeout-retry"
+        },
+        {
+          "id": "F-B042-RG-02",
+          "status": "regression_verified",
+          "evidenceRef": "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-regression-closeout-retry"
+        },
+        {
+          "id": "F-B042-RG-03",
+          "status": "regression_verified",
+          "evidenceRef": "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-regression-closeout-retry"
+        },
+        {
+          "id": "F-B042-RG-04",
+          "status": "regression_verified",
+          "evidenceRef": "bugs/BUG-042-same-revision-receipt-supersession/report.md#e-b042-regression-closeout-retry"
+        },
+        {
+          "id": "F-B042-BOUNDARY-METADATA-01",
+          "status": "resolved",
+          "evidenceRef": "bugs/BUG-042-same-revision-receipt-supersession/scopes.md#external-base-prerequisite-import"
+        }
+      ],
+      "unresolvedFindings": []
+    },
+    "audit": {
+      "schemaVersion": "audit-run/v1",
+      "runId": null,
+      "currentAttemptId": null,
+      "attempts": []
+    }
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {
+        "scope": 1,
+        "name": "Deterministic append-only proof-chain selection",
+        "status": "not_started",
+        "dependsOn": [],
+        "scopeDir": "scopes.md",
+        "evidenceFile": "report.md",
+        "certifiedAt": null
+      }
+    ],
+    "lockdownState": {
+      "active": false,
+      "lockedScenarioIds": []
+    }
+  },
+  "policySnapshot": {
+    "grill": {"mode": "off", "provenance": "operator-request"},
+    "tdd": {"mode": "scenario-first", "provenance": "bugfix-fastlane-contract"},
+    "autoCommit": {"mode": "off", "provenance": "operator-request"},
+    "lockdown": {"mode": "unlocked", "provenance": "framework-default"},
+    "regression": {"mode": "required", "provenance": "framework-default"},
+    "validation": {"mode": "required", "provenance": "framework-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "phase": "bootstrap",
+      "agent": "bubbles.design",
+      "scope": 1,
+      "outcome": "completed_owned",
+      "phasesExecuted": ["bootstrap"],
+      "statusBefore": "in_progress",
+      "runStartedAt": "2026-09-02T16:12:55Z",
+      "durationUnmeasured": true,
+      "summary": "Reconciled the provisional BUG-042 design into one active contract. Chose resolver-derived physical append ordinals, latest-complete-chain selection before diagnosis, a closed disposition and refusal vocabulary, unchanged tool-call receipt schema, fail-closed later-candidate handling, and exact BUG-034 compatibility. Routed planning reconciliation without changing source, tests, planning artifacts, report evidence, certification, acceptance, or release metadata.",
+      "verified": [
+        "The inherited repository packet validated against the reconstructed in-memory 30-node scenario at control revision 1.",
+        "The production resolver sorts by timestamp, emits the three affected refusals during its scan, and filters only SCS-REVISION-DRIFT from blocking refusals.",
+        "Commit fc2e7ca and the focused resolver selftest define the three-part BUG-034 drift compatibility contract.",
+        "The tool-call schema accepts versions 1 through 3 and contains no receipt-controlled append ordinal.",
+        "Focused artifact lint passed after the initial design edit and after the consumer and vocabulary correction."
+      ],
+      "routedFindings": [
+        {
+          "id": "F-B042-DESIGN-PLAN-01",
+          "owner": "bubbles.plan",
+          "finding": "The active planning artifacts predate the adjudicated 18-case adversarial matrix and exact phase-coordinator and transition-guard consumer contracts.",
+          "requiredAction": "Reconcile the scope, scenario manifest, test plan, DoD mapping, and allowed test paths to design.md without checking any delivery or acceptance item."
+        }
+      ],
+      "notDone": [
+        "No production source, test, registry, planning, report, acceptance, or certification artifact changed.",
+        "No delivery or human-acceptance checkbox changed.",
+        "No framework-wide validation, release check, commit, push, fetch, merge, cleanup, deployment, or action-node operation ran."
+      ]
+    }
+  ]
+}
