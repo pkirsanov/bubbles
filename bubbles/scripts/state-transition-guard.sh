@@ -2509,6 +2509,7 @@ _scope_context_consume() {
     return 2
   fi
   SCOPE_CONTEXT_ACTIVE_LINES=("${staged_active[@]}")
+  # shellcheck disable=SC2034  # populated alongside its sibling arrays for a future consumer
   SCOPE_CONTEXT_ACTIVE_LOCATIONS=("${staged_locations[@]}")
   SCOPE_CONTEXT_DOD_LINES=("${staged_dod[@]}")
   SCOPE_CONTEXT_TEST_ROWS=("${staged_test_rows[@]}")

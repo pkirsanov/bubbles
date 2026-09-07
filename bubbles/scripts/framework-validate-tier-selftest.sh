@@ -11,7 +11,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FV="$SCRIPT_DIR/framework-validate.sh"
 BASH_BIN="$(command -v bash)"
-ENV_BIN="/usr/bin/env"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/guard-lib.sh"
 

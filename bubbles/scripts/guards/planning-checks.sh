@@ -1,5 +1,6 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2154  # sourced fragment: all referenced vars are set in state-transition-guard.sh's scope before sourcing
+# shellcheck disable=SC2034  # CHECK8B_* result-contract vars are read by state-transition-guard.sh and its selftest in the same shell scope, not within this fragment
 # =============================================================================
 # guards/planning-checks.sh  (M4 guard split)
 # =============================================================================

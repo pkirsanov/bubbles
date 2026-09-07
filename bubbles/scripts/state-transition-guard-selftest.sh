@@ -5748,6 +5748,7 @@ check8b_trace_strip_inert_text() {
   fi
   if [[ "$lexical_state" == "single-quote" ]] \
     || [[ "$lexical_state" == "double-quote" ]]; then
+    # shellcheck disable=SC2034  # diagnostic trace flag for a future failure dump
     CHECK8B_TRACE_UNCLOSED_QUOTE=1
     return 1
   fi
@@ -5928,6 +5929,7 @@ check8b_trace_split_command_list() {
   if [[ "$parameter_depth" -ne 0 ]] \
     || [[ "$parenthesis_depth" -ne 0 ]] \
     || [[ "$conditional_depth" -ne 0 ]]; then
+    # shellcheck disable=SC2034  # diagnostic trace flag for a future failure dump
     CHECK8B_TRACE_COMMAND_PARSE_UNCERTAIN=1
     CHECK8B_TRACE_COMMAND_SEGMENTS=()
     return 1
@@ -6035,10 +6037,12 @@ check8b_function_brace_scan_line() {
     trailing_text="${closing_remainder#"${closing_remainder%%[![:space:]]*}"}"
     trailing_text="${trailing_text%"${trailing_text##*[![:space:]]}"}"
     if [[ "$trailing_text" != ';' ]]; then
+      # shellcheck disable=SC2034  # diagnostic trace flag for a future failure dump
       CHECK8B_FUNCTION_BRACE_TRAILING_CODE=1
       CHECK8B_FUNCTION_BRACE_SCAN_FAILURES=$((CHECK8B_FUNCTION_BRACE_SCAN_FAILURES + 1))
       return 1
     fi
+    # shellcheck disable=SC2034  # diagnostic trace flag for a future failure dump
     CHECK8B_FUNCTION_BRACE_CLOSED=1
     CHECK8B_FUNCTION_BRACE_FINAL_DEPTH=0
     return 0
@@ -6542,6 +6546,7 @@ check8b_source_contract_matches() {
   done
 
   CHECK8B_SOURCE_CONTRACT_MATCHED=0
+  # shellcheck disable=SC2034  # diagnostic trace flag for a future failure dump
   CHECK8B_SOURCE_CALLER_STATE_CLEAN="$caller_state_clean"
   [[ "$source_contract_failures" -eq 0 ]] \
     && [[ "$inventory_matched" -eq 1 ]] \
