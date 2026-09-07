@@ -942,6 +942,23 @@ else
   ok "Bubbles (${BUBBLES_REF}) installed"
 fi
 
+# ── Render Claude Code output (agents/commands/skills) ──────────────
+# Second OUTPUT target alongside the Copilot install above (.github/agents,
+# .github/prompts, .github/skills, just installed). Renders the SAME source
+# agents into .claude/agents (subagents) + .claude/commands (slash commands),
+# with .claude/skills + .claude/instructions mirrored so relative links in
+# rendered agent bodies resolve. Soft-fails (never blocks install) when yq or
+# python3 is unavailable — Copilot output is complete and correct either way.
+RENDER_CLAUDE_CODE="$TEMP_DIR/bubbles/scripts/render-claude-code.sh"
+if [[ -f "$RENDER_CLAUDE_CODE" ]]; then
+  info "Rendering Claude Code agents + commands..."
+  if bash "$RENDER_CLAUDE_CODE" --source "$TEMP_DIR" --dest "$(pwd)"; then
+    ok "Claude Code agents + commands rendered to .claude/"
+  else
+    warn "Claude Code render failed — Copilot install is unaffected; re-run 'bash .github/bubbles/scripts/render-claude-code.sh --source <checkout> --dest .' after resolving the error"
+  fi
+fi
+
 INSTALL_MODE='remote-ref'
 SOURCE_REF="$BUBBLES_REF"
 SOURCE_GIT_SHA="$(bubbles_json_string_field "$RELEASE_MANIFEST_SOURCE" gitSha)"
