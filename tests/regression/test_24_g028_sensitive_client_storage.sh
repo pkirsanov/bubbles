@@ -10,8 +10,8 @@ set -uo pipefail
 PASS_COUNT=0
 FAIL_COUNT=0
 SKIP_COUNT=0
-BUG039_CASCADE_VERIFIED=0
-BUG039_UNAVAILABLE_PATH_VERIFIED=0
+B039_CASCADE_VERIFIED=0
+B039_UNAVAILABLE_PATH_VERIFIED=0
 TEST24_MUTATION_ROOT=''
 
 pass() {
@@ -38,7 +38,7 @@ bug039_record_unavailable_cascade() {
   skip "managed selftest Scan 2B coverage (classifier interpreter unusable; selftest reported the cause and remediation)"
   if [[ "$PASS_COUNT" -eq "$pass_before_sentinel" && "$SKIP_COUNT" -eq $((skip_before_sentinel + 1)) ]]; then
     pass "unavailable sentinel increments only the skip counter"
-    BUG039_CASCADE_VERIFIED=1
+    B039_CASCADE_VERIFIED=1
   else
     fail "unavailable sentinel must increment skip, never pass"
   fi
@@ -115,7 +115,7 @@ test24_run_sentinel_to_pass_negative_control() {
   if [[ "$mutant_status" -eq 1 ]] &&
     /usr/bin/grep -Fq 'FAIL: unavailable sentinel must increment skip, never pass' "$mutant_output" &&
     /usr/bin/grep -Fq 'test_24 sentinel child: 1 passed, 1 failed, 0 skipped' "$mutant_output" &&
-    /usr/bin/grep -Fq 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=0' "$mutant_output"; then
+    /usr/bin/grep -Fq 'B039_DETERMINISTIC_CASCADE_VERIFIED=0' "$mutant_output"; then
     printf '%s\n' 'RED: NEG-B039-SENTINEL-TO-PASS mutant_exit=1 PASS_COUNT=1 SKIP_COUNT=0 exact_assertion=FAIL: unavailable sentinel must increment skip, never pass'
     test24_cleanup_mutation_root
     builtin trap - EXIT HUP INT TERM
@@ -144,9 +144,9 @@ case "${1:-}" in
     bug039_record_unavailable_cascade
     printf 'test_24 sentinel child: %s passed, %s failed, %s skipped\n' \
       "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
-    printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
+    printf 'B039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$B039_CASCADE_VERIFIED"
     if [[ "$FAIL_COUNT" -eq 0 && "$PASS_COUNT" -eq 1 && "$SKIP_COUNT" -eq 1 &&
-      "$BUG039_CASCADE_VERIFIED" -eq 1 ]]; then
+      "$B039_CASCADE_VERIFIED" -eq 1 ]]; then
       exit 0
     fi
     exit 1
@@ -1030,7 +1030,7 @@ assert_contains "PASS: Real zero-finding producer executes the production driver
 assert_contains "PASS: Real classifier emits the exact durable-credential finding tuple" "managed selftest executes real classifier classification"
 assert_contains "PASS: Deleting production completion emission makes the real-finding contract red" "managed selftest proves completion-emission teeth"
 assert_contains "PASS: Corrupting production classification makes the real-finding contract red" "managed selftest proves classification teeth"
-assert_contains "BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1" "managed selftest records the authorized classifier mutation as executed and fatal"
+assert_contains "B039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1" "managed selftest records the authorized classifier mutation as executed and fatal"
 assert_contains "PASS: Real finding producer creates no helper-side bytecode cache" "managed selftest proves helper bytecode suppression"
 assert_contains "PASS: Trusted classifier launch never executes hostile PATH env" "managed selftest proves PATH env cannot replace the trusted launch"
 assert_contains "PASS: Premature EXIT preserves fatal exit 1" "managed selftest proves premature exit fails closed"
@@ -1042,11 +1042,11 @@ if [[ ! -e "$REPO_ROOT/bubbles/scripts/guards/__pycache__" ]]; then
 else
   fail "canonical selftest leaves the helper bytecode cache absent"
 fi
-if [[ "$RUN_STATUS" -eq 0 && "$BUG039_CASCADE_VERIFIED" -eq 1 &&
+if [[ "$RUN_STATUS" -eq 0 && "$B039_CASCADE_VERIFIED" -eq 1 &&
   ! -e "$FORCED_UNAVAILABLE_MARKER" ]] &&
   grep -Fq 'SENSITIVE_STORAGE_CLASSIFIER_UNAVAILABLE=1' <<<"$RUN_OUTPUT" &&
   grep -Fq 'diagnostic=DEVELOPER_DIR_UNTRUSTED' <<<"$RUN_OUTPUT"; then
-  BUG039_UNAVAILABLE_PATH_VERIFIED=1
+  B039_UNAVAILABLE_PATH_VERIFIED=1
 fi
 
 printf '%s\n' '=== BUG-039 authenticated selftest sanitized PATH ==='
@@ -1076,12 +1076,12 @@ assert_contains "supervisorProtocol=BPS1" "authenticated runtime executes the na
 assert_contains "PASS: Exact configured session credential is allowed" "authenticated runtime runs the exact-approval semantic assertion"
 assert_contains "PASS: Unknown session provider is blocked distinctly" "authenticated runtime runs the unknown-provider semantic assertion"
 assert_contains "PASS: Malformed sensitive storage YAML reports config integrity" "authenticated runtime runs the config-integrity assertion"
-assert_contains "BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1" "authenticated runtime preserves the authorized classifier mutation control"
+assert_contains "B039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1" "authenticated runtime preserves the authorized classifier mutation control"
 
 printf '%s\n' '=== BUG-013 regression summary ==='
 printf 'test_24_g028_sensitive_client_storage: %s passed, %s failed, %s skipped\n' "$PASS_COUNT" "$FAIL_COUNT" "$SKIP_COUNT"
-printf 'BUG039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$BUG039_CASCADE_VERIFIED"
-printf 'BUG039_UNAVAILABLE_PATH_VERIFIED=%s\n' "$BUG039_UNAVAILABLE_PATH_VERIFIED"
+printf 'B039_DETERMINISTIC_CASCADE_VERIFIED=%s\n' "$B039_CASCADE_VERIFIED"
+printf 'B039_UNAVAILABLE_PATH_VERIFIED=%s\n' "$B039_UNAVAILABLE_PATH_VERIFIED"
 TEST_COMPLETED=1
 if [[ "$FAIL_COUNT" -ne 0 ]]; then
   exit 1

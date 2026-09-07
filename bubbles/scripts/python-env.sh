@@ -673,8 +673,22 @@ bubbles_python_security_cleanup() {
 
 _bubbles_python_security_exit_trap() {
   local exit_status=$?
+  local supervisor_wait_status=0
   if [[ "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" =~ ^[1-9][0-9]*$ ]]; then
-    builtin wait "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" 2>/dev/null || true
+    # A trapped signal can interrupt wait with a status above 128 without
+    # reaping the supervisor. Retry the blocking wait until it returns a
+    # definitive child status, or 127 after a signal-shaped child status was
+    # already reaped. This retains the wait handle and private root without
+    # adding PID probes or a polling loop.
+    while true; do
+      if builtin wait "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" 2>/dev/null; then
+        supervisor_wait_status=0
+        break
+      else
+        supervisor_wait_status=$?
+      fi
+      [[ "$supervisor_wait_status" -gt 128 ]] || break
+    done
     BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID=''
   fi
   bubbles_python_security_cleanup || true

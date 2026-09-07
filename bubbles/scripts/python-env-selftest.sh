@@ -31,11 +31,16 @@ RUN_CLI_INTEGRATION=0
 RUN_SIGNAL_READINESS=0
 RUN_SIGNAL_TARGET=0
 RUN_STRESS_COMPLETENESS_CONTROL=0
+RUN_EXIT_TRAP_INTERRUPT=0
+RUN_EXIT_TRAP_TARGET=0
+RUN_BASH32_AGGREGATE=0
 SIGNAL_TARGET_NAME=''
 SIGNAL_TARGET_WORKER=''
 SIGNAL_TARGET_READY_FIFO=''
 SIGNAL_TARGET_HOLD_FIFO=''
 SIGNAL_TARGET_RESULT_FILE=''
+EXIT_TRAP_TARGET_WORKER=''
+EXIT_TRAP_TARGET_CONTROL_ROOT=''
 case "${1:-}" in
   '')
     if [[ "$#" -ne 0 ]]; then
@@ -95,6 +100,41 @@ case "${1:-}" in
     RUN_GENERAL=0
     RUN_STRESS_COMPLETENESS_CONTROL=1
     ;;
+  --internal-exit-trap-interruption)
+    if [[ "$#" -ne 2 || "${2:-}" != pre-har-01-exit-trap-v1 ]]; then
+      printf '%s\n' 'python-env exit-trap interruption control requires its explicit internal token' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_EXIT_TRAP_INTERRUPT=1
+    ;;
+  --reg-py-reap-01)
+    if [[ "$#" -ne 1 ]]; then
+      printf '%s\n' 'REG-PY-REAP-01 accepts no additional arguments' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_EXIT_TRAP_INTERRUPT=1
+    ;;
+  --reg-py-bash32-01)
+    if [[ "$#" -ne 1 ]]; then
+      printf '%s\n' 'REG-PY-BASH32-01 accepts no additional arguments' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_BASH32_AGGREGATE=1
+    ;;
+  --internal-exit-trap-target)
+    if [[ "$#" -ne 4 || "${2:-}" != pre-har-01-target-v1 ||
+      "${3:-}" != /* || ! -x "${3:-}" || "${4:-}" != /* || ! -d "${4:-}" ]]; then
+      printf '%s\n' 'python-env exit-trap target requires its token, executable worker, and absolute control root' >&2
+      exit 2
+    fi
+    RUN_GENERAL=0
+    RUN_EXIT_TRAP_TARGET=1
+    EXIT_TRAP_TARGET_WORKER="$3"
+    EXIT_TRAP_TARGET_CONTROL_ROOT="$4"
+    ;;
   --internal-fixed-perl-negative-controls)
     if [[ "$#" -ne 2 || "${2:-}" != b039-fixed-perl-negative-controls-v1 ]]; then
       printf '%s\n' 'python-env fixed-Perl negative-control mode requires its explicit internal token' >&2
@@ -123,7 +163,8 @@ if [[ ! -f "$ENV_SH" || ! -f "$GUARD_LIB" ]]; then
 fi
 
 if [[ "$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ||
-  "$RUN_SIGNAL_READINESS" -eq 1 || "$RUN_SIGNAL_TARGET" -eq 1 ]]; then
+  "$RUN_SIGNAL_READINESS" -eq 1 || "$RUN_SIGNAL_TARGET" -eq 1 ||
+  "$RUN_EXIT_TRAP_TARGET" -eq 1 ]]; then
   case "$-" in
     *p*) ;;
     *)
@@ -175,7 +216,8 @@ selftest_cleanup() {
   fi
   builtin trap - EXIT HUP INT TERM
   if [[ ("$RUN_SECURITY" -eq 1 || "$RUN_FIXED_PERL" -eq 1 ||
-    "$RUN_SIGNAL_READINESS" -eq 1 || "$RUN_SIGNAL_TARGET" -eq 1) &&
+    "$RUN_SIGNAL_READINESS" -eq 1 || "$RUN_SIGNAL_TARGET" -eq 1 ||
+    "$RUN_EXIT_TRAP_TARGET" -eq 1) &&
     "$SECURITY_BOUNDARY_READY" -eq 1 ]]; then
     bubbles_python_security_cleanup || true
   fi
@@ -323,6 +365,300 @@ bad() {
   echo "FAIL: $1"
   fail=$((fail + 1))
 }
+
+PRE_HAR_01_WAIT_COUNT=0
+PRE_HAR_01_OWNER_PID=''
+
+pre_har_01_wait_debug() {
+  local command_text="$1"
+  local supervisor_command=""
+
+  [[ "$command_text" == "builtin wait \"\$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID\"" ]] || return 0
+  PRE_HAR_01_WAIT_COUNT=$((PRE_HAR_01_WAIT_COUNT + 1))
+  printf '%s\n' "$PRE_HAR_01_WAIT_COUNT" >"$EXIT_TRAP_TARGET_CONTROL_ROOT/wait-count"
+  if [[ "$PRE_HAR_01_WAIT_COUNT" -eq 1 ]]; then
+    printf '%s\n' "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" \
+      >"$EXIT_TRAP_TARGET_CONTROL_ROOT/supervisor.pid"
+    printf '%s\n' "$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT" \
+      >"$EXIT_TRAP_TARGET_CONTROL_ROOT/private-root"
+    supervisor_command="$(/bin/ps -p "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" -o command= 2>/dev/null || true)"
+    printf '%s\n' "$supervisor_command" >"$EXIT_TRAP_TARGET_CONTROL_ROOT/supervisor.command"
+    (
+      /bin/sleep 0.2
+      if pre_har_01_process_is_live "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID"; then
+        printf '%s\n' yes >"$EXIT_TRAP_TARGET_CONTROL_ROOT/supervisor-live-before-term"
+      fi
+      /bin/kill -TERM "$PRE_HAR_01_OWNER_PID"
+      printf '%s\n' SENT >"$EXIT_TRAP_TARGET_CONTROL_ROOT/signal-sent"
+      /bin/sleep 0.5
+      if pre_har_01_process_is_live "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID"; then
+        printf '%s\n' yes >"$EXIT_TRAP_TARGET_CONTROL_ROOT/supervisor-live-before-usr1"
+      fi
+      /bin/kill -USR1 "$PRE_HAR_01_OWNER_PID"
+      printf '%s\n' SENT >"$EXIT_TRAP_TARGET_CONTROL_ROOT/usr1-signal-sent"
+    ) &
+    printf '%s\n' "$!" >"$EXIT_TRAP_TARGET_CONTROL_ROOT/signal-sender.pid"
+    # Leave the normal operation path at its first real supervisor wait. The
+    # delayed sender interrupts both production EXIT waits while that same
+    # supervisor remains live; Bash suppresses DEBUG while the EXIT trap runs.
+    exit 77
+  fi
+}
+
+pre_har_01_second_wait_interrupt() {
+  local handle_present=no
+  local private_root_present=no
+  local supervisor_live=no
+
+  if [[ "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID" =~ ^[1-9][0-9]*$ ]]; then
+    handle_present=yes
+    if pre_har_01_process_is_live "$BUBBLES_PYTHON_SECURITY_SUPERVISOR_WAIT_PID"; then
+      supervisor_live=yes
+    fi
+  fi
+  [[ -n "$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT" \
+    && -d "$BUBBLES_PYTHON_SECURITY_PRIVATE_ROOT" ]] && private_root_present=yes
+  printf 'pendingSignal=%s pendingStatus=%s handlePresent=%s supervisorLive=%s privateRootPresent=%s\n' \
+    "${BUBBLES_PYTHON_SECURITY_PENDING_SIGNAL:-none}" \
+    "$BUBBLES_PYTHON_SECURITY_PENDING_STATUS" "$handle_present" \
+    "$supervisor_live" "$private_root_present" \
+    >"$EXIT_TRAP_TARGET_CONTROL_ROOT/second-wait-interrupt.snapshot"
+}
+
+run_exit_trap_target() {
+  local boundary_record=""
+  local owner_identity_waited=0
+
+  while [[ ! -s "$EXIT_TRAP_TARGET_CONTROL_ROOT/owner.pid" &&
+    "$owner_identity_waited" -lt 20 ]]; do
+    /bin/sleep 0.1
+    owner_identity_waited=$((owner_identity_waited + 1))
+  done
+  PRE_HAR_01_OWNER_PID="$(/bin/cat "$EXIT_TRAP_TARGET_CONTROL_ROOT/owner.pid" 2>/dev/null || true)"
+  [[ "$PRE_HAR_01_OWNER_PID" =~ ^[1-9][0-9]*$ ]] || return 125
+
+  BUBBLES_SECURITY_ENTRY_MODE=direct
+  export BUBBLES_SECURITY_ENTRY_MODE
+  boundary_record="$(bubbles_python_security_require_boundary 2>/dev/null)" || return $?
+  [[ "$boundary_record" == $'ENTRY\tBSEC1\tprivileged-bash-entry-v1\tdirect' ]] || return 125
+  builtin trap 'pre_har_01_second_wait_interrupt' USR1
+  set -T
+  # BASH_COMMAND is intentionally expanded by the DEBUG trap.
+  # shellcheck disable=SC2016
+  builtin trap 'pre_har_01_wait_debug "$BASH_COMMAND"' DEBUG
+  _bubbles_python_run_closed_operation general-probe "$EXIT_TRAP_TARGET_WORKER"
+  return $?
+}
+
+pre_har_01_process_is_live() {
+  local process_pid="${1:-}"
+  local process_state=""
+
+  [[ "$process_pid" =~ ^[1-9][0-9]*$ ]] || return 1
+  builtin kill -0 "$process_pid" 2>/dev/null || return 1
+  process_state="$(/bin/ps -p "$process_pid" -o state= 2>/dev/null || true)"
+  process_state="${process_state//[[:space:]]/}"
+  [[ "$process_state" != Z* ]]
+}
+
+pre_har_01_worker_processes() {
+  local worker_path="$1"
+  local process_line=""
+  local process_pid=""
+  local process_command=""
+
+  while IFS= read -r process_line; do
+    process_line="${process_line#"${process_line%%[![:space:]]*}"}"
+    process_pid="${process_line%%[[:space:]]*}"
+    process_command="${process_line#"$process_pid"}"
+    if [[ "$process_pid" =~ ^[1-9][0-9]*$ && "$process_command" == *"$worker_path"* ]]; then
+      printf '%s\n' "$process_pid"
+    fi
+  done < <(/bin/ps -axo pid=,command=)
+}
+
+run_exit_trap_interruption_control() {
+  local case_root="$TMP_ROOT/pre-har-01-exit-trap"
+  local output_file="$case_root/owner.output"
+  local worker_file="$case_root/real-supervisor.worker"
+  local supervisor_pid=""
+  local supervisor_state="absent"
+  local supervisor_command=""
+  local supervisor_is_real="no"
+  local supervisor_alive_initial="no"
+  local supervisor_alive_final="no"
+  local private_root=""
+  local private_root_absent_initial="no"
+  local private_root_absent_final="no"
+  local signal_sent="no"
+  local usr1_signal_sent="no"
+  local first_wait_supervisor_live="no"
+  local second_wait_supervisor_live="no"
+  local second_wait_snapshot=""
+  local signal_sender_pid=""
+  local signal_sender_residue="no"
+  local owner_pid=""
+  local wait_count=0
+  local owner_status=0
+  local waited=0
+  local worker_residue_count=0
+  local worker_pid=""
+
+  mkdir -p "$case_root"
+  cat >"$worker_file" <<'PRE_HAR_01_WORKER'
+#!/usr/bin/env bash
+printf '%s' 'bubbles-python-runs'
+/bin/sleep 5
+PRE_HAR_01_WORKER
+  /bin/chmod 700 "$worker_file"
+
+  /usr/bin/env -i LC_ALL=C PATH=/usr/bin:/bin \
+    BUBBLES_SECURITY_ENTRY_MODE=direct \
+    "$BASH" -p "$SELFTEST_SCRIPT" --internal-exit-trap-target \
+    pre-har-01-target-v1 "$worker_file" "$case_root" \
+    >"$output_file" 2>&1 &
+  owner_pid=$!
+  printf '%s\n' "$owner_pid" >"$case_root/owner.pid"
+  if builtin wait "$owner_pid"; then
+    owner_status=0
+  else
+    owner_status=$?
+  fi
+
+  /bin/cat "$output_file"
+  supervisor_pid="$(/bin/cat "$case_root/supervisor.pid" 2>/dev/null || true)"
+  private_root="$(/bin/cat "$case_root/private-root" 2>/dev/null || true)"
+  supervisor_command="$(/bin/cat "$case_root/supervisor.command" 2>/dev/null || true)"
+  wait_count="$(/bin/cat "$case_root/wait-count" 2>/dev/null || printf '%s' 0)"
+  [[ -f "$case_root/signal-sent" ]] && signal_sent=yes
+  [[ -f "$case_root/usr1-signal-sent" ]] && usr1_signal_sent=yes
+  [[ -f "$case_root/supervisor-live-before-term" ]] && first_wait_supervisor_live=yes
+  [[ -f "$case_root/supervisor-live-before-usr1" ]] && second_wait_supervisor_live=yes
+  second_wait_snapshot="$(/bin/cat "$case_root/second-wait-interrupt.snapshot" 2>/dev/null || true)"
+  signal_sender_pid="$(/bin/cat "$case_root/signal-sender.pid" 2>/dev/null || true)"
+  [[ "$supervisor_command" == *"/usr/bin/perl -T -w -e"* ]] && supervisor_is_real=yes
+  if pre_har_01_process_is_live "$supervisor_pid"; then
+    supervisor_alive_initial=yes
+    supervisor_state="$(/bin/ps -p "$supervisor_pid" -o state= 2>/dev/null || true)"
+    supervisor_state="${supervisor_state//[[:space:]]/}"
+  fi
+  [[ -n "$private_root" && ! -e "$private_root" ]] && private_root_absent_initial=yes
+
+  printf 'PRE_HAR_01_CONTROL ownerExit=%s waitCount=%s signalSent=%s supervisorPid=%s supervisorKind=%s supervisorState=%s supervisorAliveAtOwnerExit=%s privateRootAbsentAtOwnerExit=%s\n' \
+    "$owner_status" "$wait_count" "$signal_sent" \
+    "${supervisor_pid:-missing}" "$supervisor_is_real" "${supervisor_state:-missing}" \
+    "$supervisor_alive_initial" "$private_root_absent_initial"
+  printf 'REG_PY_REAP_01_CONTROL termSent=%s usr1Sent=%s supervisorLiveBeforeTerm=%s supervisorLiveBeforeUsr1=%s secondWaitSnapshot=%q\n' \
+    "$signal_sent" "$usr1_signal_sent" "$first_wait_supervisor_live" \
+    "$second_wait_supervisor_live" "${second_wait_snapshot:-missing}"
+
+  while pre_har_01_process_is_live "$supervisor_pid" && [[ "$waited" -lt 60 ]]; do
+    /bin/sleep 0.1
+    waited=$((waited + 1))
+  done
+  pre_har_01_process_is_live "$supervisor_pid" && supervisor_alive_final=yes
+  while IFS= read -r worker_pid; do
+    [[ -n "$worker_pid" ]] || continue
+    worker_residue_count=$((worker_residue_count + 1))
+    builtin kill -KILL "$worker_pid" 2>/dev/null || true
+  done < <(pre_har_01_worker_processes "$worker_file")
+  if pre_har_01_process_is_live "$signal_sender_pid"; then
+    signal_sender_residue=yes
+    builtin kill -KILL "$signal_sender_pid" 2>/dev/null || true
+  fi
+  [[ -n "$private_root" && ! -e "$private_root" ]] && private_root_absent_final=yes
+  printf 'PRE_HAR_01_CLEANUP supervisorAliveFinal=%s workerResidue=%s signalSenderResidue=%s privateRootAbsentFinal=%s waitedTenths=%s\n' \
+    "$supervisor_alive_final" "$worker_residue_count" "$signal_sender_residue" \
+    "$private_root_absent_final" "$waited"
+
+  if [[ "$owner_status" -eq 77 && "$wait_count" -eq 1 &&
+    "$signal_sent" == yes && "$usr1_signal_sent" == yes &&
+    "$first_wait_supervisor_live" == yes && "$second_wait_supervisor_live" == yes &&
+    "$second_wait_snapshot" == 'pendingSignal=TERM pendingStatus=143 handlePresent=yes supervisorLive=yes privateRootPresent=yes' &&
+    "$supervisor_pid" =~ ^[1-9][0-9]*$ &&
+    "$supervisor_is_real" == yes && "$supervisor_alive_initial" == no &&
+    "$private_root_absent_initial" == yes && "$supervisor_alive_final" == no &&
+    "$worker_residue_count" -eq 0 && "$signal_sender_residue" == no &&
+    "$private_root_absent_final" == yes ]]; then
+    ok "REG-PY-REAP-01: EXIT survives both wait interruptions and reaps the supervisor before private-root cleanup"
+  else
+    printf 'RED-CONTROL: REG-PY-REAP-01 second EXIT wait returned while realSupervisorAlive=%s privateRootAbsent=%s snapshot=%q\n' \
+      "$supervisor_alive_initial" "$private_root_absent_initial" "${second_wait_snapshot:-missing}"
+    bad "REG-PY-REAP-01: EXIT must not clear the handle or clean the private root after two interrupted waits while its supervisor remains alive"
+  fi
+
+  if [[ "$supervisor_alive_final" == yes ]]; then
+    builtin kill -KILL "$supervisor_pid" 2>/dev/null || true
+  fi
+  [[ -z "$private_root" || ! -e "$private_root" ]] || /bin/rm -rf "$private_root"
+}
+
+PRE_HAR_01_DEFAULT_AGGREGATE_ATTEMPTS=0
+PRE_HAR_01_STOCK_SCENARIO_STATUS=125
+
+run_reg_py_bash32_01_control() {
+  local output_file="$TMP_ROOT/reg-py-bash32-01.output"
+  local stock_without_bashpid=no
+  local stock_status=0
+  local scenario_markers=0
+  local lifecycle_markers=0
+  local lifecycle_execution_markers=0
+  local result_markers=0
+  local bashpid_diagnostics=0
+
+  PRE_HAR_01_DEFAULT_AGGREGATE_ATTEMPTS=$((PRE_HAR_01_DEFAULT_AGGREGATE_ATTEMPTS + 1))
+  if /bin/bash -c '[[ -z "${BASHPID+x}" ]]'; then
+    stock_without_bashpid=yes
+  fi
+  if /usr/bin/env -i LC_ALL=C PATH=/usr/bin:/bin BUBBLES_SECURITY_ENTRY_MODE=direct \
+    /bin/bash -p "$SELFTEST_SCRIPT" --reg-py-reap-01 >"$output_file" 2>&1; then
+    stock_status=0
+  else
+    stock_status=$?
+  fi
+  PRE_HAR_01_STOCK_SCENARIO_STATUS="$stock_status"
+  /bin/cat "$output_file"
+  scenario_markers="$(/usr/bin/grep -c '^Scenario: PRE-HAR-01 ' "$output_file" 2>/dev/null || true)"
+  lifecycle_markers="$(/usr/bin/grep -c '^REG_PY_REAP_01_CONTROL ' "$output_file" 2>/dev/null || true)"
+  lifecycle_execution_markers="$(/usr/bin/awk '
+    /^REG_PY_REAP_01_CONTROL / &&
+      index($0, "termSent=yes usr1Sent=yes supervisorLiveBeforeTerm=yes supervisorLiveBeforeUsr1=yes") &&
+      index($0, "secondWaitSnapshot=pendingSignal=TERM\\ pendingStatus=143\\ handlePresent=yes\\ supervisorLive=yes\\ privateRootPresent=yes") {
+        count++
+      }
+    END { print count + 0 }
+  ' "$output_file")"
+  result_markers="$(/usr/bin/grep -c '^python-env PRE-HAR-01 selftest:' "$output_file" 2>/dev/null || true)"
+  bashpid_diagnostics="$(/usr/bin/grep -c 'BASHPID.*unbound variable' "$output_file" 2>/dev/null || true)"
+  printf 'REG_PY_BASH32_01_CONTROL aggregateInvocation=%s stockWithoutBASHPID=%s stockExit=%s scenarioMarkers=%s lifecycleMarkers=%s lifecycleExecutionMarkers=%s resultMarkers=%s bashpidDiagnostics=%s\n' \
+    "$PRE_HAR_01_DEFAULT_AGGREGATE_ATTEMPTS" "$stock_without_bashpid" \
+    "$stock_status" "$scenario_markers" "$lifecycle_markers" \
+    "$lifecycle_execution_markers" "$result_markers" "$bashpid_diagnostics"
+  if [[ "$stock_without_bashpid" == yes &&
+    ( "$stock_status" -eq 0 || "$stock_status" -eq 1 ) &&
+    "$scenario_markers" -eq 1 && "$lifecycle_markers" -eq 1 &&
+    "$lifecycle_execution_markers" -eq 1 && "$result_markers" -eq 1 &&
+    "$bashpid_diagnostics" -eq 0 ]]; then
+    ok "REG-PY-BASH32-01: stock Bash without BASHPID executes and reports the PRE-HAR-01 lifecycle assertion"
+  else
+    bad "REG-PY-BASH32-01: stock Bash 3.2 must reach PRE-HAR-01 and the aggregate must account for its RED result"
+  fi
+}
+
+if [[ "$RUN_EXIT_TRAP_TARGET" -eq 1 ]]; then
+  run_exit_trap_target
+  exit $?
+fi
+
+if [[ "$RUN_EXIT_TRAP_INTERRUPT" -eq 1 ]]; then
+  echo "Scenario: PRE-HAR-01 two signal interruptions cannot make EXIT clear a live supervisor handle."
+  run_exit_trap_interruption_control
+  echo
+  echo "python-env PRE-HAR-01 selftest: $pass passed, $fail failed"
+  SELFTEST_COMPLETED=1
+  [[ "$fail" -eq 0 ]]
+  exit $?
+fi
 
 scope2_sha256_file() {
   local path="$1"
@@ -3019,6 +3355,18 @@ if [[ "$RUN_SIGNAL_READINESS" -eq 1 &&
 fi
 if [[ "$RUN_STRESS" -eq 1 && "$SCOPE2_STRESS_COMPLETED" -ne 1 ]]; then
   bad "TP-S2-05 stress lifecycle exited before all seven classes, 210 iterations, and the end sentinel"
+fi
+if [[ "$RUN_GENERAL" -eq 1 || "$RUN_BASH32_AGGREGATE" -eq 1 ]]; then
+  echo "Scenario: REG-PY-BASH32-01 stock Bash executes PRE-HAR-01 and the default aggregate accounts for it."
+  run_reg_py_bash32_01_control
+  printf 'REG_PY_BASH32_01_AGGREGATE attempts=%s expected=1\n' \
+    "$PRE_HAR_01_DEFAULT_AGGREGATE_ATTEMPTS"
+  if [[ "$PRE_HAR_01_DEFAULT_AGGREGATE_ATTEMPTS" -ne 1 ]]; then
+    bad "REG-PY-BASH32-01: PRE-HAR-01 aggregate invocation count must be exactly one"
+  fi
+  if [[ "$RUN_GENERAL" -eq 1 && "$PRE_HAR_01_STOCK_SCENARIO_STATUS" -ne 0 ]]; then
+    bad "REG-PY-REAP-01: the default aggregate must propagate the PRE-HAR-01 lifecycle RED result"
+  fi
 fi
 echo
 echo "python-env selftest: $pass passed, $fail failed"

@@ -18,6 +18,9 @@ PID during cleanup.
 The mutation harness also stores worker and watchdog PIDs. Its interrupt fixture
 lets the target retain descriptor 9 and influence completion behavior.
 
+The candidate CI workflow adds a manual source-only exact-head lane. This design
+defines that lane alongside the existing supervision contract.
+
 ### Target State
 
 Canonical callers launch Scan 2B through `privileged-bash-entry-v1`. The new
@@ -25,6 +28,9 @@ Bash process imports no exported functions and evaluates no `BASH_ENV`.
 
 A root-protected `/usr/bin/perl` process owns each fixed operation. It forks,
 signals, and reaps one direct worker with `waitpid` under a fixed wall.
+
+The supervision architecture remains unchanged. A separate CI contract
+qualifies one same-repository source SHA on Ubuntu and macOS.
 
 ### Patterns To Follow
 
@@ -34,6 +40,7 @@ signals, and reaps one direct worker with `waitpid` under a fixed wall.
 - Keep general Python usability separate from Scan 2B authority.
 - Preserve fail-closed findings and honest unavailable-prerequisite accounting.
 - Derive worker completion only from supervisor-owned `waitpid`.
+- Reuse the existing release-hygiene platform setup and 180-minute bound.
 
 ### Patterns To Avoid
 
@@ -44,6 +51,8 @@ signals, and reaps one direct worker with `waitpid` under a fixed wall.
 - Do not treat FIFO EOF, readiness output, or worker text as completion.
 - Do not add a Bash or PATH-selected supervisor fallback.
 - Do not claim recursive descendant containment.
+- Do not equate source identity with workflow identity, approval, publication,
+  or certification.
 
 ### Resolved Decisions
 
@@ -58,6 +67,9 @@ signals, and reaps one direct worker with `waitpid` under a fixed wall.
 - Parent signals become pending results until the supervisor has been reaped.
 - Active labels use `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`.
 - Scope 2 requires the widened source, test, governance, and documentation boundary.
+- `.github/workflows/agnosticity.yml` adds one manual source-only exact-head matrix.
+- The dispatch accepts one lowercase 40-hex commit SHA and runs only that matrix.
+- Exact-head release hygiene disables receipt reuse and requires both platforms.
 
 ### Open Questions
 
@@ -81,7 +93,8 @@ The active architecture has four layers:
 The security guarantee begins inside the privileged child. It makes no claim
 about code that an ordinary caller ran before that boundary.
 
-This design changes no source, tests, state, evidence, or acceptance record.
+This design admits one CI workflow surface. It changes no runtime source
+contract, test, state, evidence, or acceptance record.
 
 ## Requirement And Finding Reconciliation
 
@@ -658,11 +671,130 @@ The supported Linux lane must prove one authenticated Perl and Python positive.
 
 ### Dependency Posture
 
-This design adds no package-manager or network dependency. It promotes a fixed
-host primitive into the Scan 2B authority preflight.
+The supervision architecture adds no package-manager or runtime network
+dependency. It promotes a fixed host primitive into the Scan 2B authority
+preflight.
+
+The CI lane reuses hosted-runner checkout and provisioning. Those operational
+dependencies do not enter Scan 2B authority.
 
 A release image without acceptable `/usr/bin/perl` cannot earn Scan 2B
 authority. The result remains visible and non-authoritative.
+
+## Source-Only Exact-Head CI Qualification
+
+The lane lives in `.github/workflows/agnosticity.yml`. It qualifies one source
+commit through release hygiene without changing `privileged-native-supervision-v2`.
+
+### Trigger, Isolation, And Execution Contract
+
+| Concern | Active contract |
+| --- | --- |
+| Trigger | `workflow_dispatch` only. |
+| Input | One required `source_sha` string matching `^[0-9a-f]{40}$`. |
+| Job isolation | Only `release-hygiene-exact-head` runs for `workflow_dispatch`. Existing jobs remain limited to pull requests or pushes. |
+| Permissions | Workflow token permissions are read-only with `contents: read`. |
+| Platforms | One matrix spans `ubuntu-latest` and `macos-latest`. |
+| Bound | Each matrix job has `timeout-minutes: 180`. |
+| Release command | Run `bash bubbles/scripts/cli.sh release-check` with `BUBBLES_RELEASE_CHECK_ACCEPT_RECEIPT=0`. |
+
+The first step validates the input before checkout. Malformed input exits `2`
+before any candidate repository code can run.
+
+Checkout uses
+`actions/checkout@11d5960a326750d5838078e36cf38b85af677262`. It sets
+`repository` to `github.repository`, selects `source_sha`, fetches full history,
+and disables persisted credentials.
+
+After checkout, the job derives the expected HTTPS origin from
+`github.repository`. It rejects any different origin before running candidate
+scripts.
+
+The job fetches `source_sha` explicitly from that origin without tags. It
+requires `FETCH_HEAD`, checked-out `HEAD`, and `source_sha` to match exactly.
+
+The job also requires `source_sha` to resolve as a commit. Only then may it run
+the source-controlled provisioner or release check.
+
+The macOS leg resolves one validated Homebrew prefix and installs Bash 4 or
+newer. Both legs require Bash 4 or newer before provisioning Python.
+
+The release step asserts that receipt reuse remains disabled. It then passes
+the disabled value explicitly to `release-check`.
+
+### Trust Boundary
+
+Treat `source_sha` as hostile until the anchored lowercase-hex check passes.
+Treat checked-out source as untrusted until origin, fetch, commit, and HEAD
+checks all pass.
+
+The CI control plane trusts the GitHub event repository identity, the pinned
+checkout action, the hosted runner, runner Git, and the same-repository origin.
+These components remain outside Scan 2B's native-supervision TCB.
+
+Exact-head means only that candidate source `HEAD` equals the fetched
+same-repository commit. The workflow definition is not asserted equal to
+`source_sha`.
+
+The lane does not prove branch ancestry, signature, review approval, source
+safety, or release authorization. Mutable hosted-runner images also remain a
+separate evidence identity.
+
+### Failure Boundary
+
+| Failure | Required outcome |
+| --- | --- |
+| Input is not one lowercase 40-hex SHA | Exit `2` before checkout. |
+| Checkout or explicit fetch fails | The affected matrix leg fails without a fallback ref. |
+| Origin differs from the event repository | Fail before candidate provisioning. |
+| `FETCH_HEAD`, `HEAD`, or `source_sha` differs | Fail before candidate provisioning. |
+| The object is not a commit | Fail before candidate provisioning. |
+| Bash or Python provisioning fails | The affected matrix leg fails. |
+| The 180-minute bound expires | The affected matrix leg fails. |
+| Receipt reuse is not exactly disabled | Fail before `release-check`. |
+| `release-check` exits nonzero | The affected matrix leg fails with its real status. |
+| Either platform lacks successful evidence | Withhold exact-head qualification. |
+
+No retry, alternate ref, cached receipt, fallback command, or partial-platform
+success can produce qualification.
+
+### Non-Goals
+
+- Do not bind the workflow definition itself to `source_sha`.
+- Do not publish, tag, sign, deploy, or update a release manifest.
+- Do not create human acceptance, DoD completion, or certification.
+- Do not authorize a cross-repository ref or persist checkout credentials.
+- Do not change pull-request or push release-hygiene behavior.
+- Do not modify the privileged entry, Perl supervisor, Python trust, or `SCS1` contracts.
+
+### Evidence Requirements And Ownership
+
+Exact-head evidence must identify the workflow run, attempt, event, and supplied
+`source_sha`. It must record the controlling workflow revision separately.
+
+Each matrix leg must record its runner platform. Its logs must show the accepted
+origin, fetched SHA, checked-out HEAD, provisioned tools, and release-check run.
+
+Both legs must conclude successfully within the bound. A failed, timed-out,
+cancelled, or missing leg supplies no exact-head qualification evidence.
+
+Evidence must show receipt reuse disabled for the release step. A pre-existing
+receipt cannot replace execution against the selected source commit.
+
+Changing the source SHA, workflow revision, checkout action pin, platform, or
+release command invalidates the affected evidence set.
+
+| Surface | Owner |
+| --- | --- |
+| Active technical contract in this file | `bubbles.design` |
+| Workflow implementation and event permissions | `bubbles.devops` |
+| Persistent workflow regression proof | `bubbles.test` |
+| Scope, DoD, and scenario mapping | `bubbles.plan` |
+| Current-session execution evidence | The agent that executes and records the run |
+| Certification and terminal status | `bubbles.validate` |
+| Source SHA selection | The manual dispatcher, without certification authority |
+
+This design claims no workflow run or release-check result.
 
 ## Required Path Widening
 
@@ -698,6 +830,15 @@ No new supervisor file is required. The fixed Perl source remains embedded in
 Canonical guidance must route ordinary users through `cli.sh scan` or the
 transition guard. Raw scanner invocation remains compatibility-only.
 
+### CI And Operational Path
+
+| Path | Required responsibility |
+| --- | --- |
+| `.github/workflows/agnosticity.yml` | Add the isolated source-only exact-head matrix and preserve existing pull-request and push lanes. |
+
+The workflow remains operational code owned by `bubbles.devops`. This design
+owns only the technical contract for that surface.
+
 ### BUG-039 Artifact Family
 
 The boundary must admit
@@ -717,8 +858,14 @@ Artifact ownership still controls each file.
 The classifier helper stays a read-only digest-pinned input. `guard-lib.sh` may
 not become a timeout or lifecycle fallback for this boundary.
 
-No dependency manifest, workflow, datastore, network, browser, deployment, or
-cross-repository surface changes under this design.
+Only `.github/workflows/agnosticity.yml` changes among CI surfaces. Existing
+pull-request and push jobs keep their prior event boundaries.
+
+No dependency manifest, product datastore, browser, deployment, publication,
+release-manifest, acceptance, or cross-repository surface changes.
+
+CI network use is limited to checkout, same-origin fetch, and hosted-runner
+provisioning. It creates no product network contract.
 
 ## Testing And Validation Strategy
 
@@ -738,6 +885,19 @@ proof on the final immutable candidate.
 | `SCN-B039-007` | Python and scanner selftests | `waitpid`, wall, status ownership, signals, and no Bash signaling hold. |
 | `SCN-B039-008` | scanner selftest and `test_24` | Target control cannot end supervision and private files are removed. |
 | `SCN-B039-009` | artifact guards and identifier scan | One epoch uses only current BUG-039 identifiers. |
+
+### Exact-Head CI Proof
+
+| Proof type | Required assertion |
+| --- | --- |
+| Focused workflow contract check | One dispatch input, dispatch-only job isolation, read-only permissions, pinned checkout, full history, disabled credentials, two platforms, and 180-minute bound. |
+| Input negative control | Uppercase, short, long, non-hex, or multi-value text fails before checkout. |
+| Provenance negative control | A different origin, fetch result, checked-out HEAD, or non-commit object fails before candidate scripts. |
+| Live dispatch | Both platform legs run against the same `source_sha` and complete release hygiene without receipt reuse. |
+| Evidence review | Source SHA, workflow revision, action pin, runner platform, command, and outcome remain separate identities. |
+
+These checks validate the CI qualification contract. They do not replace the
+supervisor, classifier, acceptance, or certification scenarios.
 
 ### Finding Negative Controls
 
@@ -817,10 +977,13 @@ Only `privileged-native-supervision-v2` evidence may close the redesigned Scope
 One evidence epoch binds all of these values:
 
 - clean immutable commit
+- exact-head run identity, attempt, workflow revision, and dispatch `source_sha`
+- per-leg origin, `FETCH_HEAD`, `HEAD`, action pin, and runner platform
 - helper digest
 - `BSEC1`, `BPS1`, `PYSEC1`, `PYMOD1`, and `SCS1` protocol versions
 - macOS and Linux platform identities
 - focused scenario and mutation results
+- disabled release-check receipt reuse
 - complete `framework-validate` and `release-check` results
 - independent security review
 - fresh human acceptance
@@ -837,6 +1000,9 @@ nine scenario IDs.
 Implementation and test owners may record only current-epoch evidence. Only
 `bubbles.validate` may write certification or terminal status.
 
+The exact-head lane may supply release-check evidence only when both matrix
+legs satisfy the source, workflow, platform, and no-receipt identities above.
+
 ## Migration, Rollout, And Safe Rollback
 
 The implementation must land as one coherent security epoch. A mixed entry,
@@ -851,9 +1017,11 @@ The required order is:
 5. Remove watchdog, FIFO, worker PID, and stale cleanup mechanisms.
 6. Retain Python trust, helper identity, `SCS1`, and skip behavior.
 7. Update active identifiers and required guidance.
-8. Execute focused macOS and Linux matrices on one immutable candidate.
-9. Execute complete framework and release gates on that candidate.
-10. Obtain independent security review, human acceptance, and certification.
+8. Reconcile the exact-head workflow contract and its focused controls.
+9. Execute focused macOS and Linux matrices on one immutable candidate.
+10. Dispatch exact-head release hygiene for that same source SHA.
+11. Execute complete framework and release gates on that candidate.
+12. Obtain independent security review, human acceptance, and certification.
 
 Safe rollback means fail closed. It disables authoritative Scan 2B acceptance
 when privileged entry or native supervision is unavailable.
@@ -923,6 +1091,7 @@ invalidated lifecycle.
 | Widened caller boundary | Keep five files | Production callers currently create ordinary Bash scanner processes. |
 | Embedded Perl source | Separate helper | A new file adds identity and packaging obligations. |
 | Fail closed without Perl | Shell fallback | A fallback restores the rejected security path. |
+| Separate exact-head matrix | Reuse branch-triggered jobs | A dedicated dispatch isolates source qualification from pull-request and push behavior. |
 
 ## Risks And Open Questions
 
@@ -936,6 +1105,8 @@ invalidated lifecycle.
 - Kernel-uninterruptible worker state may exceed userspace timing.
 - SIGKILL or host termination may leave private capture files.
 - The embedded supervisor expands the reviewed TCB in `python-env.sh`.
+- Source exact-head does not make the workflow definition or runner image immutable.
+- The lane can test a same-repository commit without proving release approval.
 
 ### Remaining Architecture Questions
 

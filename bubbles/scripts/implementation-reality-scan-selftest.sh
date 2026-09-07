@@ -949,7 +949,7 @@ fi
 
 failures=0
 skips=0
-BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=0
+B039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=0
 RUN_OUTPUT=""
 RUN_STATUS=0
 
@@ -2143,7 +2143,7 @@ if [[ "$RUN_STATUS" -eq 1 ]] && ! grep -Fq 'diagnostic=HELPER_DIGEST_MISMATCH' <
   grep -Fq 'classifier protocol complete: version=SCS1' <<<"$RUN_OUTPUT" &&
   grep -Fq 'reason=SESSION_CREDENTIAL_UNAPPROVED' <<<"$RUN_OUTPUT" &&
   ! grep -Fq 'reason=DURABLE_CREDENTIAL_STORAGE storage=localStorage operation=persist key=marketProvider:twelvedata:apiKey provider=twelvedata configMatch=absent' <<<"$RUN_OUTPUT"; then
-  BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
+  B039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=1
   pass "SCN-B039-003 copied classifier mutation executes after explicit digest review and changes semantic tuples"
   pass "Corrupting production classification makes the real-finding contract red"
 else
@@ -2549,7 +2549,7 @@ assert_classifier_helper_cache_absent "Post-timeout real producer leaves the hel
 SELFTEST_COMPLETED=1
 
 echo "implementation-reality-scan selftest summary: failures=$failures skips=$skips"
-echo "BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=$BUG039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED"
+echo "B039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED=$B039_AUTHORIZED_CLASSIFIER_MUTATION_VERIFIED"
 
 if [[ "$skips" -gt 0 ]]; then
   echo "implementation-reality-scan selftest skipped $skips scenario group(s) for an absent prerequisite."

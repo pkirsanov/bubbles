@@ -349,7 +349,7 @@
       "obligations": [
         {
           "trait": "degraded-state",
-          "requiredProof": "Parent HUP, INT, and TERM remain pending results until the Perl supervisor is reaped, then return exact status 129, 130, or 143.",
+          "requiredProof": "Parent HUP, INT, and TERM remain pending results until the Perl supervisor is reaped, then return exact status 129, 130, or 143. PRE-HAR-01 also interrupts the EXIT trap's first real wait and requires the supervisor handle and private root to remain live until reap.",
           "satisfiedBy": ["bubbles/scripts/python-env-selftest.sh"]
         },
         {
@@ -367,7 +367,7 @@
         }
       ],
       "riskTier": "high",
-      "tags": ["persistent-regression", "security", "HAR-R1", "wait-only-handle", "signal-window"],
+      "tags": ["persistent-regression", "security", "HAR-R1", "PRE-HAR-01", "wait-only-handle", "signal-window", "exit-lifecycle"],
       "linkedTests": [
         "bubbles/scripts/python-env-selftest.sh",
         "bubbles/scripts/implementation-reality-scan-selftest.sh"
@@ -385,7 +385,7 @@
         "assertionSurface": "returned-value",
         "dependencyPath": "same-origin-real",
         "productionOwners": ["bubbles/scripts/python-env.sh"],
-        "negativeControl": "Restore a Bash worker or watchdog PID, signal a PID from Bash, add kill -0, job control, process-group signaling, or return a pending signal before supervisor reap. The paired lifecycle mutation must fail.",
+        "negativeControl": "Restore a Bash worker or watchdog PID, signal a PID from Bash, add kill -0, job control, process-group signaling, return a pending signal before supervisor reap, or clear the wait handle and private root after an interrupted first EXIT wait. The paired lifecycle mutation must fail.",
         "negativeControlMechanism": "mutation"
       }
     },
@@ -508,6 +508,64 @@
           "bubbles/scripts/state-transition-guard.sh"
         ],
         "negativeControl": "Reintroduce an active historical finding label, present a prior candidate as current evidence, or change one implementation, test, protocol, digest, or planning byte after capture. Planning and validation must reject each stale-epoch shape.",
+        "negativeControlMechanism": "mutation"
+      }
+    },
+    {
+      "id": "SCN-B039-010",
+      "title": "A manual exact-head CI dispatch qualifies only one reachable same-repository source commit",
+      "finding": "REG-PLAN-EXACTHEAD-01",
+      "requiredTestType": "integration",
+      "requiredTestTypes": ["functional", "integration"],
+      "scopeRef": "Scope 2",
+      "behaviorTraits": ["dependency-path", "runtime-config"],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Persistent controls and one live manual dispatch traverse the immutable pinned checkout, same-repository HTTPS origin, explicit no-tags fetch, commit-object check, exact FETCH_HEAD and HEAD assertions, provisioning, and release-check execution for the supplied source_sha.",
+          "satisfiedBy": [
+            "bubbles/scripts/ci-annotation-emitter-selftest.sh",
+            ".github/workflows/agnosticity.yml"
+          ]
+        },
+        {
+          "trait": "runtime-config",
+          "requiredProof": "The workflow accepts exactly one lowercase 40-hex source_sha, permits only the exact-head job on workflow_dispatch, grants contents read, disables persisted credentials, spans ubuntu-latest and macos-latest, fixes each leg at 180 minutes, and explicitly disables release-check receipt reuse.",
+          "satisfiedBy": [
+            "bubbles/scripts/ci-annotation-emitter-selftest.sh",
+            ".github/workflows/agnosticity.yml"
+          ]
+        }
+      ],
+      "riskTier": "high",
+      "tags": [
+        "persistent-regression",
+        "ci",
+        "exact-head",
+        "manual-dispatch",
+        "release-readiness",
+        "REG-CI-NONVACUITY-01"
+      ],
+      "linkedTests": [
+        "bubbles/scripts/ci-annotation-emitter-selftest.sh",
+        ".github/workflows/agnosticity.yml"
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        ".github/workflows/agnosticity.yml",
+        "bubbles/scripts/ci-annotation-emitter-selftest.sh",
+        "bubbles/scripts/release-check.sh"
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "ephemeral-real",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          ".github/workflows/agnosticity.yml",
+          "bubbles/scripts/release-check.sh"
+        ],
+        "negativeControl": "Accept malformed or uppercase source_sha, admit workflow_dispatch into an automatic job, weaken the checkout pin or credentials setting, permit a different origin or mismatched FETCH_HEAD or HEAD, omit one matrix platform or timeout, skip provisioning, reuse a receipt, or accept one successful leg. The persistent contract controls or live qualification must fail.",
         "negativeControlMechanism": "mutation"
       }
     }

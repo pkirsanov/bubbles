@@ -103,8 +103,12 @@ record_gate_ids_from_message() {
   local outcome="$1"
   local remaining="$2"
   local gate_id
-  while [[ "$remaining" =~ (G[0-9][0-9][0-9]) ]]; do
-    gate_id="${BASH_REMATCH[1]}"
+  # A gate id is an identifier, not an arbitrary four-byte substring. Without
+  # both boundaries, active bug-marker suffixes are misread as gate ids and
+  # pollute the structured transition result. Keep this POSIX ERE-shaped for
+  # Bash 4+ on both Linux and macOS; no GNU/PCRE word-boundary extension.
+  while [[ "$remaining" =~ (^|[^[:alnum:]_])(G[0-9][0-9][0-9])([^[:alnum:]_]|$) ]]; do
+    gate_id="${BASH_REMATCH[2]}"
     if [[ "$outcome" == "pass" ]]; then
       record_passed_gate "$gate_id"
     else
