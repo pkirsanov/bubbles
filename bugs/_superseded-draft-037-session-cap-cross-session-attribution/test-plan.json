@@ -1,0 +1,238 @@
+{
+  "version": 1,
+  "specId": "BUG-037",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-09-01T20:18:16Z",
+  "scopes": [
+    {
+      "scopeId": "01-authority-safe-state-and-session-policy",
+      "scopeName": "Authority-Safe State And Session Policy",
+      "tests": [
+        {
+          "id": "TP-01-01",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-snapshot-selftest.sh",
+          "scenarioId": "SCN-B037-010",
+          "description": "Helper-level descriptor cases reject symlink, non-regular, replacement, and stale-identity lock targets without changing sentinel bytes.",
+          "command": "/bin/bash bubbles/scripts/state-snapshot-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-01-02",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/state-snapshot-selftest.sh",
+          "scenarioId": "SCN-B037-009",
+          "description": "Packet rejection precedes repository entries. Valid writes preserve exact policy chains, turns, mirrors, and convergence mappings under flock and mkdir locks.",
+          "command": "/bin/bash bubbles/scripts/state-snapshot-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-01-03",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/autonomy-resolve-selftest.sh",
+          "scenarioId": "SCN-B037-011",
+          "description": "Unattended boundedness reads only the exact session head. A bounded sibling or legacy object cannot activate an absent or all-null session.",
+          "command": "/bin/bash bubbles/scripts/autonomy-resolve-selftest.sh",
+          "liveSystem": true
+        }
+      ]
+    },
+    {
+      "scopeId": "02-immutable-g128-event-evaluation",
+      "scopeName": "Immutable G128 Event Evaluation",
+      "tests": [
+        {
+          "id": "TP-02-01",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/session-cap-guard-selftest.sh",
+          "scenarioId": "SCN-B037-001",
+          "description": "The real guard uses one immutable revision and rejects an incomplete matching event population instead of measuring a subset.",
+          "command": "/bin/bash bubbles/scripts/session-cap-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-02-02",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/session-cap-guard-selftest.sh",
+          "scenarioId": "SCN-B037-002",
+          "description": "Exact observations preserve equality, one-unit-over breach, strict greater-than, and measured-only 70 percent boundary behavior.",
+          "command": "/bin/bash bubbles/scripts/session-cap-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-02-03",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/session-cap-guard-selftest.sh",
+          "scenarioId": "SCN-B037-006",
+          "description": "Invalid identity, policy keys, revisions, timestamps, and arguments yield escaped INPUT-ERROR while default-off and all seven dimension states remain truthful.",
+          "command": "/bin/bash bubbles/scripts/session-cap-guard-selftest.sh",
+          "liveSystem": true
+        }
+      ]
+    },
+    {
+      "scopeId": "03-exact-receipt-and-usage-evaluation",
+      "scopeName": "Exact Receipt And Usage Evaluation",
+      "tests": [
+        {
+          "id": "TP-03-01",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/tool-log-selftest.sh",
+          "scenarioId": "SCN-B037-003",
+          "description": "Real wrapper receipts preserve exact session IDs and valid byte members. Concurrent append deltas expose duplicate or missing physical rows.",
+          "command": "/bin/bash bubbles/scripts/tool-log-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-03-02",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/usage-adapter-contract-selftest.sh",
+          "scenarioId": "SCN-B037-007",
+          "description": "The real adapter proves one exact artifact. It preserves valid filename bytes and rejects traversal, symlink, containment, replacement, read, parse, and mixed-token failures.",
+          "command": "/bin/bash bubbles/scripts/usage-adapter-contract-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-03-03",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/session-cap-guard-selftest.sh",
+          "scenarioId": "SCN-B037-004",
+          "description": "The real guard validates immutable receipt bytes and exact usage proof. Invalid present byte or measured token data returns INPUT-ERROR without a subset total.",
+          "command": "/bin/bash bubbles/scripts/session-cap-guard-selftest.sh",
+          "liveSystem": true
+        }
+      ]
+    },
+    {
+      "scopeId": "04-authoritative-g082-and-blocking-callers",
+      "scopeName": "Authoritative G082 And Blocking Callers",
+      "tests": [
+        {
+          "id": "TP-04-01",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/convergence-cap-guard-selftest.sh",
+          "scenarioId": "SCN-B037-012",
+          "description": "Real G082 filters exact session and target spec, retains maximum semantics, rejects malformed matching rows, and emits only PASS, BREACH, or INPUT-ERROR.",
+          "command": "/bin/bash bubbles/scripts/convergence-cap-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-04-02",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B037-013",
+          "description": "Check 23 and Check 40 validate actionable authority, invoke stable guards once, preserve G082 and G128 distinctions, and reject every invalid status, exit, or availability pair.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-04-03",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/framework-validate-tier-selftest.sh",
+          "scenarioId": "SCN-B037-014",
+          "description": "The live G128 check validates authority and applies the same closed parser and guard-availability contract under core and full tier selection.",
+          "command": "bash bubbles/scripts/framework-validate-tier-selftest.sh",
+          "liveSystem": true
+        }
+      ]
+    },
+    {
+      "scopeId": "05-concurrency-portability-and-release-epoch",
+      "scopeName": "Concurrency, Portability, And Release Epoch",
+      "tests": [
+        {
+          "id": "TP-05-01",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/runtime-concurrency-selftest.sh",
+          "scenarioId": "SCN-B037-005",
+          "description": "Real concurrent producers prove exact receipt deltas, every session mapping, both policy heads, and both G082 and G128 verdict pairs after flock and mkdir locking.",
+          "command": "/bin/bash bubbles/scripts/runtime-concurrency-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-05-02",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/tool-log-selftest.sh",
+          "scenarioId": "SCN-B037-005",
+          "description": "Concurrent completed wrapper calls add exactly one physical row per expected session. Duplicate rows cannot collapse behind a keyed projection.",
+          "command": "/bin/bash bubbles/scripts/tool-log-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-05-03",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/state-snapshot-selftest.sh",
+          "scenarioId": "SCN-B037-008",
+          "description": "Final state tests prove both lock paths, exact convergence and policy mappings, invalid-authority zero-side-effect behavior, and actual child interpreter records.",
+          "command": "/bin/bash bubbles/scripts/state-snapshot-selftest.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-05-04",
+          "type": "functional",
+          "category": "functional",
+          "file": "tests/regression/test_22_session_cap_enforcement.sh",
+          "scenarioId": "SCN-B037-008",
+          "description": "Stock macOS Bash 3 executes every claimed production path with adversarial controls and verifies each changed production child's actual interpreter identity.",
+          "command": "/bin/bash tests/regression/test_22_session_cap_enforcement.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-05-05",
+          "type": "functional",
+          "category": "functional",
+          "file": "tests/regression/test_22_session_cap_enforcement.sh",
+          "scenarioId": "SCN-B037-008",
+          "description": "The supported Bash and GNU environment preserves the same statuses, exits, mappings, diagnostics, and negative controls.",
+          "command": "bash tests/regression/test_22_session_cap_enforcement.sh",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-05-06",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/generate-release-manifest.sh",
+          "scenarioId": "SCN-B037-015",
+          "description": "The generated manifest is fresh for every final managed source, test, contract, and planning byte.",
+          "command": "bash bubbles/scripts/generate-release-manifest.sh --check",
+          "liveSystem": false
+        },
+        {
+          "id": "TP-05-07",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-B037-015",
+          "description": "Full framework validation executes the focused and persistent BUG-037 paths on the frozen candidate.",
+          "command": "bash bubbles/scripts/cli.sh framework-validate",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-05-08",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-B037-015",
+          "description": "Release readiness reruns full validation and derived-artifact freshness on the same unchanged candidate.",
+          "command": "bash bubbles/scripts/cli.sh release-check",
+          "liveSystem": true
+        }
+      ]
+    }
+  ]
+}
