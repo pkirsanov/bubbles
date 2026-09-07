@@ -107,7 +107,7 @@ Corroborating (grep-derived, advisory) numbers:
 | G079 | impact_aware_validation_plan_gate | `script:bubbles/scripts/test-impact-plan.sh` | 0 | — | 1 | — |
 | G080 | trace_contract_evidence_gate | `script:bubbles/scripts/trace-contract-guard.sh` | 0 | — | 2 | — |
 | G081 | build_once_deploy_many_integrity_gate | `mode-required` | 3 | — | — | — |
-| G082 | convergence_cap_enforcement_gate | `script:bubbles/scripts/convergence-cap-guard-selftest.sh`, `script:bubbles/scripts/convergence-cap-guard.sh` | 0 | Check 23 | 5 | guard |
+| G082 | convergence_cap_enforcement_gate | `script:bubbles/scripts/convergence-cap-guard-selftest.sh`, `script:bubbles/scripts/convergence-cap-guard.sh` | 0 | Check 23 | 6 | guard |
 | G083 | context_compaction_discipline_gate | `script:bubbles/scripts/compaction-discipline-guard-selftest.sh`, `script:bubbles/scripts/compaction-discipline-guard.sh`, `script:bubbles/scripts/context-compactor.sh`, `script:bubbles/scripts/state-snapshot.sh` | 0 | Check 24 | 11 | guard |
 | G084 | pre_existing_deferral_block_gate | `script:bubbles/scripts/pre-existing-deferral-guard-selftest.sh`, `script:bubbles/scripts/pre-existing-deferral-guard.sh` | 0 | Check 25 | 2 | guard |
 | G085 | framework_dogfood_evidence_gate | `guard-check:26` | 0 | Check 26 | 7 | guard |
@@ -186,7 +186,7 @@ These gates are intentionally enforced OUTSIDE the mode `requiredGates` lists. E
 | G078 | batch_promotion_limit_gate | — | 2 | — | batch-promotion-lint.sh, gate-enforcement.sh |
 | G079 | impact_aware_validation_plan_gate | — | 1 | — | test-impact-plan.sh |
 | G080 | trace_contract_evidence_gate | — | 2 | — | observability-check.sh, trace-contract-guard.sh |
-| G082 | convergence_cap_enforcement_gate | Check 23 | 5 | guard | convergence-cap-guard-selftest.sh, convergence-cap-guard.sh, session-cap-guard-selftest.sh, session-cap-guard.sh, state-snapshot.sh |
+| G082 | convergence_cap_enforcement_gate | Check 23 | 6 | guard | convergence-cap-guard-selftest.sh, convergence-cap-guard.sh, evidence-admission-hardening-selftest.sh, session-cap-guard-selftest.sh, session-cap-guard.sh, state-snapshot.sh |
 | G083 | context_compaction_discipline_gate | Check 24 | 11 | guard | cli.sh, compaction-discipline-guard-selftest.sh, compaction-discipline-guard.sh, context-compactor.sh, framework-validate.sh, session-liveness-selftest.sh, +5 more |
 | G084 | pre_existing_deferral_block_gate | Check 25 | 2 | guard | pre-existing-deferral-guard-selftest.sh, pre-existing-deferral-guard.sh |
 | G085 | framework_dogfood_evidence_gate | Check 26 | 7 | guard | bug-packet-selftest.sh, evidence-admission-hardening-selftest.sh, framework-dogfood-guard-selftest.sh, framework-dogfood-guard.sh, observability-slo-guard.sh, scaffold-gate.sh, +1 more |
