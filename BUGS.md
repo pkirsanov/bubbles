@@ -4004,3 +4004,46 @@ production repair and `bubbles.test` owns the same-control GREEN proof.
   `REG-EC-STATUS-01`. No source or test repair, GREEN result, DoD closure, or
   certification is claimed.
 
+---
+
+## BUG-048 — `bash-baseline-guard-selftest.sh` SCN-B043-002 fixture construction targets a Check 7C call-site shape that a later fix superseded
+
+- **Filed:** 2026-09-07
+- **Disposition:** OPEN. `bash-baseline-guard-selftest.sh` builds its
+  SCN-B043-002 regression and mutation fixtures by locating one of two exact
+  line shapes in `state-transition-guard.sh`'s Check 7C call site:
+  `claim_backing_analysis="$(python3 - "$state_file" <<'PY'` (the original
+  bug) or `claim_backing_analysis=$(python3 - "$state_file" <<'PY'` (the
+  first repair, which only removed the outer quotes). BUG-039's native-
+  supervisor hardening (branch `fix/bug039-native-supervisor-r2`) replaced
+  that call site with a function-wrapped form —
+  `_check7c_claim_backing_analysis() { python3 - "$1" <<'PY' ... }` invoked
+  as `claim_backing_analysis="$(_check7c_claim_backing_analysis "$state_file")"`
+  — to close a related but distinct embedded-heredoc-in-command-substitution
+  parsing failure. Neither anchor string exists at this call site anymore, so
+  `openingAnchorCount=0` and fixture construction refuses (exit 1) rather than
+  fabricate a false result. The guard's own correctness is not in question:
+  SCN-B043-001 ("repaired guard parses under real Bash 3 and Bash 5 on
+  identical bytes") and the macOS portability guard selftest both pass
+  against the current call site in the same run. This is a stale adversarial-
+  mutation fixture that assumed one fix shape and was overtaken by a later,
+  independent fix at the same call site, not a functional regression in the
+  guard itself.
+- **Severity:** low. The gate refuses honestly (build error, not a fabricated
+  pass) rather than silently certifying an untested shape.
+- **Affects:** `bubbles/scripts/bash-baseline-guard-selftest.sh` (TP02/TP03,
+  `quoted_open`/`repaired_open` anchor list, lines ~265-282).
+- **Owner:** unassigned. Repair requires deciding whether to extend the
+  anchor list to recognize the function-wrapped form, or to retarget the
+  mutation at a call site that still uses the direct command-substitution
+  shape (several other Check-N call sites in `state-transition-guard.sh`
+  still use `="$(python3 ... <<'PY'` unwrapped, per a plain grep of that
+  file), and to re-verify the mutation still reproduces the original parser
+  divergence against a real Bash 3.2 interpreter before certifying either
+  option.
+- **Claim Source:** executed. `bash bubbles/scripts/bash-baseline-guard-selftest.sh`
+  run directly reproduces `BUG043_FIXTURE_BUILD_ERROR openingAnchorCount=0`
+  for both TP02 and TP03; `git log -S'_check7c_claim_backing_analysis'` and a
+  direct read of both `fix/bug039-native-supervisor-r2`'s and the current
+  call site's content confirm the superseding fix and the absent anchor.
+

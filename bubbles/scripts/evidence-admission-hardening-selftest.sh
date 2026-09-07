@@ -414,6 +414,47 @@ clone_framework_surface "$tmp_root"
 git -C "$tmp_root" init -q
 export BUBBLES_REPO_ROOT="$tmp_root"
 
+# Establish real session-binding authority (BUBBLES_SESSION_ID,
+# BUBBLES_SESSION_CONTROL_FILE, BUBBLES_BINDING_PACKET_FILE) so tail-gate
+# checks that require b037_validate_blocking_authority (e.g. Check 23 / G082)
+# run against a genuine preflight packet instead of refusing as
+# invalid-authority. Without this, every fixture below BLOCKS on Check 23
+# regardless of what Check 9 (the actual subject of this selftest) decides.
+binding_root="$(cd "$(mktemp -d "$selftest_tmp_base/bubbles-evidence-admission-binding.XXXXXX")" && pwd -P)"
+chmod 700 "$binding_root"
+binding_control_file="$binding_root/repository-binding.json"
+binding_packet_file="$binding_root/actionable-packet.json"
+set +e
+binding_preflight_output="$(bash "$SCRIPT_DIR/repository-binding.sh" preflight \
+  --session-id host-current \
+  --session-control-file "$binding_control_file" \
+  --expected-control-revision 0 \
+  --request-class TARGETLESS_MODE \
+  --workspace-root "$REPO_ROOT" \
+  --repository-root "$REPO_ROOT" 2>&1)"
+binding_preflight_rc=$?
+set -e
+if [[ "$binding_preflight_rc" -ne 0 ]]; then
+  printf 'evidence-admission-hardening-selftest: binding preflight failed (exit=%s)\n%s\n' \
+    "$binding_preflight_rc" "$binding_preflight_output" >&2
+  exit 2
+fi
+binding_packet_json=""
+while IFS= read -r binding_preflight_line; do
+  case "$binding_preflight_line" in
+    \{*) binding_packet_json="$binding_preflight_line" ;;
+  esac
+done <<<"$binding_preflight_output"
+if [[ -z "$binding_packet_json" ]]; then
+  printf 'evidence-admission-hardening-selftest: preflight emitted no actionable packet\n' >&2
+  exit 2
+fi
+printf '%s\n' "$binding_packet_json" >"$binding_packet_file"
+chmod 600 "$binding_packet_file"
+export BUBBLES_SESSION_ID=host-current
+export BUBBLES_SESSION_CONTROL_FILE="$binding_control_file"
+export BUBBLES_BINDING_PACKET_FILE="$binding_packet_file"
+
 # Materialize the OLD (pre-fix) guard inside the CLONE so its sibling fragments +
 # schema resolve; used ONLY for the non-tautology teeth-proof.
 # A shallow clone (actions/checkout default fetch-depth: 1) does not carry that
