@@ -62,6 +62,20 @@ run_block_diagnostic() {
     pass "$label"
   fi
 }
+run_horizontal_without_authority_conflict() {
+  local label="$1" dir="$2"
+  local output rc=0
+  output="$(bash "$GUARD" "$dir" 2>&1)" && rc=0 || rc=$?
+  if [[ "$rc" -ne 1 ]]; then
+    fail "$label (expected deliberate block exit 1, got $rc: $output)"
+  elif [[ "$output" != *"DEPENDENCY-GRAPH HORIZONTAL PLAN"* ]]; then
+    fail "$label (exit 1 lacked the horizontal-plan diagnostic: $output)"
+  elif [[ "$output" == *"INCOMPLETE DAG SIGNAL"* || "$output" == *"deprecated top-level scopeProgress conflicts with certification.scopeProgress"* ]]; then
+    fail "$label (authority-conflict/incomplete-DAG diagnostic vetoed canonical evaluation: $output)"
+  else
+    pass "$label"
+  fi
+}
 run_collision_diagnostic() {
   local label="$1" dir="$2" expected="$3"
   local output rc=0
@@ -294,11 +308,29 @@ printf '%s\n' '{"scopeProgress":[
 mk_block "$d"
 run "T15 real horizontal chain still BLOCKS under block posture (exit 1)" 1 "$d"
 
-# T16: canonical symbolic scopeId chain. This is the adversarial regression for
-# AUDIT-020-001: symbolic IDs must remain strings through map construction and
-# fixed-point closure. The diagnostic checks prove exit 1 is the deliberate
-# policy verdict, not a jq/runtime crash that merely happens to be non-zero.
+# T16 / SCN-B052-001: a deprecated empty top-level array must not shadow the
+# canonical certification graph. The canonical chain is horizontal and must
+# therefore block under block posture.
 d="$TMP_ROOT/t16"
+mk_scope "$d" 01-a foundation
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d consumer
+printf '%s\n' '{
+  "scopeProgress": [],
+  "certification": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[1]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[2]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[3]}
+  ]}
+}' > "$d/state.json"
+mk_block "$d"
+run_horizontal_without_authority_conflict "T16 SCN-B052-001 legacy empty array cannot shadow canonical deep graph" "$d"
+
+# T16A: canonical symbolic scopeId chain. This preserves the adversarial
+# regression for symbolic IDs through map construction and fixed-point closure.
+d="$TMP_ROOT/t16a"
 mk_scope "$d" 01-a foundation
 mk_scope "$d" 02-b foundation
 mk_scope "$d" 03-c foundation
@@ -310,11 +342,34 @@ printf '%s\n' '{"scopeProgress":[
   {"scopeId":"SCOPE-consumer","scopeDir":"scopes/04-d","dependsOn":["SCOPE-foundation-c"]}
 ]}' > "$d/state.json"
 mk_block "$d"
-run_block_diagnostic "T16 symbolic horizontal chain deliberately BLOCKS" "$d" "SCOPE-consumer" 3
+run_block_diagnostic "T16A symbolic horizontal chain deliberately BLOCKS" "$d" "SCOPE-consumer" 3
 
-# T17: canonical symbolic IDs preserve the early-increment exception. The first
-# consumer needs one foundation while a second consumer is deep in the DAG.
+# T17 / SCN-B052-002: canonical shallow data wins over a deprecated deep graph.
 d="$TMP_ROOT/t17"
+mk_scope "$d" 01-a consumer
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d foundation
+printf '%s\n' '{
+  "scopeProgress": [
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2,3,4]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ],
+  "certification": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ]}
+}' > "$d/state.json"
+mk_block "$d"
+run "T17 SCN-B052-002 canonical shallow graph wins over legacy deep graph (exit 0)" 0 "$d"
+
+# T17A: canonical symbolic IDs preserve the early-increment exception. The
+# first consumer needs one foundation while a second consumer is deep in the DAG.
+d="$TMP_ROOT/t17a"
 mk_scope "$d" 01-a consumer
 mk_scope "$d" 02-b foundation
 mk_scope "$d" 03-c foundation
@@ -328,12 +383,48 @@ printf '%s\n' '{"scopeProgress":[
   {"scopeId":"SCOPE-late","scopeDir":"scopes/05-e","dependsOn":["SCOPE-foundation-c"]}
 ]}' > "$d/state.json"
 mk_block "$d"
-run "T17 symbolic early usable increment, block → exit 0" 0 "$d"
+run "T17A symbolic early usable increment, block → exit 0" 0 "$d"
 
-# T18: when both identities exist, canonical scopeId wins over legacy scope.
-# Symbolic edges intentionally cannot resolve against the conflicting numeric
-# values, so a deliberate block proves scopeId precedence rather than accident.
+# T18 / SCN-B052-003: a legacy-only deep graph remains supported.
 d="$TMP_ROOT/t18"
+mk_scope "$d" 01-a foundation
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d consumer
+printf '%s\n' '{"scopeProgress":[
+  {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[]},
+  {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[1]},
+  {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[2]},
+  {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[3]}
+]}' > "$d/state.json"
+mk_block "$d"
+run "T18 SCN-B052-003 legacy-only deep graph remains blocking (exit 1)" 1 "$d"
+
+# T19 / SCN-B052-004: execution metadata cannot replace canonical authority.
+d="$TMP_ROOT/t19"
+mk_scope "$d" 01-a consumer
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d foundation
+printf '%s\n' '{
+  "certification": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ]},
+  "execution": {"scopeProgress":[
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[2,3,4]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[]}
+  ]}
+}' > "$d/state.json"
+mk_block "$d"
+run "T19 SCN-B052-004 canonical graph wins over execution deep graph (exit 0)" 0 "$d"
+
+# T18A: when both identities exist, canonical scopeId wins over legacy scope.
+d="$TMP_ROOT/t18a"
 mk_scope "$d" 01-a foundation
 mk_scope "$d" 02-b foundation
 mk_scope "$d" 03-c foundation
@@ -345,11 +436,11 @@ printf '%s\n' '{"scopeProgress":[
   {"scopeId":"SCOPE-consumer","scope":44,"scopeDir":"scopes/04-d","dependsOn":["SCOPE-foundation-c"]}
 ]}' > "$d/state.json"
 mk_block "$d"
-run_block_diagnostic "T18 scopeId precedes conflicting legacy scope and deliberately BLOCKS" "$d" "SCOPE-consumer" 3
+run_block_diagnostic "T18A scopeId precedes conflicting legacy scope and deliberately BLOCKS" "$d" "SCOPE-consumer" 3
 
-# T19: an entry with neither canonical nor usable legacy identity cannot be
+# T19A: an entry with neither canonical nor usable legacy identity cannot be
 # represented in the local DAG map and must fail closed in block posture.
-d="$TMP_ROOT/t19"
+d="$TMP_ROOT/t19a"
 mk_scope "$d" 01-a foundation
 mk_scope "$d" 02-b consumer
 printf '%s\n' '{"scopeProgress":[
@@ -357,12 +448,49 @@ printf '%s\n' '{"scopeProgress":[
   {"scopeId":"SCOPE-consumer","scopeDir":"scopes/02-b","dependsOn":["SCOPE-missing"]}
 ]}' > "$d/state.json"
 mk_block "$d"
-run_signal_diagnostic "T19 unusable identity refuses in block posture" 1 "$d" "not every scope has a usable scopeId/scope identity"
+run_signal_diagnostic "T19A unusable identity refuses in block posture" 1 "$d" "not every scope has a usable scopeId/scope identity"
 
-# T20: canonical IDs connected exclusively through positive numeric legacy
-# aliases. Dependency tokens arrive as JSON numbers and must resolve back to
-# the canonical IDs before the fixed-point closure is evaluated.
+# T20: a present canonical empty array is authoritative; only absent or null
+# canonical data may select the deprecated top-level fallback.
 d="$TMP_ROOT/t20"
+mk_scope "$d" 01-a foundation
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d consumer
+printf '%s\n' '{
+  "scopeProgress": [
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[1]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[2]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[3]}
+  ],
+  "certification": {"scopeProgress":[]}
+}' > "$d/state.json"
+mk_block "$d"
+run "T20 canonical empty array remains authoritative over legacy deep graph (exit 0)" 0 "$d"
+
+# T20B / SCN-B052-005: canonical null selects the deprecated compatibility
+# graph, which remains subject to the normal horizontal-plan verdict.
+d="$TMP_ROOT/t20b"
+mk_scope "$d" 01-a foundation
+mk_scope "$d" 02-b foundation
+mk_scope "$d" 03-c foundation
+mk_scope "$d" 04-d consumer
+printf '%s\n' '{
+  "scopeProgress": [
+    {"scope":1,"scopeDir":"scopes/01-a","dependsOn":[]},
+    {"scope":2,"scopeDir":"scopes/02-b","dependsOn":[1]},
+    {"scope":3,"scopeDir":"scopes/03-c","dependsOn":[2]},
+    {"scope":4,"scopeDir":"scopes/04-d","dependsOn":[3]}
+  ],
+  "certification": {"scopeProgress":null}
+}' > "$d/state.json"
+mk_block "$d"
+run_horizontal_without_authority_conflict "T20B SCN-B052-005 canonical null falls back to legacy deep graph" "$d"
+
+# T20A: canonical IDs connected exclusively through positive numeric legacy
+# aliases remain a real horizontal chain.
+d="$TMP_ROOT/t20a"
 mk_scope "$d" 01-a foundation
 mk_scope "$d" 02-b foundation
 mk_scope "$d" 03-c foundation
@@ -374,7 +502,7 @@ printf '%s\n' '{"scopeProgress":[
   {"scopeId":"SCOPE-consumer","scope":44,"scopeDir":"scopes/04-d","dependsOn":[43]}
 ]}' > "$d/state.json"
 mk_block "$d"
-run_block_diagnostic "T20 numeric legacy aliases form a real horizontal chain" "$d" "SCOPE-consumer" 3
+run_block_diagnostic "T20A numeric legacy aliases form a real horizontal chain" "$d" "SCOPE-consumer" 3
 
 # T21: canonical IDs connected exclusively through nonblank string legacy
 # aliases. Whitespace around a legacy alias is identity padding, not part of
@@ -834,8 +962,7 @@ printf '%s\n' '{"scopeProgress":[' \
 mk_block "$d"
 run_signal_diagnostic "T48 duplicate physical body claim refuses" 1 "$d" "multiple scope records claim physical body"
 
-# T49: certification.scopeProgress is authoritative. A simultaneous deprecated
-# top-level value may not shadow a conflicting certified graph.
+# T49: divergent deprecated data cannot veto canonical evaluation.
 d="$TMP_ROOT/t49"
 mk_scope "$d" 01-foundation foundation
 mk_scope "$d" 02-consumer consumer
@@ -850,7 +977,7 @@ printf '%s\n' '{
   ]}
 }' > "$d/state.json"
 mk_block "$d"
-run_signal_diagnostic "T49 conflicting scopeProgress authorities refuse" 1 "$d" "deprecated top-level scopeProgress conflicts with certification.scopeProgress"
+run "T49 divergent legacy data cannot veto canonical scopeProgress (exit 0)" 0 "$d"
 
 # T50: semantically equal authorities may coexist during migration. Object-key,
 # record, and dependency order are representation details, not graph meaning.
@@ -944,8 +1071,8 @@ mk_block "$d"
 mkdir -p "$d/fake-bin"
 real_grep="$(command -v grep)"
 printf '%s\n' '#!/usr/bin/env bash' \
-  'if [[ "${LC_ALL:-}" != "C" ]]; then exit 97; fi' \
-  'exec "${REAL_GREP:?}" "$@"' > "$d/fake-bin/grep"
+  "if [[ \"\${LC_ALL:-}\" != \"C\" ]]; then exit 97; fi" \
+  "exec \"\${REAL_GREP:?}\" \"\$@\"" > "$d/fake-bin/grep"
 chmod +x "$d/fake-bin/grep"
 locale_output=""
 locale_rc=0

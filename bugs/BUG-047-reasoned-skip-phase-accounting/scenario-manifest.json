@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-047-reasoned-skip-phase-accounting",
+  "scenarios": [
+    {
+      "id": "SCN-B047-001",
+      "title": "Canonical skip satisfies required phase accounting",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command outcome assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/workflows/modes.yaml", "bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Remove the skip reason. Check 6 must report the required phase unresolved.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Phase accounting is a command-line control-plane verdict with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B047-002",
+      "title": "Authorized skip decision may have zero duration",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command outcome assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Change the outcome to executed while retaining equal timestamps. Check 7A must block.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Timestamp plausibility is a framework guard result."
+      }
+    },
+    {
+      "id": "SCN-B047-003",
+      "title": "Executed zero-duration phase remains blocked",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"named negative-path refusal assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Broaden the skip exemption to every stabilize record. The executed twin must expose the unsafe relaxation.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The scenario validates fail-closed execution-history analysis."
+      }
+    },
+    {
+      "id": "SCN-B047-004",
+      "title": "Malformed skip gains no exemption",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"named negative-path refusal assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/workflows/modes.yaml", "bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "synthetic-boundary",
+        "productionOwners": ["bubbles/scripts/state-transition-guard.sh"],
+        "negativeControl": "Accept the outcome token without validating its reason and metadata. The malformed fixture must fail the regression.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Skip schema validation is a framework control-plane contract."
+      }
+    }
+  ]
+}

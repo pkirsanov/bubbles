@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-051-yaml-validator-downstream-root",
+  "scenarios": [
+    {
+      "id": "SCN-B051-001",
+      "title": "Installed validator discovers a top-level manifest",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"installed production command manifest-discovery assertion","satisfiedBy":["bubbles/scripts/install-provenance-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/install-provenance-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/yaml-schema-validate.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/yaml-schema-validate.sh"],"negativeControl":"Restore the two-parent project root in the installed script. The top-level manifest must disappear from the validated count.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Schema validation is a command-line repository check."}
+    },
+    {
+      "id": "SCN-B051-002",
+      "title": "Installed validator discovers a nested bug manifest",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"installed production command recursive-discovery assertion","satisfiedBy":["bubbles/scripts/install-provenance-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/install-provenance-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/yaml-schema-validate.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/yaml-schema-validate.sh"],"negativeControl":"Replace the recursive glob with a one-level glob. The nested bug manifest must disappear from the count.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Recursive manifest discovery has no rendered product surface."}
+    },
+    {
+      "id": "SCN-B051-003",
+      "title": "Invalid installed manifest remains blocking",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"named installed manifest validation failure","satisfiedBy":["bubbles/scripts/install-provenance-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/install-provenance-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/yaml-schema-validate.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/yaml-schema-validate.sh"],"negativeControl":"Make the malformed manifest valid. The installed validator must return to a passing verdict.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"The failure is an installed command verdict."}
+    },
+    {
+      "id": "SCN-B051-004",
+      "title": "Source and installed discovery remain equivalent",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"source and installed production command count comparison","satisfiedBy":["bubbles/scripts/install-provenance-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/install-provenance-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/yaml-schema-validate.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/yaml-schema-validate.sh"],"negativeControl":"Point only the installed scan at .github. The compared counts must diverge.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Layout parity is a repository validation contract."}
+    }
+  ]
+}

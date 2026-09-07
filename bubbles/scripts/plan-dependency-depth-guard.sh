@@ -100,31 +100,20 @@ signal_finding() {
   return 0
 }
 
-# certification.scopeProgress is canonical. The deprecated top-level field is
-# accepted only when the canonical field is absent or both representations are
-# semantically equal. Registry/dependency array order and object-key order do
-# not change graph meaning.
-scope_progress_authority="$(jq -c '
-  def semantic:
-    if type == "object" then
-      to_entries | sort_by(.key) | map(.value |= semantic) | from_entries
-    elif type == "array" then
-      map(semantic) | sort_by(tojson)
-    else .
-    end;
-  (has("scopeProgress")) as $has_deprecated
-  | (((.certification | type) == "object") and (.certification | has("scopeProgress"))) as $has_canonical
-  | { conflict: ($has_deprecated and $has_canonical
-                 and ((.scopeProgress | semantic) != (.certification.scopeProgress | semantic))),
-      value: (if $has_canonical then .certification.scopeProgress
-              elif $has_deprecated then .scopeProgress
-              else [] end) }
+# certification.scopeProgress is canonical whenever it is non-null. The
+# deprecated top-level field is a compatibility fallback only when canonical
+# data is absent or null. execution.scopeProgress is never an authority source.
+sp="$(jq -c '
+  if (((.certification | type) == "object")
+      and (.certification | has("scopeProgress"))
+      and (.certification.scopeProgress != null)) then
+    .certification.scopeProgress
+  elif (has("scopeProgress") and (.scopeProgress != null)) then
+    .scopeProgress
+  else
+    []
+  end
 ' "$state_file")"
-if [[ "$(printf '%s' "$scope_progress_authority" | jq -r '.conflict')" == "true" ]]; then
-  signal_finding "deprecated top-level scopeProgress conflicts with certification.scopeProgress"
-  exit $?
-fi
-sp="$(printf '%s' "$scope_progress_authority" | jq -c '.value')"
 
 # scopeProgress has two legitimate shapes in the wild: the per-scope ARRAY
 # ([{scope,scopeDir,dependsOn}, ...]) this DAG analysis is written for, and the

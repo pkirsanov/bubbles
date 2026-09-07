@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VALIDATOR="$SCRIPT_DIR/yaml-schema-validate.sh"
-WORK="$(mktemp -d -t bubbles-yaml-schema-dispatch-XXXXXXXX)"
+WORK="$(mktemp -d /tmp/bys.XXXXXXXX)"
 cleanup() { rm -rf "$WORK"; }
 trap cleanup EXIT INT TERM
 

@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "specId": "BUG-050",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-09-02T07:43:11Z",
+  "scopes": [
+    {
+      "scopeId": "01-transition-local-receipt-admission",
+      "scopeName": "Transition-Local Receipt Admission",
+      "tests": [
+        {"type":"functional","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B050-001","description":"Regression E2E: unrelated stale receipts remain present but inert","command":"BUBBLES_STATE_TRANSITION_GUARD_BUG050_ONLY=1 bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/evidence-receipt-check-selftest.sh","scenarioId":"SCN-B050-002","description":"Adversarial actively admitted stale receipt still blocks","command":"bash bubbles/scripts/evidence-receipt-check-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"regression","file":"bubbles/scripts/receipt-identity-selftest.sh","scenarioId":"SCN-B050-003","description":"Unrelated incompatible clone group remains inert","command":"bash bubbles/scripts/receipt-identity-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/receipt-identity-selftest.sh","scenarioId":"SCN-B050-004","description":"Adversarial admitted incompatible clone preserves BUG-033 refusal","command":"bash bubbles/scripts/receipt-identity-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"regression","file":"bubbles/scripts/scenario-state-resolve-selftest.sh","scenarioId":"SCN-B050-005","description":"Historical RED plus current GREEN derive the ordered scenario states","command":"bash bubbles/scripts/scenario-state-resolve-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"regression","file":"bubbles/scripts/mutation-receipt-selftest.sh","scenarioId":"SCN-B050-006","description":"Historical killed mutant remains valid while failed restoration blocks","command":"bash bubbles/scripts/mutation-receipt-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"canary","file":"bubbles/scripts/evidence-tool-log-bridge-selftest.sh","scenarioId":"Aggregate","description":"Canary: semantic DoD admission selects the same active receipts","command":"bash bubbles/scripts/evidence-tool-log-bridge-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"regression","file":"bubbles/scripts/receipt-identity-selftest.sh","scenarioId":"Aggregate","description":"BUG-007, BUG-028, BUG-032, and BUG-033 receipt identity protections remain green","command":"bash bubbles/scripts/receipt-identity-selftest.sh","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"Aggregate","description":"Full source framework regression","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

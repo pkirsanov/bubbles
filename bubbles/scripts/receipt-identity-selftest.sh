@@ -25,6 +25,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GUARD_SCRIPT="$SCRIPT_DIR/state-transition-guard.sh"
+BRIDGE="$SCRIPT_DIR/evidence-tool-log-bridge.sh"
 NAME="receipt-identity-selftest"
 
 passes=0
@@ -44,6 +45,10 @@ command -v jq >/dev/null 2>&1 || {
 }
 [[ -f "$GUARD_SCRIPT" ]] || {
   printf '%s: guard not found: %s\n' "$NAME" "$GUARD_SCRIPT" >&2
+  exit 2
+}
+[[ -f "$BRIDGE" ]] || {
+  printf '%s: bridge not found: %s\n' "$NAME" "$BRIDGE" >&2
   exit 2
 }
 
@@ -71,7 +76,7 @@ fi
 # terminating quote. This is what the guard actually runs.
 PROGRAM="$(awk '
   /c43_analysis="\$\(jq -rs/ { grab = 1; next }
-  grab && /^[[:space:]]*'"'"' "\$c43_log"/ { exit }
+  grab && /^[[:space:]]*'"'"' "\$c43_admitted_log"/ { exit }
   grab { print }
 ' "$GUARD_SCRIPT")"
 if [[ -z "$PROGRAM" ]] || ! printf '%s' "$PROGRAM" | grep -qF 'deterministic_siblings'; then
@@ -114,6 +119,71 @@ clone_count() {
 sibling_count() {
   printf '%s' "$1" | jq -r '.siblings | length' 2>/dev/null || printf 'ERR'
 }
+
+# ---------------------------------------------------------------------------
+# BUG-050 SCN-B050-003/004 — clone identity consumes the same transition-local
+# admitted projection as freshness. The bridge executes real semantic
+# admission; this selftest continues to execute the real extracted Check 43 jq.
+# ---------------------------------------------------------------------------
+admission_dir="$TMP_DIR/050-admission"
+mkdir -p "$admission_dir"
+cat > "$admission_dir/scenario-manifest.json" <<'EOF'
+{
+  "schemaVersion": 1,
+  "spec": "050-admission",
+  "scenarios": [
+    {"scenarioId":"SCN-B050-003","title":"Unrelated clone groups are inert","requiredTestType":"functional"},
+    {"scenarioId":"SCN-B050-004","title":"Admitted incompatible clone blocks","requiredTestType":"functional"}
+  ]
+}
+EOF
+admission_rev="$(printf '%040d' 1)"
+active_hash="$(sha256_text 'bug050-active-output')"
+unrelated_hash="$(sha256_text 'bug050-unrelated-clone-output')"
+
+admit_log() {
+  bash "$BRIDGE" "$admission_dir" --log "$1" --format=admitted-jsonl 2>&1
+}
+
+unrelated_clone_log="$TMP_DIR/bug050-unrelated-clone.jsonl"
+write_log "$unrelated_clone_log" \
+  "{\"schemaVersion\":3,\"ts\":\"2026-09-02T08:10:00Z\",\"sessionId\":\"b050-active\",\"spec\":\"050-admission\",\"scope\":\"SCOPE-01\",\"cmd\":\"bash active-check.sh\",\"exitCode\":0,\"durationMs\":10,\"stdoutHash\":\"$active_hash\",\"stdoutBytes\":64,\"tags\":[\"test\"],\"scenarioBinding\":{\"scenarioId\":\"SCN-B050-003\",\"phase\":\"green\",\"testIdentity\":\"BUG-050::active-clean\",\"sourceRevision\":\"$admission_rev\",\"negativeControl\":\"restore repository-global grouping\",\"claim\":\"unrelated clone groups are inert\"}}" \
+  "{\"schemaVersion\":3,\"ts\":\"2026-09-02T08:10:01Z\",\"sessionId\":\"b050-unrelated-a\",\"spec\":\"999-unrelated\",\"scope\":\"SCOPE-X\",\"cmd\":\"cargo test\",\"exitCode\":0,\"durationMs\":11,\"stdoutHash\":\"$unrelated_hash\",\"stdoutBytes\":64,\"tags\":[\"test\"]}" \
+  "{\"schemaVersion\":3,\"ts\":\"2026-09-02T08:10:02Z\",\"sessionId\":\"b050-unrelated-b\",\"spec\":\"999-unrelated\",\"scope\":\"SCOPE-X\",\"cmd\":\"npm run lint\",\"exitCode\":0,\"durationMs\":12,\"stdoutHash\":\"$unrelated_hash\",\"stdoutBytes\":64,\"tags\":[\"lint\"]}"
+unrelated_admitted_log="$TMP_DIR/bug050-unrelated-admitted.jsonl"
+unrelated_admitted_out="$(admit_log "$unrelated_clone_log")"
+unrelated_admitted_rc=$?
+printf '%s\n' "$unrelated_admitted_out" > "$unrelated_admitted_log"
+unrelated_admitted_count="$(awk 'NF { count++ } END { print count + 0 }' "$unrelated_admitted_log")"
+unrelated_out="$(analyze "$unrelated_admitted_log")"
+if [[ "$unrelated_admitted_rc" -eq 0 && "$unrelated_admitted_count" -eq 1 && "$(clone_count "$unrelated_out")" == "0" ]]; then
+  pass "SCN-B050-003 unrelated incompatible clone history is excluded from the admitted projection"
+else
+  fail "SCN-B050-003 expected one active row and zero admitted clones (bridge=$unrelated_admitted_rc rows=$unrelated_admitted_count clones=$(clone_count "$unrelated_out"))"
+fi
+
+active_clone_log="$TMP_DIR/bug050-active-clone.jsonl"
+write_log "$active_clone_log" \
+  "{\"schemaVersion\":3,\"ts\":\"2026-09-02T08:20:00Z\",\"sessionId\":\"b050-clone-a\",\"spec\":\"050-admission\",\"scope\":\"SCOPE-01\",\"cmd\":\"cargo test\",\"exitCode\":0,\"durationMs\":20,\"stdoutHash\":\"$active_hash\",\"stdoutBytes\":64,\"tags\":[\"test\"],\"scenarioBinding\":{\"scenarioId\":\"SCN-B050-004\",\"phase\":\"green\",\"testIdentity\":\"BUG-050::clone-a\",\"sourceRevision\":\"$admission_rev\",\"negativeControl\":\"accept incompatible active programs\",\"claim\":\"admitted incompatible clone blocks\"}}" \
+  "{\"schemaVersion\":3,\"ts\":\"2026-09-02T08:20:01Z\",\"sessionId\":\"b050-clone-b\",\"spec\":\"050-admission\",\"scope\":\"SCOPE-01\",\"cmd\":\"npm run lint\",\"exitCode\":0,\"durationMs\":21,\"stdoutHash\":\"$active_hash\",\"stdoutBytes\":64,\"tags\":[\"lint\"],\"scenarioBinding\":{\"scenarioId\":\"SCN-B050-004\",\"phase\":\"green\",\"testIdentity\":\"BUG-050::clone-b\",\"sourceRevision\":\"$admission_rev\",\"negativeControl\":\"accept incompatible active programs\",\"claim\":\"admitted incompatible clone blocks\"}}"
+active_admitted_log="$TMP_DIR/bug050-active-admitted.jsonl"
+active_admitted_out="$(admit_log "$active_clone_log")"
+active_admitted_rc=$?
+printf '%s\n' "$active_admitted_out" > "$active_admitted_log"
+active_admitted_count="$(awk 'NF { count++ } END { print count + 0 }' "$active_admitted_log")"
+active_out="$(analyze "$active_admitted_log")"
+if [[ "$active_admitted_rc" -eq 0 && "$active_admitted_count" -eq 2 && "$(clone_count "$active_out")" == "1" ]]; then
+  pass "SCN-B050-004 admitted incompatible clone remains refused by the BUG-033 identity program"
+else
+  fail "SCN-B050-004 expected two admitted rows and one clone (bridge=$active_admitted_rc rows=$active_admitted_count clones=$(clone_count "$active_out"))"
+fi
+if printf '%s' "$active_out" | grep -qF 'family=cargo category=test' &&
+  printf '%s' "$active_out" | grep -qF 'family=npm category=lint'; then
+  pass "SCN-B050-004 clone diagnostic preserves BUG-033 program and category identity detail"
+else
+  fail "SCN-B050-004 clone diagnostic lost BUG-033 identity detail"
+  printf '  analysis: %s\n' "$active_out"
+fi
 
 # ---------------------------------------------------------------------------
 # BUG-033 facet 1 — target distinctness measured PER RECEIPT.

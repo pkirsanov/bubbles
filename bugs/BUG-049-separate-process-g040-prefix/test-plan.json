@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "specId": "BUG-049",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-09-01T07:58:36Z",
+  "scopes": [
+    {
+      "scopeId": "01-token-bounded-g040-pr-matching",
+      "scopeName": "Token-Bounded G040 PR Matching",
+      "tests": [
+        {"type":"functional","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B049-001","description":"Separate process does not trigger G040","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B049-002","description":"Complete PR token remains blocking","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B049-003","description":"Complete pull request phrase remains blocking","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B049-004","description":"Case variants preserve token boundaries","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B049-001","description":"Existing G040 and portability regressions remain green","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"SCN-B049-001","description":"Full framework validation preserves G040 behavior","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

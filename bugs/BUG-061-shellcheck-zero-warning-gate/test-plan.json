@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "specId": "BUG-061",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-09-02",
+  "scopes": [
+    {
+      "scopeId": "01-restore-tracked-shell-zero-warning-contract",
+      "scopeName": "Restore the Tracked Shell Zero-Warning Contract",
+      "tests": [
+        {"type":"functional","category":"adversarial-regression","file":"bubbles/adapters/research/disabled.sh","scenarioId":"SCN-B061-001","description":"Explicit empty CDPATH produces zero SC1007 findings; restoring the ambiguous form fails","command":"shellcheck -S warning -f gcc bubbles/adapters/research/disabled.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial-regression","file":"bubbles/adapters/research/local-command.sh","scenarioId":"SCN-B061-002","description":"Explicit empty CDPATH produces zero SC1007 findings; restoring the ambiguous form fails","command":"shellcheck -S warning -f gcc bubbles/adapters/research/local-command.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial-regression","file":"bubbles/adapters/usage/reference-test.sh","scenarioId":"SCN-B061-003","description":"No unread EMPTY_DIGEST assignment remains; restoring it fails with SC2034","command":"shellcheck -S warning -f gcc bubbles/adapters/usage/reference-test.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial-regression","file":"bubbles/scripts/research-run.sh","scenarioId":"SCN-B061-004","description":"Explicit empty CDPATH produces zero SC1007 findings; restoring the ambiguous form fails","command":"shellcheck -S warning -f gcc bubbles/scripts/research-run.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial-regression","file":"bubbles/scripts/scenario-manifest-migrate-selftest.sh","scenarioId":"SCN-B061-005","description":"Explicit empty XDG_RUNTIME_DIR produces zero SC1007 findings; restoring the ambiguous form fails","command":"shellcheck -S warning -f gcc bubbles/scripts/scenario-manifest-migrate-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"behavior-preservation","file":"bubbles/scripts/research-admission-cli-selftest.sh","scenarioId":"SCN-B061-001","description":"Research adapter and runner command contracts remain unchanged","command":"bash bubbles/scripts/research-admission-cli-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"behavior-preservation","file":"bubbles/scripts/usage-adapter-v2-selftest.sh","scenarioId":"SCN-B061-003","description":"Usage reference adapter operation contracts remain unchanged","command":"bash bubbles/scripts/usage-adapter-v2-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"behavior-preservation","file":"bubbles/scripts/scenario-manifest-migrate-selftest.sh","scenarioId":"SCN-B061-005","description":"Hostile fallback runtime-directory behavior remains unchanged","command":"bash bubbles/scripts/scenario-manifest-migrate-selftest.sh","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/shellcheck-lint.sh","scenarioId":"SCN-B061-001","description":"Tracked warning-level ShellCheck gate reports zero findings","command":"bash bubbles/scripts/shellcheck-lint.sh","liveSystem":false},
+        {"type":"regression","category":"portability","file":"bubbles/scripts/macos-portability-guard.sh","scenarioId":"SCN-B061-005","description":"All five changed shell surfaces remain GNU/Linux and macOS portable","command":"canonical source portability command over the five changed files","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"SCN-B061-001","description":"Full framework validation preserves the zero-warning contract","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

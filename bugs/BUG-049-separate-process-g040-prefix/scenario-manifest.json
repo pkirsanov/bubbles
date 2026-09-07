@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-049-separate-process-g040-prefix",
+  "scenarios": [
+    {
+      "id": "SCN-B049-001",
+      "title": "Separate process does not trigger G040",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command token-classification assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Restore the unbounded separate PR alternative. The separate process fixture must false-block again.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"G040 is a command-line artifact guard result."}
+    },
+    {
+      "id": "SCN-B049-002",
+      "title": "Separate PR remains blocking",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"named deferral-language refusal assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Remove the complete PR alternative. The genuine deferral fixture must expose the enforcement loss.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Deferral detection is a transition guard contract."}
+    },
+    {
+      "id": "SCN-B049-003",
+      "title": "Separate pull request remains blocking",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"named deferral-language refusal assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Remove the full phrase alternative. The pull-request deferral fixture must pass incorrectly and fail the regression.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"The scenario validates artifact prose classification."}
+    },
+    {
+      "id": "SCN-B049-004",
+      "title": "Case variants preserve the token boundary",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "medium",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command case-insensitive boundary assertion","satisfiedBy":["bubbles/scripts/state-transition-guard-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/state-transition-guard-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/state-transition-guard.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/state-transition-guard.sh"],"negativeControl":"Replace process with PR under the same case forms. Both complete tokens must block.","negativeControlMechanism":"perturbed-input"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Case-insensitive token classification has no rendered product surface."}
+    }
+  ]
+}

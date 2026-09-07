@@ -8,10 +8,8 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HELPER="$SCRIPT_DIR/release-train-metadata-assign.sh"
 RESOLVER="$SCRIPT_DIR/mode-resolver.sh"
 BINDING="$SCRIPT_DIR/repository-binding.sh"
-ALIASES_FILE="$REPO_ROOT/bubbles/workflows/aliases.yaml"
 MODES_FILE="$REPO_ROOT/bubbles/workflows/modes.yaml"
 CAPABILITIES_FILE="$REPO_ROOT/bubbles/agent-capabilities.yaml"
-OWNERSHIP_FILE="$REPO_ROOT/bubbles/agent-ownership.yaml"
 
 for dependency in jq yq; do
   if ! command -v "$dependency" >/dev/null 2>&1; then
@@ -386,7 +384,7 @@ if [[ "$(jq -S 'del(.releaseTrain, .flagsIntroduced)' "$STATE_FILE")" == "$NON_O
 else
   fail "apply changed a non-owned state value"
 fi
-if [[ "$(LC_ALL=C ls -l "$STATE_FILE" | awk '{print $1}')" == "-rw-r-----" ]]; then
+if [[ "$(stat -c '%a' "$STATE_FILE" 2>/dev/null || stat -f '%Lp' "$STATE_FILE" 2>/dev/null)" == "640" ]]; then
   pass "atomic replacement preserves the destination file mode"
 else
   fail "atomic replacement changed destination file mode"
@@ -410,7 +408,6 @@ fi
 exec "$REAL_SHA256SUM" "\$@"
 EOF
   chmod +x "$FIXTURE/bin/sha256sum"
-  drift_before="$(file_digest "$STATE_FILE")"
   run_expect_failure "replacement-time state drift" "changed concurrently" /usr/bin/env PATH="$FIXTURE/bin:$PATH" bash "$HELPER" "$STATE_DIR" --train alpha --apply "${AUTH_ARGS[@]}"
   if [[ "$(jq -r '.replacementDrift // false' "$STATE_FILE")" == "true" ]]; then
     pass "replacement-time drift is preserved instead of overwritten"

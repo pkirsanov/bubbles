@@ -300,6 +300,22 @@ Every row has one matching test-related Definition of Done item with the same ID
 
 - [ ] All 13 active scenario contracts have durable evidence, all 14 Test Plan rows have one-to-one parity items, no required check is skipped, and the owning validation agent accepts the final transition.
 
+### Test-Owned Routed Remediation Record
+
+**Phase:** test
+
+**Claim Source:** executed
+
+The BUG-050 regression findings `B050-REG-SHELLCHECK-05`, `B050-REG-SHELLCHECK-06`, and `B050-REG-SHELLCHECK-07` were remediated in the allowed BUG-038 selftest. The focused warning-level ShellCheck moved from exactly three `SC2034` diagnostics to zero diagnostics. The complete assignment selftest, linked runner-grant selftest, linked alias selftest, scenario resolution, traceability, syntax, portability, regression-quality guard, and repository ShellCheck lint all passed after the final test edit. See [Routed ShellCheck Test Remediation](report.md#routed-shellcheck-test-remediation---current-session).
+
+This record changes no Test Plan row, scenario, DoD checkbox, scope status, or certification field. It does not claim a complete independent run of all 14 Test Plan rows. Scope 1 remains `In Progress`, and complete independent Test Plan execution remains assigned to `bubbles.test`.
+
+> **Uncertainty Declaration - applies to every unchanged `[ ]` item above**
+> **What was attempted:** The routed three-warning ShellCheck red/green, complete assignment selftest, linked grant and alias mechanisms, scenario resolution, traceability, syntax, portability, regression-quality guard, repository ShellCheck lint, artifact lint, execution-substate guard, and release-manifest freshness check.
+> **What was observed:** The routed findings and remediation-specific mechanisms passed after the final test edit, while no DoD checkbox or completion state was advanced.
+> **Why this is uncertain:** This narrow remediation was not the complete independent 14-row BUG-038 completion sweep and did not perform human acceptance or validate-owned certification.
+> **What would resolve this:** Execute every Test Plan row as a complete independent BUG-038 verification, record one-to-one DoD evidence, obtain human implementation acceptance, and route the unchanged certification subtree to `bubbles.validate` for its own transition checks.
+
 ## Superseded Scopes (Do Not Execute)
 
 The prior authorization plan expected a wildcard top-level runner to reach mutation by presenting `bubbles.train` as a separate actor. The current runtime cannot dispatch `bubbles.train` from that runner. That expectation is superseded and must not be implemented or tested as success. Wildcard admission remains valid, followed by direct-only mutation refusal.

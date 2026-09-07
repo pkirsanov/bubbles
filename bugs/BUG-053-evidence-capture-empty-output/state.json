@@ -1,0 +1,95 @@
+{
+  "version": 3,
+  "bugId": "BUG-053",
+  "sourceFindings": ["F-B051-EVIDENCE-EMPTY-OUTPUT-002"],
+  "featureDir": "bugs/BUG-053-evidence-capture-empty-output",
+  "featureName": "Evidence Capture Empty Output Line Count Duplication",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because the canonical evidence formatter behavior ships across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-053-evidence-capture-empty-output"],
+    "allowedPaths": [
+      "bugs/BUG-053-evidence-capture-empty-output/**",
+      "BUGS.md",
+      "bubbles/scripts/evidence-capture.sh",
+      "bubbles/scripts/evidence-capture-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": null,
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "substate": "independently_verified",
+    "completedPhaseClaims": ["implement", "test"],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.validate",
+    "nextRequiredAction": "At scenario node integrate-publish-bubbles-main, execute the single batched full framework T6 after its dependency nodes are complete, then perform combined validation. Keep certification pending until that evidence exists.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Valid Empty Capture Formatting","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-valid-empty-capture-formatting",
+      "phasesExecuted": ["implement"],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-02T07:03:45Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-053-evidence-capture-empty-output/report.md#bug-053-focused-green",
+      "addressedFindings": ["F-B051-EVIDENCE-EMPTY-OUTPUT-002"],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-valid-empty-capture-formatting",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T07:16:30Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-053-evidence-capture-empty-output/report.md#bug-053-independent-focused-test-verification",
+      "addressedFindings": [],
+      "unresolvedFindings": []
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-02T07:16:30Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "Implementation RED and focused GREEN evidence are recorded. Independent T1-T5 verification passed on current bytes. Full framework T6 remains assigned to the combined scenario node, and certification remains untouched."
+}

@@ -1,0 +1,221 @@
+{
+  "version": 3,
+  "bugId": "BUG-052",
+  "sourceFindings": ["FP-PLAN-SP-PRECEDENCE"],
+  "featureDir": "bugs/BUG-052-plan-scope-progress-precedence",
+  "featureName": "Plan Scope Progress Precedence",
+  "status": "in_progress",
+  "workflowMode": "bugfix-fastlane",
+  "packetResolution": "full source bug packet required because plan authority and enforcement behavior change across downstream repositories",
+  "linkedImplementationSpec": null,
+  "linkedPlanningPacket": null,
+  "planningOnly": false,
+  "planningOnlyJustification": null,
+  "specDependsOn": [],
+  "workBoundary": {
+    "repositoryRoots": ["bubbles"],
+    "specTargets": ["bugs/BUG-052-plan-scope-progress-precedence"],
+    "allowedPaths": [
+      "bugs/BUG-052-plan-scope-progress-precedence/**",
+      "BUGS.md",
+      "bubbles/scripts/plan-dependency-depth-guard.sh",
+      "bubbles/scripts/plan-dependency-depth-guard-selftest.sh",
+      "bubbles/release-manifest.json"
+    ],
+    "crossRepoPolicy": "forbidden"
+  },
+  "certifiedAt": null,
+  "requiresRevalidation": false,
+  "execution": {
+    "goalContractRef": null,
+    "activeAgent": "bubbles.test",
+    "currentPhase": "test",
+    "currentScope": 1,
+    "substate": "independently_verified",
+    "completedPhaseClaims": ["implement", "test"],
+    "pendingTransitionRequests": [],
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Reconcile BUG-049 test-owned metadata from its durable receipts without rerunning T1-T5, then complete BUG-050. Preserve the one full framework T6 run for the combined post-BUG-050 validation before validate-owned certification.",
+    "audit": {"schemaVersion":"audit-run/v1","runId":null,"currentAttemptId":null,"attempts":[]}
+  },
+  "certification": {
+    "status": "in_progress",
+    "completedScopes": [],
+    "certifiedCompletedPhases": [],
+    "scopeProgress": [
+      {"scope":1,"name":"Certification-First Scope Progress Resolution","status":"not_started","dependsOn":[],"scopeDir":"scopes.md","evidenceFile":"report.md","certifiedAt":null}
+    ],
+    "lockdownState": {"active":false,"lockedScenarioIds":[]}
+  },
+  "policySnapshot": {
+    "grill": {"mode":"off","source":"operator-request"},
+    "tdd": {"mode":"scenario-first","source":"bugfix-fastlane-contract"},
+    "autoCommit": {"mode":"off","source":"operator-request"},
+    "lockdown": {"mode":"off","source":"repo-default"},
+    "regression": {"mode":"protected-scenarios","source":"repo-default"},
+    "validation": {"mode":"certification-required","source":"repo-default"}
+  },
+  "transitionRequests": [],
+  "reworkQueue": [],
+  "executionHistory": [
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["plan"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T06:34:49Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#planner-owned-inventory-reconciliation",
+      "addressedFindings": ["FP-B052-IMPLEMENTATION-FILES"],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["implement"],
+      "outcome": "completed_owned",
+      "completedAt": "2026-09-02T06:41:12Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#implementation-closeout-current-byte-checks",
+      "addressedFindings": [],
+      "unresolvedFindings": []
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T06:56:07Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#independent-focused-test-verification",
+      "addressedFindings": ["B052-MANIFEST-FRESHNESS-TRANSIENT"],
+      "unresolvedFindings": [
+        "B052-TEST-MECHANISM-HIGH-RISK-CONTROL",
+        "B052-T6-NOT-RUN-BY-INSTRUCTION"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["plan"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T07:24:27Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#planner-owned-high-risk-mechanism-reconciliation",
+      "addressedFindings": ["B052-TEST-MECHANISM-HIGH-RISK-CONTROL"],
+      "unresolvedFindings": ["B052-T6-NOT-RUN-BY-INSTRUCTION"]
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T07:32:20Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#independent-mechanism-reconciliation",
+      "addressedFindings": ["B052-TEST-MECHANISM-HIGH-RISK-CONTROL"],
+      "unresolvedFindings": ["B052-T6-NOT-RUN-BY-INSTRUCTION"]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["bootstrap"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T18:43:15Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": null,
+      "addressedFindings": [
+        "SCN-B052-001 planning contract now discriminates the required horizontal-plan diagnostic from the forbidden authority-conflict diagnostic",
+        "FR-B052-002 canonical-null fallback coverage is explicit in SCN-B052-005",
+        "scenario-manifest.json conforms to the strict version 2 producer contract"
+      ],
+      "unresolvedFindings": [
+        "origin/main T49 authority-conflict drift remains for bubbles.implement to reconcile",
+        "SCN-B052-001 exact diagnostic assertions remain for bubbles.implement and bubbles.test",
+        "SCN-B052-005 canonical-null fixture remains for bubbles.implement and bubbles.test",
+        "T6 full framework validation remains for bubbles.test"
+      ]
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["implement"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T19:11:00Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#originmain-reconciliation-focused-green",
+      "addressedFindings": [
+        "origin/main T49 authority-conflict drift was repurposed to canonical-wins exit 0",
+        "SCN-B052-001 now asserts the horizontal-plan diagnostic and rejects authority-conflict or incomplete-DAG diagnostics",
+        "SCN-B052-005 now covers canonical-null fallback",
+        "SCN-B052-006 and SCN-B052-007 preserve canonical-empty and semantically equal migration-copy behavior"
+      ],
+      "unresolvedFindings": [
+        "Independent BUG-052 verification and T6 full framework validation remain for bubbles.test"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["plan"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T19:48:49Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": null,
+      "addressedFindings": [
+        "B052-LINKED-TEST-TITLE-RESOLUTION",
+        "B052-MISSING-AUTHORED-LINKS",
+        "B052-TEST-PLAN-HEADER",
+        "B052-DOD-BINDING-AMBIGUITY",
+        "B052-TEST-PLAN-STATE-ROUTING"
+      ],
+      "unresolvedFindings": [
+        "B052-BEHAVIORAL-SELFTEST-NOT-RUN-BY-PLANNING-BOUNDARY",
+        "B052-T6-NOT-RUN-BY-INSTRUCTION",
+        "B052-CERTIFICATION-REMAINS-VALIDATE-OWNED"
+      ]
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "01-certification-first-scope-progress-resolution",
+      "phasesExecuted": ["test"],
+      "outcome": "route_required",
+      "completedAt": "2026-09-02T20:16:36Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-052-plan-scope-progress-precedence/report.md#final-independent-focused-verification-at-2658ec7",
+      "addressedFindings": [
+        "B052-BEHAVIORAL-SELFTEST-NOT-RUN-BY-PLANNING-BOUNDARY",
+        "B052-SC2016-SHELLCHECK-REVERIFICATION"
+      ],
+      "unresolvedFindings": [
+        "B052-T6-NOT-RUN-BY-INSTRUCTION",
+        "B052-CERTIFICATION-REMAINS-VALIDATE-OWNED"
+      ]
+    }
+  ],
+  "activeBugs": [],
+  "resolvedBugs": [],
+  "failures": [],
+  "lastUpdatedAt": "2026-09-02T20:16:36Z",
+  "scopeLayout": "single-file",
+  "artifacts": {"bug":"bug.md","spec":"spec.md","design":"design.md","scopes":"scopes.md","report":"report.md","uservalidation":"uservalidation.md","scenarioManifest":"scenario-manifest.json","testPlan":"test-plan.json","state":"state.json"},
+  "notes": "At 2658ec70e9def56ba4c38f38cbde0b8fb3e44231, final independent focused verification passed all seven authored links and scenario contracts, complete T1-T56 behavior including T49 and T55, adversarial regression quality, ShellCheck, and Bash syntax. Full framework T6 remains reserved for the single combined post-BUG-050 validation. The next route is BUG-049 test-owned metadata reconciliation from durable receipts without rerunning T1-T5, then BUG-050. Status remains in_progress and certification is unchanged."
+}

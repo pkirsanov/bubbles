@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "specId": "BUG-048",
+  "generatedBy": "bubbles.bug",
+  "generatedAt": "2026-09-01T07:58:36Z",
+  "scopes": [
+    {
+      "scopeId": "01-semantic-test-plan-path-extraction",
+      "scopeName": "Semantic Test Plan Path Extraction",
+      "tests": [
+        {"type":"functional","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B048-001","description":"Finding Accounting owner labels remain inert","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"compatibility","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B048-002","description":"Unique basename-only smoke.test resolves","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B048-003","description":"Missing actual path remains blocking","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"functional","category":"adversarial","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B048-004","description":"File-shaped metadata outside Test Plan remains inert","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"regression","category":"regression","file":"bubbles/scripts/state-transition-guard-selftest.sh","scenarioId":"SCN-B048-001","description":"Existing shell, command-wrapped, MJS, and placeholder Check 8 cases remain green","command":"bash bubbles/scripts/state-transition-guard-selftest.sh","liveSystem":false},
+        {"type":"Regression E2E","category":"regression","file":"bubbles/scripts/cli.sh","scenarioId":"SCN-B048-001","description":"Full framework validation preserves Check 8 behavior","command":"bash bubbles/scripts/cli.sh framework-validate","liveSystem":false}
+      ]
+    }
+  ]
+}

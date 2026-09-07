@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-053-evidence-capture-empty-output",
+  "scenarios": [
+    {
+      "id": "SCN-B053-001",
+      "title": "Empty successful output is formatted cleanly",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "high",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command exact empty-output metadata and exit assertion","satisfiedBy":["bubbles/scripts/evidence-capture-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/evidence-capture.sh"],"negativeControl":"Restore the grep-plus-fallback counter. The output must regain duplicate zero data or arithmetic diagnostics and fail the regression.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Evidence formatting is a command-line output contract."}
+    },
+    {
+      "id": "SCN-B053-002",
+      "title": "Empty failing output preserves the child exit",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"production command nonzero exit propagation and exact empty metadata assertion","satisfiedBy":["bubbles/scripts/evidence-capture-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/evidence-capture.sh"],"negativeControl":"Replace the exit-seven child with exit zero while retaining the expected wrapper exit. The propagation assertion must fail.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Child exit propagation is a command-line behavior."}
+    },
+    {
+      "id": "SCN-B053-003",
+      "title": "Non-empty counting remains compatible",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["pure-calculation"],
+      "riskTier": "medium",
+      "obligations": [{"trait":"pure-calculation","requiredProof":"production command one-line count and rendering assertion","satisfiedBy":["bubbles/scripts/evidence-capture-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/evidence-capture.sh"],"negativeControl":"Remove the child's only output line. The expected line count must change from one to zero.","negativeControlMechanism":"perturbed-input"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Line counting is a command-line formatter contract."}
+    },
+    {
+      "id": "SCN-B053-004",
+      "title": "Missing capture output remains a distinct failure",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["degraded-state"],
+      "riskTier": "high",
+      "obligations": [{"trait":"degraded-state","requiredProof":"production command missing-capture refusal assertion","satisfiedBy":["bubbles/scripts/evidence-capture-selftest.sh"]}],
+      "linkedTests": ["bubbles/scripts/evidence-capture-selftest.sh"],
+      "evidenceRefs": [],
+      "implementationRefs": ["bubbles/scripts/evidence-capture.sh"],
+      "testMechanism": {"entrypoint":"production-cli","inputOrigin":"synthetic-fixture","assertionSurface":"returned-value","dependencyPath":"synthetic-boundary","productionOwners":["bubbles/scripts/evidence-capture.sh"],"negativeControl":"Remove the capture-file existence check. The missing-path fixture must expose an empty or misleading evidence block.","negativeControlMechanism":"mutation"},
+      "liveProofNotApplicable": {"absentTrait":"user-visible-ui","reason":"Capture integrity is a command-line failure contract."}
+    }
+  ]
+}

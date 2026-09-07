@@ -729,3 +729,123 @@ No source or test command was executed as behavior evidence during this planning
 | Traceability | `timeout 120 bash bubbles/scripts/traceability-guard.sh bugs/BUG-038-train-metadata-assignment-mode-gap` | 0 | Thirteen scenarios map to thirteen Test Plan rows and thirteen DoD items with zero warnings. |
 
 BUG-038 remains `in_progress`. The next required owner remains `bubbles.test`. No new convergence iteration, certification transition, commit, push, reset, clean, source change, test change, or cross-repository change occurred.
+
+## Routed ShellCheck Test Remediation - Current Session
+
+**Phase:** test
+
+**Claim Source:** executed
+
+This test-owned slice addressed the three BUG-050 regression findings routed to BUG-038. It removed the unused `ALIASES_FILE`, `OWNERSHIP_FILE`, and `drift_before` assignments from `bubbles/scripts/release-train-metadata-assign-selftest.sh`. No suppression, severity change, production change, or behavioral assertion was removed.
+
+The first complete post-edit selftest exposed a macOS-only observation defect in the existing file-mode assertion. The helper had preserved numeric mode `640`, while `/bin/ls` rendered the symbolic token as `-rw-r-----@` because the replaced file carried `com.apple.provenance`. The test now checks numeric mode through the same GNU/BSD `stat` fallback used by the production helper. The complete selftest then passed without weakening the `640` requirement.
+
+### Focused ShellCheck RED And GREEN
+
+**Claim Source:** executed
+
+```text
+# BUG-038 routed ShellCheck warning RED
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 60 shellcheck -S warning -f gcc bubbles/scripts/release-train-metadata-assign-selftest.sh
+exit: 1
+lines: 3
+sha256: bcecdebeb43a232b51ce1cfcc1cec27700ab4d575f5597239589b09a424aeb67
+bubbles/scripts/release-train-metadata-assign-selftest.sh:11:1: warning: ALIASES_FILE appears unused. Verify use (or export if used externally). [SC2034]
+bubbles/scripts/release-train-metadata-assign-selftest.sh:14:1: warning: OWNERSHIP_FILE appears unused. Verify use (or export if used externally). [SC2034]
+bubbles/scripts/release-train-metadata-assign-selftest.sh:413:3: warning: drift_before appears unused. Verify use (or export if used externally). [SC2034]
+# BUG-038 final focused ShellCheck after portable mode repair
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=5s 60 shellcheck -S warning -f gcc bubbles/scripts/release-train-metadata-assign-selftest.sh
+exit: 0
+lines: 0
+sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+```
+
+### Complete Assignment Selftest
+
+**Claim Source:** executed
+
+The first complete run exited 1 with 114 captured lines and SHA-256 `e70261fdd97633f44f1917b2039413ba27f14e1da8ff3d81a2e26964829b3fd3`. Its sole failure was `FAIL: atomic replacement changed destination file mode`. Two disposable probes then observed symbolic `-rw-r-----@` and numeric `640`, grounding the portable test-observation repair.
+
+```text
+# BUG-038 complete assignment selftest after portable mode repair
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=10s 180 /opt/homebrew/bin/bash bubbles/scripts/release-train-metadata-assign-selftest.sh
+exit: 0
+lines: 114
+sha256: cfc89a7a8087ecff42455c1d440b6179ce199db9f95bb36ae14ab146cbc851a5
+PASS: exact v7 tuple resolves to release-train-assign-metadata
+PASS: default dry-run preserves destination bytes
+PASS: wildcard-admitted refusal preserves destination bytes
+PASS: explicit exclusion preserves destination bytes
+PASS: environment impersonation refusal preserves destination bytes
+PASS: atomic replacement preserves the destination file mode
+PASS: replacement-time drift is preserved instead of overwritten
+PASS: assignment preserves config, bundles, generated output, manifest, and invokes no lifecycle tool
+PASS: identical assignment is a byte-and-mtime preserving no-op
+PASS: unknown train preserves bytes and leaves no candidate residue
+release-train-metadata-assign-selftest: PASS
+```
+
+### Linked Mechanisms And Traceability
+
+**Claim Source:** executed
+
+```text
+scenario-test-resolve: exit=0; 14 reference(s) resolved via literal-scan; sha256=4e029abe95a9a334c2fa4a0dae92ca723db7058580b2768dbe148616c10b1b5c
+workflow-runner-grants-lint-selftest: exit=0; lines=33; sha256=30a81a4a9b8800a789747d60b44cce7a01c908c03e9dcce76c609f1ce6b51985
+PASS: wildcard-admission evaluator emitted marker 'admitted by wildcard grant'
+PASS: exclusion-precedence evaluator emitted marker 'explicitly excluded'
+PASS: default-denial evaluator emitted marker 'denied by default'
+mode-alias-selftest: exit=0; lines=17; sha256=c5470d12ad19baf84a095efc8ec05a3e2f007fed6863b67ed66167aec03c84d9
+PASS: BUG-038: exact train metadata assignment tuple resolves
+PASS: BUG-038: five existing train aliases retain their targets
+traceability-guard: exit=0; lines=119; sha256=e74ef3649db9e00a17dd8785294581f4875ee6bda0d504da6cea2017003f03ea
+Scenarios checked: 13
+Test rows checked: 14
+Edge confidence: declared=26 inferred=0 ambiguous=0
+RESULT: PASSED (0 warnings)
+```
+
+### Changed-Test Quality And Repository ShellCheck
+
+**Claim Source:** executed
+
+```text
+SELFTEST_SYNTAX_EXIT=0
+macOS portability guard: PASS; 16 portability classes clean
+SELFTEST_PORTABILITY_EXIT=0
+REGRESSION QUALITY RESULT: 0 violation(s), 0 warning(s)
+Files scanned: 1
+Files with adversarial signals: 1
+SELFTEST_REGRESSION_QUALITY_EXIT=0
+# BUG-038 repository ShellCheck lint after routed remediation
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=10s 780 /opt/homebrew/bin/bash bubbles/scripts/shellcheck-lint.sh
+exit: 0
+lines: 1
+sha256: ab177e5a066145010668821ec9167f18e9e06968ccca9b42264b597add16cac9
+shellcheck-lint: PASS - 605 script(s) clean at -S warning
+```
+
+### Release Manifest Regeneration And Freshness
+
+**Claim Source:** executed
+
+```text
+# BUG-038 release manifest regeneration after test change
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=10s 240 /opt/homebrew/bin/bash bubbles/scripts/generate-release-manifest.sh
+exit: 0
+lines: 1
+sha256: 9dba3ba137c0c0a6ad997d8dc69483ae6a2ed8fea003e3a934a02bba19728899
+Updated release manifest: 7.29.0 (980 managed files)
+# BUG-038 release manifest freshness after test change
+$ /opt/local/bin/gtimeout --signal=TERM --kill-after=10s 240 /opt/homebrew/bin/bash bubbles/scripts/generate-release-manifest.sh --check
+exit: 0
+lines: 1
+sha256: 3107222d9960d0b8e46679a81e1503f39d2f87de4b0abd2998fdd55aad7a221b
+Release manifest is current: 7.29.0 (980 managed files)
+```
+
+### Nonterminal Boundary
+
+**Claim Source:** interpreted
+
+**Interpretation:** The commands above prove the routed warning remediation, the unchanged focused behavior, the linked grant and alias mechanisms, traceability, portability, regression quality, and repository ShellCheck cleanliness. This narrow slice does not claim that the 14-row BUG-038 plan was independently executed as a completion sweep. It does not satisfy human acceptance, aggregate framework validation, release readiness, or validate-owned certification. BUG-038 and Scope 1 remain `in_progress`, every DoD checkbox remains unchanged, and the next required owner remains `bubbles.test` for the complete independent Test Plan run.

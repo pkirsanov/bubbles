@@ -13,7 +13,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+case "$SCRIPT_DIR" in
+    */.github/bubbles/scripts) REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)" ;;
+    *) REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)" ;;
+esac
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
