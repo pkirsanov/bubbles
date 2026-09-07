@@ -3013,7 +3013,7 @@ echo ""
 #     run is a legitimate pattern, so this is surfaced rather than blocked.
 # =============================================================================
 echo "--- Check 7C: Phase-Claim Execution Backing ---"
-claim_backing_analysis="$(python3 - "$state_file" <<'PY'
+claim_backing_analysis=$(python3 - "$state_file" <<'PY'
 import json
 import sys
 
@@ -3091,7 +3091,7 @@ if unbacked:
 if excess:
     print(f"EXCESS={'|'.join(excess)}")
 PY
-)"
+)
 
 if echo "$claim_backing_analysis" | grep -q '^NO_CLAIMS=1'; then
   info "No completedPhaseClaims recorded — phase-claim backing check skipped"

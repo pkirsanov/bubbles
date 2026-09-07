@@ -1,0 +1,156 @@
+{
+  "version": 1,
+  "specId": "BUG-043",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-08-31T23:26:00Z",
+  "scopes": [
+    {
+      "scopeId": "01-restore-dual-parser-compatibility",
+      "scopeName": "Restore Dual-Parser Compatibility",
+      "tests": [
+        {
+          "id": "TP-01",
+          "dodId": "DOD-TP-01",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "scenarioId": "SCN-B043-001",
+          "testTitle": "Regression: SCN-B043-001 repaired guard parses under real Bash 3 and Bash 5 on identical bytes",
+          "description": "Run the desired dual-parser assertion against one frozen source hash. Preserve the initial nonzero RED when Bash 3.2 rejects the frozen defect, then require both parser exits to be zero after repair.",
+          "command": "bash bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "timeoutSeconds": 1800,
+          "liveSystem": true,
+          "regressionRequired": true,
+          "redBeforeGreen": true,
+          "executionOrder": 1,
+          "redOracle": {
+            "bash3ParseExit": 2,
+            "bash5ParseExit": 0
+          },
+          "greenOracle": {
+            "bash3ParseExit": 0,
+            "bash5ParseExit": 0,
+            "identicalSourceHash": true
+          }
+        },
+        {
+          "id": "TP-02",
+          "dodId": "DOD-TP-02",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "scenarioId": "SCN-B043-002",
+          "testTitle": "Regression: SCN-B043-002 source-derived fixture crosses the former Bash 3 recovery boundary",
+          "description": "Extract the complete Check 7C assignment and exact Check 16 heading from unique current-source anchors. Append the named sentinel and require exactly one emission from each repaired interpreter leg.",
+          "command": "bash bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "timeoutSeconds": 1800,
+          "liveSystem": true,
+          "regressionRequired": true,
+          "redBeforeGreen": true,
+          "executionOrder": 2,
+          "assertions": {
+            "fixtureOrigin": "current-source-anchors",
+            "openingAnchorCount": 1,
+            "closingAnchorCount": 1,
+            "headingAnchorCount": 1,
+            "sentinel": "BUG043_SENTINEL_AFTER_FORMER_LINE_4016",
+            "bash3SentinelCount": 1,
+            "bash5SentinelCount": 1
+          }
+        },
+        {
+          "id": "TP-03",
+          "dodId": "DOD-TP-03",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "scenarioId": "SCN-B043-002",
+          "testTitle": "Mutation: SCN-B043-002 exact outer-quote restoration recreates the parser divergence",
+          "description": "Restore only the redundant opening and closing assignment quotes exactly once in a private copy. Preserve every heredoc byte and assert the closed repaired-versus-mutant parse and sentinel matrix.",
+          "command": "bash bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "timeoutSeconds": 1800,
+          "liveSystem": true,
+          "regressionRequired": true,
+          "redBeforeGreen": true,
+          "executionOrder": 3,
+          "negativeControl": "Restore the opening quote before the Check 7C command substitution and the closing quote after its closing parenthesis exactly once.",
+          "mutationOracle": {
+            "quoteBoundaryMutationCount": 2,
+            "heredocBytesChanged": 0,
+            "repaired": {
+              "bash3ParseExit": 0,
+              "bash5ParseExit": 0,
+              "bash3SentinelCount": 1,
+              "bash5SentinelCount": 1
+            },
+            "quoteRestorationMutant": {
+              "bash3ParseExit": 2,
+              "bash5ParseExit": 0,
+              "bash3SentinelCount": 0,
+              "bash5SentinelCount": 1
+            }
+          }
+        },
+        {
+          "id": "TP-04",
+          "dodId": "DOD-TP-04",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "scenarioId": "SCN-B043-003",
+          "testTitle": "Regression: SCN-B043-003 supported-runtime transition verdicts remain unchanged",
+          "description": "Run the complete existing transition guard selftest under supported Bash. Reject any bypass, skipped check, applicability drift, severity drift, or verdict drift.",
+          "command": "bash bubbles/scripts/state-transition-guard-selftest.sh",
+          "timeoutSeconds": 7200,
+          "liveSystem": true,
+          "regressionRequired": true,
+          "redBeforeGreen": false,
+          "executionOrder": 4
+        },
+        {
+          "id": "TP-05",
+          "dodId": "DOD-TP-05",
+          "type": "integration",
+          "category": "integration",
+          "file": "bubbles/scripts/generate-installer-selftest.sh",
+          "relatedFiles": [
+            "bubbles/scripts/install-provenance-selftest.sh",
+            "bubbles/scripts/v5.3-selftest.sh"
+          ],
+          "scenarioId": "SCN-B043-004",
+          "testTitle": "Regression: SCN-B043-004 installed transition guard matches source bytes and parser parity",
+          "description": "Generate the release manifest, install into a private downstream fixture, compare source and installed guard hashes, and run both real parser legs against the installed bytes.",
+          "command": "bash bubbles/scripts/generate-installer-selftest.sh && bash bubbles/scripts/install-provenance-selftest.sh && bash bubbles/scripts/v5.3-selftest.sh",
+          "timeoutSeconds": 7200,
+          "liveSystem": true,
+          "regressionRequired": true,
+          "redBeforeGreen": false,
+          "executionOrder": 5,
+          "assertions": {
+            "manifestGeneratedByCanonicalGenerator": true,
+            "installedHashMatchesSource": true,
+            "bash3ParseExit": 0,
+            "bash5ParseExit": 0,
+            "directDownstreamEdits": 0
+          }
+        },
+        {
+          "id": "TP-06",
+          "dodId": "DOD-TP-06",
+          "type": "functional",
+          "category": "functional",
+          "file": "bubbles/scripts/cli.sh",
+          "scenarioId": "SCN-B043-003",
+          "testTitle": "Regression: BUG-043 framework validation and release readiness preserve parser and propagation contracts",
+          "description": "Run full framework validation and release readiness on the final source bytes after all focused parser, semantic, and installer checks pass.",
+          "command": "bash bubbles/scripts/cli.sh framework-validate && bash bubbles/scripts/cli.sh release-check",
+          "timeoutSeconds": 21600,
+          "liveSystem": true,
+          "regressionRequired": true,
+          "redBeforeGreen": false,
+          "executionOrder": 6
+        }
+      ]
+    }
+  ]
+}

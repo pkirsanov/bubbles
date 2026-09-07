@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "spec": "BUG-043-state-transition-guard-bash3-parser-compatibility",
+  "generatedBy": "bubbles.plan",
+  "generatedAt": "2026-08-31T23:26:00Z",
+  "scenarios": [
+    {
+      "id": "SCN-B043-001",
+      "title": "Source guard parses under Bash 3 and Bash 5",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["dependency-path", "shared-consumer"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "linkedTests": [
+        "bubbles/scripts/bash-baseline-guard-selftest.sh"
+      ],
+      "plannedTests": [
+        {
+          "id": "TP-01",
+          "file": "bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "testId": "Regression: SCN-B043-001 repaired guard parses under real Bash 3 and Bash 5 on identical bytes",
+          "testState": "planned-not-authored",
+          "liveSystem": true
+        }
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Freeze one canonical guard hash and assert the real Bash 3.2 and Bash 5.3 parser boundary against those exact bytes.",
+          "satisfiedBy": ["TP-01"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove producer parser parity and the current command consumer surface against the same canonical guard bytes.",
+          "satisfiedBy": [
+            "TP-01",
+            "parity:TP-01-identical-source-hash",
+            "consumer-surface:TP-01-real-parser-process-exits"
+          ]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Restore only the two redundant outer assignment quotes exactly once in a private source-derived copy. Bash 3.2 must reject that copy before the sentinel.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveExpectation": "One frozen repaired-source hash produces Bash 3.2 exit 0 and Bash 5.3 exit 0 through the real parser binaries.",
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Parser compatibility is a framework command property with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B043-002",
+      "title": "The regression rejects the incompatible grammar",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["dependency-path", "shared-consumer"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "linkedTests": [
+        "bubbles/scripts/bash-baseline-guard-selftest.sh"
+      ],
+      "plannedTests": [
+        {
+          "id": "TP-02",
+          "file": "bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "testId": "Regression: SCN-B043-002 source-derived fixture crosses the former Bash 3 recovery boundary",
+          "testState": "planned-not-authored",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-03",
+          "file": "bubbles/scripts/bash-baseline-guard-selftest.sh",
+          "testId": "Mutation: SCN-B043-002 exact outer-quote restoration recreates the parser divergence",
+          "testState": "planned-not-authored",
+          "liveSystem": true
+        }
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Execute a fixture derived from unique current-source anchors through both real parsers and assert the post-boundary sentinel.",
+          "satisfiedBy": ["TP-02", "TP-03"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove repaired-versus-mutant parser parity and the post-boundary command output visible to the current consumer surface.",
+          "satisfiedBy": [
+            "TP-02",
+            "TP-03",
+            "parity:TP-03-repaired-versus-quote-restoration-matrix",
+            "consumer-surface:TP-02-post-boundary-sentinel"
+          ]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Restore only the opening and closing outer quotes around the Check 7C assignment exactly once. Preserve the apostrophe and every executable heredoc byte.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveExpectation": "The repaired Bash 3.2 and Bash 5.3 fixtures each parse with exit 0 and emit one BUG043_SENTINEL_AFTER_FORMER_LINE_4016. The quote-restoration mutant yields parse exits 2 and 0 with sentinel counts 0 and 1.",
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "The adversarial check validates shell grammar rather than a rendered surface."
+      }
+    },
+    {
+      "id": "SCN-B043-003",
+      "title": "Supported-runtime guard behavior remains stable",
+      "requiredTestType": "functional",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["dependency-path", "shared-consumer"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "linkedTests": [
+        "bubbles/scripts/state-transition-guard-selftest.sh"
+      ],
+      "plannedTests": [
+        {
+          "id": "TP-04",
+          "file": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "testId": "Regression: SCN-B043-003 supported-runtime transition verdicts remain unchanged",
+          "testState": "planned-not-authored",
+          "liveSystem": true
+        },
+        {
+          "id": "TP-06",
+          "file": "bubbles/scripts/cli.sh",
+          "testId": "Regression: BUG-043 framework validation and release readiness preserve parser and propagation contracts",
+          "testState": "planned-not-authored",
+          "liveSystem": true
+        }
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Execute the real transition guard selftest path under supported Bash and preserve every existing verdict and applicability result.",
+          "satisfiedBy": ["TP-04", "TP-06"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove the guard owner and aggregate framework consumers observe unchanged transition semantics.",
+          "satisfiedBy": [
+            "TP-04",
+            "TP-06",
+            "parity:TP-04-existing-verdict-matrix",
+            "consumer-surface:TP-06-framework-and-release-cli"
+          ]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "returned-value",
+        "dependencyPath": "same-origin-real",
+        "productionOwners": [
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Alter the repaired branch outcome. An existing transition fixture must detect the semantic drift.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveExpectation": "The complete supported-Bash transition guard selftest and both aggregate CLI checks exit zero without a skipped check or changed verdict.",
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Transition policy is a repository guard result with no rendered product surface."
+      }
+    },
+    {
+      "id": "SCN-B043-004",
+      "title": "Downstream installation receives the repaired guard",
+      "requiredTestType": "integration",
+      "scopeRef": "Scope 1",
+      "behaviorTraits": ["dependency-path", "shared-consumer"],
+      "riskTier": "high",
+      "regressionRequired": true,
+      "linkedTests": [
+        "bubbles/scripts/generate-installer-selftest.sh",
+        "bubbles/scripts/install-provenance-selftest.sh",
+        "bubbles/scripts/v5.3-selftest.sh"
+      ],
+      "plannedTests": [
+        {
+          "id": "TP-05",
+          "file": "bubbles/scripts/generate-installer-selftest.sh",
+          "testId": "Regression: SCN-B043-004 installed transition guard matches source bytes and parser parity",
+          "testState": "planned-not-authored",
+          "liveSystem": true
+        }
+      ],
+      "evidenceRefs": [],
+      "implementationRefs": [
+        "install.sh",
+        "bubbles/release-manifest.json",
+        "bubbles/scripts/state-transition-guard.sh"
+      ],
+      "obligations": [
+        {
+          "trait": "dependency-path",
+          "requiredProof": "Generate the release manifest, install into a private downstream fixture, and execute the real parser boundary against installed bytes.",
+          "satisfiedBy": ["TP-05"]
+        },
+        {
+          "trait": "shared-consumer",
+          "requiredProof": "Prove source-to-installed byte parity and the current installed command surface without direct downstream edits.",
+          "satisfiedBy": [
+            "TP-05",
+            "parity:TP-05-source-installed-sha256",
+            "consumer-surface:TP-05-installed-parser-process-exits"
+          ]
+        }
+      ],
+      "testMechanism": {
+        "entrypoint": "production-cli",
+        "inputOrigin": "synthetic-fixture",
+        "assertionSurface": "persisted-state",
+        "dependencyPath": "ephemeral-real",
+        "productionOwners": [
+          "install.sh",
+          "bubbles/release-manifest.json",
+          "bubbles/scripts/state-transition-guard.sh"
+        ],
+        "negativeControl": "Install a manifest with the old guard checksum. Byte parity or the parser matrix must fail.",
+        "negativeControlMechanism": "mutation"
+      },
+      "liveExpectation": "The canonical generator and installer produce an installed guard with the source SHA-256, and both real parser legs exit zero on that copy.",
+      "liveProofNotApplicable": {
+        "absentTrait": "user-visible-ui",
+        "reason": "Installer propagation is a repository artifact contract with no rendered product surface."
+      }
+    }
+  ]
+}
