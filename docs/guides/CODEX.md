@@ -18,6 +18,32 @@ Open the repository with Codex, then use a matching skill or ask explicitly for
 one of the `bubbles_*` specialist agents. The source MCP server starts through
 the checked-in `.codex/config.toml` configuration.
 
+## Goal slash command (optional)
+
+Codex slash commands are user-local custom prompts, not MCP prompts. Install
+the Bubbles template once, then restart Codex:
+
+```sh
+bash bubbles/scripts/install-codex-prompt.sh
+```
+
+In a downstream installation, run the installed counterpart:
+
+```sh
+bash .github/bubbles/scripts/install-codex-prompt.sh
+```
+
+It creates `bubbles-goal.md` under `$CODEX_HOME/prompts` (or
+`~/.codex/prompts`) without replacing an existing file. Invoke it with:
+
+```text
+/prompts:bubbles-goal Add a compatibility check for …
+```
+
+The prompt directs Codex's main agent to spawn `bubbles_goal`; that agent then
+coordinates the appropriate specialist agents. Use `--force` only to replace a
+locally customized prompt with Bubbles' template.
+
 ## Downstream installation
 
 After installing Bubbles into a product repository, add these project-owned

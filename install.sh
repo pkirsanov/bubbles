@@ -555,6 +555,18 @@ if [[ -d "$TEMP_DIR/bubbles/mcp" ]]; then
   ok "$(find "${TARGET}/bubbles/mcp" -type f 2>/dev/null | wc -l) MCP file(s) installed"
 fi
 
+# ── Install Codex custom-prompt templates ───────────────────────────────
+# Codex custom prompts are intentionally user-local, so this copies only the
+# portable template and helper into Bubbles' managed payload. The helper writes
+# to the user's prompt directory only when they explicitly run it.
+if [[ -d "$TEMP_DIR/bubbles/codex-prompts" ]]; then
+  info "Installing Codex prompt templates..."
+  mkdir -p "${TARGET}/bubbles/codex-prompts"
+  cp -R "$TEMP_DIR"/bubbles/codex-prompts/. "${TARGET}/bubbles/codex-prompts/"
+  bubbles_prune_managed_tree_orphans "bubbles/codex-prompts"
+  ok "$(find "${TARGET}/bubbles/codex-prompts" -type f 2>/dev/null | wc -l) Codex prompt template(s) installed"
+fi
+
 # ── Register the Bubbles MCP server in .vscode/mcp.json (unique id) ────
 # VS Code reads each workspace folder's own .vscode/mcp.json. When several
 # folders in a multi-root workspace all register a server under the SAME

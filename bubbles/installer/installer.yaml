@@ -122,6 +122,14 @@ steps:
   bug_class: missing-mcp-surface
   required: true
 
+- name: install_codex_prompt_templates
+  type: directory_copy
+  target_dir: bubbles/codex-prompts
+  source_dir: bubbles/codex-prompts
+  marker: 'Installing Codex prompt templates'
+  bug_class: missing-codex-prompt-template
+  required: true
+
 - name: register_mcp_vscode
   type: mcp_register
   target_dir: .vscode/mcp.json
@@ -351,6 +359,8 @@ required_artifacts:
   install_step: install_workflow_alias_map
 - path: bubbles/registry/gates.yaml
   install_step: install_registry
+- path: bubbles/codex-prompts/bubbles-goal.md
+  install_step: install_codex_prompt_templates
 - path: skills/bubbles-result-envelope/SKILL.md
   install_step: install_skills
 - path: skills/bubbles-quality-gates-catalog/SKILL.md
