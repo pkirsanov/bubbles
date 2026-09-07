@@ -40,6 +40,35 @@ Maintained for the Bubbles framework source repository. This checkout does not h
 - Tautological regressions are forbidden: if all fixtures already satisfy the broken filter/gate/path, the regression cannot detect the bug.
 - Required tests MUST NOT use bailout returns such as `if (page.url().includes('/login')) { return; }` or equivalent failure-condition early exits.
 
+### G028 Privileged Reality-Scan Boundary
+
+Use only the canonical Bubbles CLI for an authoritative reality scan:
+
+```bash
+# Framework source checkout
+bash bubbles/scripts/cli.sh scan <classified-work-path> --verbose
+
+# Installed downstream checkout
+bash .github/bubbles/scripts/cli.sh scan <classified-work-path> --verbose
+```
+
+- `cli.sh scan` and transition-guard Check 16 enter `privileged-bash-entry-v1` directly.
+- They establish `/usr/bin/env -i`, `BUBBLES_SECURITY_ENTRY_MODE=direct`, and `/bin/bash -p` before scanner module sourcing.
+- A raw `implementation-reality-scan.sh` invocation is compatibility-only.
+- Its `compat-reexec` path cannot attest to or reverse pre-boundary contamination. It cannot supply canonical validation evidence.
+- Security authority requires fixed root-protected `/usr/bin/perl` under `root-protected-perl-supervisor-v1`.
+- It also requires authenticated Python under `root-protected-native-python-v1`.
+- Perl owns one direct worker, the fixed 30-second wall, the two-second grace, and fixed output limits.
+- It signals only an unreaped worker, calls `waitpid`, and then emits `BPS1`.
+- Bash holds only the Perl supervisor wait handle. Bash never signals a worker or watchdog PID.
+- Worker text, pipe EOF, and descriptor-holding descendants never determine completion. This boundary makes no recursive descendant-containment claim.
+- Diagnostics expose numeric status, closed enums, and protocol identities. They never replay raw worker output, environment values, or PIDs.
+- Missing or untrusted Perl fails closed with `SUPERVISOR_UNAVAILABLE` or `SUPERVISOR_UNTRUSTED`.
+- Never use a PATH-selected Perl, Bash supervisor, Python supervisor, external timeout, fallback, or bypass.
+- Remediation must install or provide a root-protected fixed `/usr/bin/perl` and an authenticated Python toolchain. Do not suggest a weaker execution path.
+- Accepted evidence binds the exact immutable candidate and epoch `privileged-native-supervision-v2`.
+- It identifies `BSEC1`, `BPS1`, `PYSEC1`, `PYMOD1`, `SCS1`, `SEC-R1`, `SEC-R2`, `HAR-R1`, `HAR-R2`, and `HAR-R3`.
+
 ---
 
 ## Terminal Discipline
@@ -56,8 +85,8 @@ See [terminal-discipline.instructions.md](instructions/terminal-discipline.instr
 **This applies to ALL work, whether initiated via a `bubbles.*` prompt or a regular agent request.**
 
 Full workflow rules, artifact templates, and verification gates are in:
-- [agent-common.md](agents/bubbles_shared/agent-common.md) — Anti-Fabrication Policy, Execution Evidence Standard, Canonical Test Taxonomy
-- [scope-workflow.md](agents/bubbles_shared/scope-workflow.md) — Scope templates, artifact structure, phase execution flow
+- [agent-common.md](../agents/bubbles_shared/agent-common.md) — Anti-Fabrication Policy, Execution Evidence Standard, Canonical Test Taxonomy
+- [scope-workflow.md](../agents/bubbles_shared/scope-workflow.md) — Scope templates, artifact structure, phase execution flow
 
 ### Source-Repo Evidence Model (G085 — no persistent `specs/`)
 
@@ -139,8 +168,8 @@ bash bubbles/scripts/cli.sh framework-validate
 # 4. Run artifact lint (downstream/fixture spec dir)
 bash bubbles/scripts/artifact-lint.sh specs/<NNN-feature-name>
 
-# 5. Run implementation reality scan
-bash bubbles/scripts/implementation-reality-scan.sh specs/<NNN-feature-name> --verbose
+# 5. Run implementation reality scan through the privileged CLI boundary
+bash bubbles/scripts/cli.sh scan specs/<NNN-feature-name> --verbose
 
 # 6. Run state transition guard
 bash bubbles/scripts/state-transition-guard.sh specs/<NNN-feature-name>
