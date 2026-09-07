@@ -41,28 +41,39 @@
       "docs/recipes/release-planning.md",
       "bubbles/cheatsheet/vocabulary.json",
       "docs/CHEATSHEET.md",
-      "docs/its-not-rocket-appliances.html"
+      "docs/its-not-rocket-appliances.html",
+      "skills/bubbles-quality-gates-catalog/SKILL.md"
     ]
   },
   "certifiedAt": null,
   "requiresRevalidation": false,
   "execution": {
-    "substate": "independently_verified",
     "goalContractRef": {
-      "goalId": "gc:vscode-1cd624debf3423a7635289b9c293a70c:2",
-      "revision": 2,
-      "sourceRequestDigest": "sha256:83843eddbec5643174eb4e15d13166054e6cc41815b8ef12c06e439d754e9848"
+      "goalId": "gc:vscode-525bd37be99c7e973d43fd329dd5150e:4",
+      "revision": 4,
+      "sourceRequestDigest": "sha256:da5b8052e5571c04c9cc8f59050f5f8bbc052819a12d371918946808f82b5508"
     },
     "activeAgent": "bubbles.plan",
-    "currentPhase": "plan",
-    "currentScope": 2,
-    "runStartedAt": "2026-08-15T16:41:51Z",
-    "completedPhaseClaims": [
-      "test"
-    ],
+    "currentPhase": "bootstrap",
+    "currentPhaseDetail": "convergence-iteration-10-sec005-adjudication",
+    "currentScope": 1,
+    "runStartedAt": "2026-09-03T05:49:47Z",
+    "completedPhaseClaims": [],
     "pendingTransitionRequests": [],
-    "nextRequiredOwner": "bubbles.docs",
-    "nextRequiredAction": "Update the ten operator-approved G043/G101 documentation surfaces and BUGS.md, use canonical generators only within the approved boundary, record any proven extra generator path before requesting another revision, then return BUG-032 to bubbles.plan. Certification remains in_progress.",
+    "nextRequiredOwner": "bubbles.test",
+    "nextRequiredAction": "Remove the BUG032-SEC-005-G040-DIAGNOSTIC-INJECTION variables, fixtures, assertions, and SEC-003 failure-counter fold from bubbles/scripts/state-transition-guard-selftest.sh while preserving the BUG032-REG-C5A-TYPE-COLUMN-001 hunk byte-for-byte. Retain only the authorized SEC-001 through SEC-004 security identities. Do not run the complete transition selftest until the test-owned oracle is coherent.",
+    "currentEvidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md#convergence-iteration-10-sec-005-adjudication",
+    "substate": "needs_reverification",
+    "parallelReadyOwners": [
+      {
+        "owner": "bubbles.test",
+        "lane": "A-SECURITY-ORACLE-CORRECTION",
+        "scope": 1
+      }
+    ],
+    "independentRoutedFindings": [
+      "BUG035-D14-EMPTY-OUTPUT-COUNT"
+    ],
     "audit": {
       "schemaVersion": "audit-run/v1",
       "runId": null,
@@ -87,7 +98,7 @@
       {
         "scope": 2,
         "name": "Receipt Clone Execution Identity",
-        "status": "in_progress",
+        "status": "done",
         "dependsOn": [
           1
         ],
@@ -98,7 +109,7 @@
       {
         "scope": 3,
         "name": "G101 Delivery-Capable Mode Semantics",
-        "status": "blocked",
+        "status": "done",
         "dependsOn": [
           2
         ],
@@ -109,7 +120,7 @@
       {
         "scope": 4,
         "name": "Contract Reconciliation And Full Validation",
-        "status": "not_started",
+        "status": "in_progress",
         "dependsOn": [
           1,
           2,
@@ -128,15 +139,15 @@
   "policySnapshot": {
     "grill": {
       "mode": "off",
-      "source": "operator-request"
+      "source": "repo-default"
     },
     "tdd": {
       "mode": "scenario-first",
-      "source": "bugfix-fastlane-contract"
+      "source": "workflow-forced"
     },
     "autoCommit": {
       "mode": "off",
-      "source": "operator-request"
+      "source": "user-request"
     },
     "lockdown": {
       "mode": "off",
@@ -144,7 +155,7 @@
     },
     "regression": {
       "mode": "protected-scenarios",
-      "source": "bugfix-fastlane-contract"
+      "source": "repo-default"
     },
     "validation": {
       "mode": "certification-required",
@@ -214,12 +225,626 @@
         "BUG032-VAL-STATE-GUARD",
         "BUG032-VAL-COLD-GATES"
       ]
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 Spec 045 G026 repair",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "completed_owned",
+      "completedAt": "2026-08-30T00:04:55Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-30-spec-045-g026-repair",
+      "addressedFindings": [
+        "AUD-045-G026-009"
+      ]
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 G026 revision-20 independent verification",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "completed_owned",
+      "completedAt": "2026-08-30T00:25:31Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-30-independent-g026-verification",
+      "addressedFindings": [
+        "AUD-045-G026-009"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 planning and state truth reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-30T00:34:49Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-30-planning-and-state-reconciliation",
+      "addressedFindings": [
+        "BUG032-PLAN-001",
+        "BUG032-PLAN-002",
+        "BUG032-PLAN-003",
+        "BUG032-PLAN-004"
+      ],
+      "unresolvedFindings": [
+        "BUG032-OPEN-001",
+        "BUG032-OPEN-002",
+        "BUG032-OPEN-003",
+        "BUG032-OPEN-004",
+        "BUG032-OPEN-005",
+        "BUG032-OPEN-006",
+        "BUG032-OPEN-007"
+      ]
+    },
+    {
+      "agent": "bubbles.gaps",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 revision-21 post-regression gap closure",
+      "phasesExecuted": [
+        "gaps"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-30T06:25:49Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-30-revision-21-gap-closure",
+      "addressedFindings": [
+        "BUG032-REG-G060-001",
+        "BUG032-OPEN-002",
+        "BUG032-REG-PORT-001",
+        "BUG032-OPEN-004",
+        "BUG032-OPEN-007",
+        "BUG032-REG-DOC-001",
+        "BUG032-REG-PROV-001"
+      ],
+      "unresolvedFindings": [
+        "BUG032-OPEN-001",
+        "BUG032-OPEN-003",
+        "BUG032-OPEN-005",
+        "BUG032-OPEN-006"
+      ]
+    },
+    {
+      "agent": "bubbles.regression",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 revision-22 regression re-verification",
+      "phasesExecuted": [
+        "regression"
+      ],
+      "outcome": "completed_diagnostic",
+      "completedAt": "2026-08-30T07:11:04Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-30-revision-22-regression-completion",
+      "addressedFindings": [
+        "AUD-045-G026-009",
+        "BUG032-REG-G060-001",
+        "BUG032-OPEN-002",
+        "BUG032-REG-PORT-001",
+        "BUG032-OPEN-004",
+        "BUG032-OPEN-007",
+        "BUG032-REG-DOC-001",
+        "BUG032-REG-PROV-001"
+      ],
+      "unresolvedFindings": [
+        "BUG032-OPEN-001",
+        "BUG032-OPEN-003",
+        "BUG032-OPEN-005",
+        "BUG032-OPEN-006"
+      ]
+    },
+    {
+      "agent": "bubbles.simplify",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 revision-22 simplification review",
+      "phasesExecuted": [
+        "simplify"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-30T16:58:49Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-30-simplify-completion",
+      "addressedFindings": [
+        "BUG032-OPEN-003"
+      ],
+      "unresolvedFindings": [
+        "BUG032-OPEN-001",
+        "BUG032-OPEN-005",
+        "BUG032-OPEN-006"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 convergence-3 planning-owner remediation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-31T01:36:42Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-31-planning-owner-handoff",
+      "addressedFindings": [
+        "BUG032-PLAN-013-MAPPING",
+        "BUG032-PLAN-D3-PARITY",
+        "BUG032-PLAN-MACHINE-HANDOFF",
+        "BUG032-PLAN-ROUTING-STATE"
+      ],
+      "unresolvedFindings": [
+        "BUG032-SCN-013-EXECUTION",
+        "BUG032-SCOPE-2-REPLAY",
+        "BUG032-HARDEN-003",
+        "BUG032-SCOPE-4-DELIVERY",
+        "BUG032-VALIDATE-CERTIFICATION",
+        "BUG032-G136-HUMAN-ACCEPTANCE"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 convergence-3 complete five-finding planning reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-31T03:31:39Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-08-31-complete-five-finding-planning-reconciliation",
+      "addressedFindings": [
+        "BUG032-PLAN-FIVE-FINDING-MAPPING"
+      ],
+      "unresolvedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02",
+        "BUG032-SCOPE-2-REPLAY",
+        "BUG032-SEQUENTIAL-SCOPE-ORDER",
+        "BUG032-HARDEN-003",
+        "BUG032-SCOPE-4-DELIVERY",
+        "BUG032-VALIDATE-CERTIFICATION",
+        "BUG032-G136-HUMAN-ACCEPTANCE"
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 Check 8B authored-test metadata reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-08-31T22:38:42Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": ".specify/runtime/tool-calls.jsonl#row-18",
+      "addressedFindings": [
+        "BUG032-PLAN-STALE-TESTSTATE"
+      ],
+      "unresolvedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02"
+      ]
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 Scope 1 bounded Check 8B classifier implementation",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T00:15:45Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-scope-1-implementation-red-and-green-handoff",
+      "addressedFindings": [
+        "BUG032-IMPLEMENTATION-EVIDENCE-HANDOFF"
+      ],
+      "unresolvedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02"
+      ]
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 Scope 1 five-finding independent verification",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T04:35:46Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-independent-five-finding-adjudication",
+      "addressedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02"
+      ],
+      "unresolvedFindings": [],
+      "nextRequiredOwner": "bubbles.regression"
+    },
+    {
+      "agent": "bubbles.implement",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 claim-source proximity remediation",
+      "phasesExecuted": [
+        "implement"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T04:58:39Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-bug032-reg-prov-002a-remediation",
+      "addressedFindings": [
+        "BUG032-REG-PROV-002A"
+      ],
+      "unresolvedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT",
+        "BUG032-REG-PROV-002B"
+      ],
+      "nextRequiredOwner": "bubbles.test"
+    },
+    {
+      "agent": "bubbles.test",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 test-artifact claim-source proximity remediation",
+      "phasesExecuted": [
+        "test"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T05:02:34Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-bug032-reg-prov-002b-remediation",
+      "addressedFindings": [
+        "BUG032-REG-PROV-002B"
+      ],
+      "unresolvedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.regression"
+    },
+    {
+      "agent": "bubbles.regression",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 provenance repair regression re-adjudication",
+      "phasesExecuted": [
+        "regression"
+      ],
+      "outcome": "completed_diagnostic",
+      "completedAt": "2026-09-01T05:16:19Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-regression-provenance-re-adjudication",
+      "addressedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02",
+        "BUG032-REG-PROV-002A",
+        "BUG032-REG-PROV-002B"
+      ],
+      "unresolvedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.simplify"
+    },
+    {
+      "agent": "bubbles.simplify",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 post-regression simplification review",
+      "phasesExecuted": [
+        "simplify"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T05:33:47Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-simplify-phase-review",
+      "addressedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02",
+        "BUG032-REG-PROV-002A",
+        "BUG032-REG-PROV-002B"
+      ],
+      "unresolvedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.gaps"
+    },
+    {
+      "agent": "bubbles.gaps",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 post-simplify current-source and artifact audit",
+      "phasesExecuted": [
+        "gaps"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T05:50:21Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-gaps-phase-current-source-and-artifact-audit",
+      "addressedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02",
+        "BUG032-REG-PROV-002A",
+        "BUG032-REG-PROV-002B"
+      ],
+      "unresolvedFindings": [
+        "BUG032-GAPS-PLAN-STATE-001",
+        "BUG032-GAPS-TESTPLAN-001",
+        "BUG032-HARDEN-003",
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.plan"
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 planning status and Test Plan reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T06:03:02Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-planning-status-and-test-plan-reconciliation",
+      "addressedFindings": [
+        "BUG032-GAPS-PLAN-STATE-001",
+        "BUG032-GAPS-TESTPLAN-001"
+      ],
+      "unresolvedFindings": [
+        "BUG032-HARDEN-003",
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.bug"
+    },
+    {
+      "agent": "bubbles.bug",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 BUG032-HARDEN-003 narrative reconciliation",
+      "phasesExecuted": [],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T06:12:46Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/bug.md#current-scope-and-evidence-status",
+      "addressedFindings": [
+        "BUG032-HARDEN-003"
+      ],
+      "unresolvedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.gaps"
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 planning-owner reconciliation transaction",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T06:55:11Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-planning-owner-reconciliation-transaction",
+      "addressedFindings": [
+        "BUG032-GAPS-REPORT-STATE-004",
+        "BUG032-GAPS-USERVALIDATION-STATE-005",
+        "BUG032-GAPS-TEST-ID-006",
+        "BUG032-OBS-REALITY-FALLBACK-010"
+      ],
+      "unresolvedFindings": [
+        "BUG032-GAPS-STATE-NOTES-009",
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.validate"
+    },
+    {
+      "agent": "bubbles.gaps",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 convergence iteration 9 fresh complete gaps re-audit",
+      "phasesExecuted": [
+        "gaps"
+      ],
+      "outcome": "completed_diagnostic",
+      "completedAt": "2026-09-01T07:38:38Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-convergence-iteration-9-fresh-complete-gaps-re-audit",
+      "addressedFindings": [
+        "BUG032-CR-01",
+        "BUG032-CR-02",
+        "BUG032-CR-03",
+        "BUG032-ENG-01",
+        "BUG032-ENG-02",
+        "BUG032-REG-PROV-002A",
+        "BUG032-REG-PROV-002B",
+        "BUG032-GAPS-PLAN-STATE-001",
+        "BUG032-GAPS-TESTPLAN-001",
+        "BUG032-HARDEN-003",
+        "BUG032-GAPS-SPEC-STATE-002",
+        "BUG032-GAPS-DESIGN-STATE-003",
+        "BUG032-GAPS-REPORT-STATE-004",
+        "BUG032-GAPS-USERVALIDATION-STATE-005",
+        "BUG032-GAPS-TEST-ID-006",
+        "BUG032-GAPS-C43-COMMENT-007",
+        "BUG032-GAPS-PHASE-OWNER-008",
+        "BUG032-GAPS-STATE-NOTES-009",
+        "BUG032-OBS-REALITY-FALLBACK-010",
+        "BUG032-GAPS-EXECUTION-SUBSTATE-011"
+      ],
+      "unresolvedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.harden"
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 convergence iteration 9 complete sixteen-finding planning reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T08:13:55Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-convergence-iteration-9-planning-reconciliation",
+      "addressedFindings": [
+        "BUG032-HARDEN9-EVIDENCE-ANCHORS-011",
+        "BUG032-HARDEN9-G068-DOD-013",
+        "BUG032-HARDEN9-REPORT-ROUTE-016"
+      ],
+      "unresolvedFindings": [
+        "BUG032-HARDEN9-C8B-PASSIVE-OBJECT-001",
+        "BUG032-HARDEN9-C8B-PASSIVE-TAIL-002",
+        "BUG032-HARDEN9-C8B-PASSIVE-NEGATION-003",
+        "BUG032-HARDEN9-C8B-CONTEXT-004",
+        "BUG032-HARDEN9-C5A-CONTEXT-005",
+        "BUG032-HARDEN9-C5A-COVERAGE-PROXY-006",
+        "BUG032-HARDEN9-C43-TARGET-OVERLAP-007",
+        "BUG032-HARDEN9-C43-WRAPPER-IDENTITY-008",
+        "BUG032-HARDEN9-C43-STDOUTBYTES-009",
+        "BUG032-HARDEN9-G101-CERTIFICATION-010",
+        "BUG032-HARDEN9-G040-BOUNDARIES-012",
+        "BUG032-HARDEN9-RELEASE-MANIFEST-014",
+        "BUG032-HARDEN9-TEST-PROSE-015"
+      ],
+      "independentRoutedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "parallelReadyOwners": [
+        {
+          "owner": "bubbles.test",
+          "lane": "A-RED",
+          "scope": 1
+        },
+        {
+          "owner": "bubbles.test",
+          "lane": "C-RED",
+          "scope": 3
+        }
+      ]
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 revision-71 analyst and design planning reconciliation",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-01T17:30:25Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/report.md#2026-09-01-revision-71-analyst-design-planning-reconciliation",
+      "addressedFindings": [
+        "BUG032-HARDEN9-EVIDENCE-ANCHORS-011",
+        "BUG032-HARDEN9-G068-DOD-013",
+        "BUG032-HARDEN9-REPORT-ROUTE-016"
+      ],
+      "independentlyVerifiedNonterminalFindings": [
+        "BUG032-HARDEN9-G101-CERTIFICATION-010"
+      ],
+      "unresolvedFindings": [
+        "BUG032-HARDEN9-C8B-PASSIVE-OBJECT-001",
+        "BUG032-HARDEN9-C8B-PASSIVE-TAIL-002",
+        "BUG032-HARDEN9-C8B-PASSIVE-NEGATION-003",
+        "BUG032-HARDEN9-C8B-CONTEXT-004",
+        "BUG032-HARDEN9-C5A-CONTEXT-005",
+        "BUG032-HARDEN9-C5A-COVERAGE-PROXY-006",
+        "BUG032-HARDEN9-C43-TARGET-OVERLAP-007",
+        "BUG032-HARDEN9-C43-WRAPPER-IDENTITY-008",
+        "BUG032-HARDEN9-C43-STDOUTBYTES-009",
+        "BUG032-HARDEN9-G040-BOUNDARIES-012",
+        "BUG032-HARDEN9-RELEASE-MANIFEST-014",
+        "BUG032-HARDEN9-TEST-PROSE-015"
+      ],
+      "findingPartitions": [
+        {
+          "finding": "BUG032-HARDEN9-TEST-PROSE-015",
+          "owner": "bubbles.test",
+          "surface": "bubbles/scripts/state-transition-guard-selftest.sh",
+          "lane": "A/B"
+        },
+        {
+          "finding": "BUG032-HARDEN9-TEST-PROSE-015",
+          "owner": "bubbles.test",
+          "surface": "bubbles/scripts/release-delivery-reconciliation-guard-selftest.sh",
+          "lane": "C"
+        }
+      ],
+      "inadmissibleEvidenceRows": [
+        130,
+        141
+      ],
+      "independentRoutedFindings": [
+        "BUG035-D14-EMPTY-OUTPUT-COUNT"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "nextRequiredAction": "Perform the test-only A oracle correction before any A production work. Remove the rejected G068 same-ID assertion, fold candidate test bindings into surviving scenarios, and capture clean A-RED against unchanged production. B waits for A. C is independently GREEN."
+    },
+    {
+      "agent": "bubbles.plan",
+      "mode": "bugfix-fastlane",
+      "scope": "BUG-032 convergence iteration 10 SEC-005 planning adjudication",
+      "phasesExecuted": [
+        "bootstrap"
+      ],
+      "outcome": "route_required",
+      "completedAt": "2026-09-03T05:53:25Z",
+      "statusBefore": "in_progress",
+      "statusAfter": "in_progress",
+      "evidenceRef": "bugs/BUG-032-planning-maturity-guard-false-positives/scopes.md#convergence-iteration-10-sec-005-adjudication",
+      "addressedFindings": [],
+      "unresolvedFindings": [
+        "BUG032-REG-SEC005-TRACE-002",
+        "BUG032-REG-C5A-TYPE-COLUMN-001"
+      ],
+      "nextRequiredOwner": "bubbles.test",
+      "nextRequiredAction": "Remove the unplanned SEC-005 variables, fixtures, assertions, and SEC-003 counter fold while preserving the C5A Type-third RED hunk byte-for-byte. Return the coherent test oracle before any implementation owner acts."
     }
   ],
   "activeBugs": [],
   "resolvedBugs": [],
   "failures": [],
-  "lastUpdatedAt": "2026-08-15T16:41:51Z",
+  "lastUpdatedAt": "2026-09-03T05:53:25Z",
   "scopeLayout": "single-file",
   "artifacts": {
     "bug": "bug.md",
@@ -259,5 +884,5 @@
     ],
     "bugDoneRequires": "All four scopes are done, pre-fix and post-fix evidence is recorded, focused and full validation pass, and bubbles.validate certifies promotion."
   },
-  "notes": "Goal Contract revision 2 records the operator-approved Bubbles-only boundary expansion. Planning truth is Scope 1 done, Scope 2 in progress, Scope 3 blocked by Scope 2, and Scope 4 not started. BUG-028 reconciliation and all Scope 4 DoD items remain unchecked. Certification status, completed scopes, completed phases, and certifiedAt remain unchanged; bubbles.docs is the next owner."
+  "notes": "Goal Contract revision 4 governs the existing work boundary. The active specification and scopes preserve the prior 22 behaviors and add SCN-032-033 through SCN-032-036 for exactly 26 active scenarios. Convergence iteration 10 assigns no scenario or Test Plan identity to SEC-005 because its fallback diagnostic behavior is not part of the active requirement and design contract. All four active scopes remain in progress. Validate-owned certification stays unchanged as an earlier projection. Row 144 remains prior accepted A-RED. Row 145 remains failed and nonterminal with no inferred cause. The first executable route is test-owned SEC-005 oracle removal while preserving the C5A Type-third RED hunk. Production rollback remains implementation-owned and cannot begin before the coherent test oracle returns. B waits for independent A verification. C-GREEN remains independently verified. BUG035-D14-EMPTY-OUTPUT-COUNT remains independently routed to the existing BUG-035 packet and is not an in-boundary BUG-032 blocker. No terminal status, certification mutation, human acceptance, deployment, promotion, host mutation, model selection, commit, or push is claimed."
 }
